@@ -13,7 +13,7 @@ Ahora los 3 cuadros muestran:
 Las imágenes siguen cargando de `assets/cuadros/`.
 
 ## 3) ¿Dónde agrego los modelos PNG?
-Ahora se cargan desde una carpeta raíz llamada:
+Los modelos se cargan desde una carpeta raíz llamada:
 - `Tapiz/`
 
 Estructura esperada:
@@ -32,11 +32,12 @@ Resultado:
 - Copia PNG a `assets/modelos/`
 - Genera `config/modelos.json` con nombres, categoría e identificador.
 
-## 5) Personalizador por secciones (vector)
-- Elige un color en la paleta.
-- Da clic con el mouse en una sección del mosaico vectorial para aplicarlo.
-- Puedes seguir cambiando colores en otras secciones del mismo mosaico.
-- La vista grande se actualiza automáticamente con el patrón personalizado.
+> En `mosaicos.php` ya NO se muestran ejemplos si no hay modelos.
+
+## 5) Personalizador (PNG)
+- Todas las imágenes de modelo son PNG.
+- La paleta usa colores específicos (la paleta que compartiste).
+- El mosaico en vista principal se actualiza con esos tonos seleccionados.
 
 ## 6) ¿Cómo compartirme tu base de datos?
 Puedes hacerlo de cualquiera de estas formas:

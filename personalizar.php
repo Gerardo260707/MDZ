@@ -42,7 +42,7 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
       <div class="custom-wrap">
         <div>
           <p data-i18n="custom_step1">1. Selecciona un color.</p>
-          <p class="note">2. Da clic en una sección del mosaico para colorearla. Puedes repetir en otras secciones.</p>
+          <p class="note">2. Si tu modelo es SVG podrás colorear por secciones. Si es PNG se aplicará el tono sobre la vista del patrón.</p>
           <div class="vector-editor" id="vectorEditor"></div>
         </div>
         <div>

@@ -75,21 +75,54 @@ if (empty($items)) {
 }
 
 if (empty($items)) {
-    $categorias = ['centro', 'cenefa', 'esquina', 'hexagonales', 'antiderrapante'];
-    for ($i = 1; $i <= 12; $i++) {
-        $categoria = $categorias[($i - 1) % count($categorias)];
-        $items[] = normaliza_item([
-            'id' => $i,
-            'nombre' => 'Mosaico ejemplo ' . chr(64 + (($i % 26) ?: 26)) . ' ' . $i,
-            'imagen' => 'assets/placeholder-tile.svg',
-            'descripcion' => 'Modelo de demostración',
-            'precio' => 0,
-            'categoria' => $categoria,
-            'identificador' => '',
-        ]);
+    $tapizDir = __DIR__ . '/Tapiz';
+    if (is_dir($tapizDir)) {
+        $folders = array_filter(scandir($tapizDir) ?: [], static fn($n) => $n !== '.' && $n !== '..' && is_dir($tapizDir . '/' . $n));
+        sort($folders, SORT_NATURAL | SORT_FLAG_CASE);
+
+        $idx = 1;
+        $catCounters = ['centro'=>0,'cenefa'=>0,'esquina'=>0,'hexagonales'=>0,'antiderrapante'=>0];
+        foreach ($folders as $folder) {
+            $path = $tapizDir . '/' . $folder;
+            $pngs = glob($path . '/*.png');
+            if (!$pngs) {
+                continue;
+            }
+            sort($pngs, SORT_NATURAL | SORT_FLAG_CASE);
+            $src = $pngs[0];
+            $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $folder));
+            $slug = trim($slug, '-');
+            if ($slug === '') {
+                $slug = 'modelo-' . $idx;
+            }
+            $targetRel = 'assets/modelos/' . $slug . '.png';
+            $targetAbs = __DIR__ . '/' . $targetRel;
+            if (!is_dir(dirname($targetAbs))) {
+                mkdir(dirname($targetAbs), 0777, true);
+            }
+            if (!file_exists($targetAbs)) {
+                @copy($src, $targetAbs);
+            }
+
+            $categoria = 'centro';
+            if (isset($catCounters[$categoria])) {
+                $catCounters[$categoria]++;
+            }
+            $items[] = normaliza_item([
+                'id' => $idx,
+                'nombre' => ucwords(str_replace(['_', '-'], ' ', $folder)),
+                'imagen' => $targetRel,
+                'descripcion' => '',
+                'precio' => 0,
+                'categoria' => $categoria,
+                'identificador' => '',
+            ]);
+            $idx++;
+        }
     }
 }
 
+if (!empty($items)) {
 usort($items, static function ($a, $b) {
     $rankCmp = categoria_rank($a['categoria']) <=> categoria_rank($b['categoria']);
     if ($rankCmp !== 0) {
@@ -97,6 +130,7 @@ usort($items, static function ($a, $b) {
     }
     return strcasecmp((string)$a['nombre'], (string)$b['nombre']);
 });
+}
 
 $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
 ?>
@@ -137,14 +171,18 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
 
     <section class="panel">
       <div class="mosaic-grid">
-        <?php foreach ($items as $m): ?>
-          <article class="mosaic-card">
-            <img src="<?= htmlspecialchars($m['imagen'] ?: 'assets/placeholder-tile.svg', ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" />
-            <p class="code"><?= htmlspecialchars(strtoupper($m['categoria']), ENT_QUOTES) ?> · <?= htmlspecialchars($m['identificador'], ENT_QUOTES) ?></p>
-            <p class="name"><?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?></p>
-            <a class="action" href="personalizar.php?id=<?= urlencode((string)$m['id']) ?>&lang=<?= $lang ?>&img=<?= urlencode((string)($m['imagen'] ?: "assets/placeholder-tile.svg")) ?>&name=<?= urlencode((string)$m['nombre']) ?>" data-i18n="btn_customize">Personalizar</a>
-          </article>
-        <?php endforeach; ?>
+        <?php if (!empty($items)): ?>
+          <?php foreach ($items as $m): ?>
+            <article class="mosaic-card">
+              <img src="<?= htmlspecialchars($m['imagen'] ?: 'assets/placeholder-tile.svg', ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" />
+              <p class="code"><?= htmlspecialchars(strtoupper($m['categoria']), ENT_QUOTES) ?> · <?= htmlspecialchars($m['identificador'], ENT_QUOTES) ?></p>
+              <p class="name"><?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?></p>
+              <a class="action" href="personalizar.php?id=<?= urlencode((string)$m['id']) ?>&lang=<?= $lang ?>&img=<?= urlencode((string)($m['imagen'] ?: "assets/placeholder-tile.svg")) ?>&name=<?= urlencode((string)$m['nombre']) ?>" data-i18n="btn_customize">Personalizar</a>
+            </article>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <p class="empty-msg">Aún no hay modelos cargados en <strong>Tapiz/</strong>. Agrega carpetas con PNG y ejecuta <code>python3 scripts/import_tapiz.py</code>.</p>
+        <?php endif; ?>
       </div>
     </section>
   </main>

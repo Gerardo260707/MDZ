@@ -123,30 +123,56 @@
 
     const selectedColorRef = { value: '#2f658c' };
     const src = big.dataset.image || 'assets/placeholder-tile.svg';
-    const colors = ['#962f2f', '#ca6f46', '#f1ad2e', '#2f658c', '#7c90aa', '#2b8481', '#2a3a4f', '#a3b57a', '#dac9ad', '#303030', '#8d4d60', '#f4f4f0', '#1b4f72', '#3d9970', '#b03a2e'];
+    const isSvg = src.toLowerCase().endsWith('.svg');
+    const colors = [
+      '#9b3536','#a02f2f','#a83232','#6e4648','#633737','#7d5545',
+      '#ad9764','#906643','#955f49','#cc6f4a','#b85a3d','#1f2426',
+      '#7f4044','#89767e','#767791','#b0a3a3','#d1b3a9','#dcd2bf',
+      '#b69b77','#c0b1b1','#d8b3af','#d88582','#c46d78','#6f928c',
+      '#c7bbb0','#d8cbb8','#f79a06','#d9a12d','#e2b451','#85a389',
+      '#80a38a','#6f8682','#e6cd69','#e6bc6e','#e1af2f','#94994d',
+      '#979167','#7d9c7c','#7f8e7d','#5c6e62','#7fa35d','#37495f',
+      '#b7b7a8','#8ea88b','#77786b','#83b4af','#4f8f6c','#75806a',
+      '#5b6a98','#5b5ee0','#6685b1','#2f80b3','#8db5b4','#c8d9d4',
+      '#a6a6a6','#7a8a91','#8f8f8d','#757575','#a7c7c1','#9ab9d2',
+      '#979797','#bdbbbb','#c3c2c1','#cececd','#e7e2d6','#d8d8da',
+      '#6f978e','#436c99','#b7b7ae'
+    ];
 
-    let svgMarkup = templateSvg();
-    if (src.toLowerCase().endsWith('.svg')) {
+    let updatePattern = () => {};
+
+    if (isSvg) {
+      let svgMarkup = templateSvg();
       try {
         const res = await fetch(src);
         if (res.ok) svgMarkup = await res.text();
       } catch (e) {
         // fallback template
       }
-    }
 
-    editor.innerHTML = svgMarkup;
-    const svg = editor.querySelector('svg');
-    if (svg) {
-      svg.setAttribute('class', 'editable-svg');
-      const updatePattern = () => {
-        const url = svgToDataUrl(svg);
-        big.style.backgroundImage = `url('${url}')`;
+      editor.innerHTML = svgMarkup;
+      const svg = editor.querySelector('svg');
+      if (svg) {
+        svg.setAttribute('class', 'editable-svg');
+        updatePattern = () => {
+          const url = svgToDataUrl(svg);
+          big.style.backgroundImage = `url('${url}')`;
+          big.style.backgroundSize = '140px 140px';
+          big.style.backgroundRepeat = 'repeat';
+        };
+        setupInteractiveSvg(svg, selectedColorRef, updatePattern);
+        updatePattern();
+      }
+    } else {
+      editor.innerHTML = `<img class="editable-png" src="${src}" alt="Modelo PNG" />`;
+      const applyTint = (color) => {
+        big.style.backgroundImage = `linear-gradient(${color}66, ${color}66), url('${src}')`;
+        big.style.backgroundBlendMode = 'multiply';
         big.style.backgroundSize = '140px 140px';
         big.style.backgroundRepeat = 'repeat';
       };
-      setupInteractiveSvg(svg, selectedColorRef, updatePattern);
-      updatePattern();
+      updatePattern = () => applyTint(selectedColorRef.value);
+      applyTint(selectedColorRef.value);
     }
 
     colors.forEach((c) => {
@@ -158,6 +184,7 @@
         selectedColorRef.value = c;
         document.querySelectorAll('.sw').forEach((n) => n.classList.remove('active'));
         b.classList.add('active');
+        if (!isSvg) updatePattern();
       });
       palette.appendChild(b);
     });
@@ -165,30 +192,42 @@
     const resetBtn = q('resetColor');
     if (resetBtn) {
       resetBtn.addEventListener('click', () => {
-        editor.innerHTML = templateSvg();
-        const nsvg = editor.querySelector('svg');
-        nsvg.setAttribute('class', 'editable-svg');
-        const updatePattern = () => {
-          const url = svgToDataUrl(nsvg);
-          big.style.backgroundImage = `url('${url}')`;
-          big.style.backgroundSize = '140px 140px';
-          big.style.backgroundRepeat = 'repeat';
-        };
-        setupInteractiveSvg(nsvg, selectedColorRef, updatePattern);
-        updatePattern();
+        if (isSvg) {
+          editor.innerHTML = templateSvg();
+          const nsvg = editor.querySelector('svg');
+          nsvg.setAttribute('class', 'editable-svg');
+          updatePattern = () => {
+            const url = svgToDataUrl(nsvg);
+            big.style.backgroundImage = `url('${url}')`;
+            big.style.backgroundSize = '140px 140px';
+            big.style.backgroundRepeat = 'repeat';
+          };
+          setupInteractiveSvg(nsvg, selectedColorRef, updatePattern);
+          updatePattern();
+        } else {
+          selectedColorRef.value = '#ffffff';
+          updatePattern();
+        }
       });
     }
 
     const dl = q('download');
     if (dl) {
       dl.addEventListener('click', () => {
-        const currentSvg = editor.querySelector('svg');
-        const blob = new Blob([currentSvg ? currentSvg.outerHTML : templateSvg()], { type: 'image/svg+xml' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'mosaico-personalizado.svg';
-        a.click();
-        URL.revokeObjectURL(a.href);
+        if (isSvg) {
+          const currentSvg = editor.querySelector('svg');
+          const blob = new Blob([currentSvg ? currentSvg.outerHTML : templateSvg()], { type: 'image/svg+xml' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'mosaico-personalizado.svg';
+          a.click();
+          URL.revokeObjectURL(a.href);
+        } else {
+          const a = document.createElement('a');
+          a.href = src;
+          a.download = 'mosaico-modelo.png';
+          a.click();
+        }
       });
     }
   }
