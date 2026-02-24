@@ -121,9 +121,8 @@
     const big = q('bigPreview');
     if (!palette || !editor || !big) return;
 
-    const selectedColorRef = { value: '#2f658c' };
     const src = big.dataset.image || 'assets/placeholder-tile.svg';
-    const isSvg = src.toLowerCase().endsWith('.svg');
+    const category = (big.dataset.category || 'centro').toLowerCase();
     const colors = [
       '#9b3536','#a02f2f','#a83232','#6e4648','#633737','#7d5545',
       '#ad9764','#906643','#955f49','#cc6f4a','#b85a3d','#1f2426',
@@ -139,97 +138,147 @@
       '#6f978e','#436c99','#b7b7ae'
     ];
 
-    let updatePattern = () => {};
+    let selected = colors[0];
+    let img = new Image();
+    img.crossOrigin = 'anonymous';
 
-    if (isSvg) {
-      let svgMarkup = templateSvg();
-      try {
-        const res = await fetch(src);
-        if (res.ok) svgMarkup = await res.text();
-      } catch (e) {
-        // fallback template
-      }
+    const regionsNorm = [
+      [[0,0],[0.5,0],[0,0.5]],
+      [[0.5,0],[1,0],[1,0.5]],
+      [[0,0.5],[0,1],[0.5,1]],
+      [[1,0.5],[1,1],[0.5,1]],
+      [[0.2,0.2],[0.5,0.08],[0.8,0.2],[0.92,0.5],[0.8,0.8],[0.5,0.92],[0.2,0.8],[0.08,0.5]],
+      [[0,0.35],[0.35,0],[0.65,0],[1,0.35],[1,0.65],[0.65,1],[0.35,1],[0,0.65]],
+    ];
+    const regionColors = {};
 
-      editor.innerHTML = svgMarkup;
-      const svg = editor.querySelector('svg');
-      if (svg) {
-        svg.setAttribute('class', 'editable-svg');
-        updatePattern = () => {
-          const url = svgToDataUrl(svg);
-          big.style.backgroundImage = `url('${url}')`;
-          big.style.backgroundSize = '140px 140px';
-          big.style.backgroundRepeat = 'repeat';
-        };
-        setupInteractiveSvg(svg, selectedColorRef, updatePattern);
-        updatePattern();
-      }
-    } else {
-      editor.innerHTML = `<img class="editable-png" src="${src}" alt="Modelo PNG" />`;
-      const applyTint = (color) => {
-        big.style.backgroundImage = `linear-gradient(${color}66, ${color}66), url('${src}')`;
-        big.style.backgroundBlendMode = 'multiply';
-        big.style.backgroundSize = '140px 140px';
-        big.style.backgroundRepeat = 'repeat';
-      };
-      updatePattern = () => applyTint(selectedColorRef.value);
-      applyTint(selectedColorRef.value);
+    editor.innerHTML = '<canvas id="editCanvas" class="vector-canvas" width="600" height="600"></canvas>';
+    big.innerHTML = '<canvas id="patternCanvas" class="pattern-canvas" width="960" height="640"></canvas>';
+    const editCanvas = q('editCanvas');
+    const patternCanvas = q('patternCanvas');
+    const ectx = editCanvas.getContext('2d');
+    const pctx = patternCanvas.getContext('2d');
+
+    function denormRegion(r, size){
+      return r.map(([x,y]) => [x*size, y*size]);
     }
 
-    colors.forEach((c) => {
+    function drawBaseOn(ctx, size=600){
+      ctx.clearRect(0,0,size,size);
+      ctx.drawImage(img,0,0,size,size);
+      Object.entries(regionColors).forEach(([k,color])=>{
+        const idx = Number(k);
+        const pts = denormRegion(regionsNorm[idx], size);
+        ctx.save();
+        ctx.beginPath();
+        pts.forEach((p,i)=> i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));
+        ctx.closePath();
+        ctx.clip();
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.55;
+        ctx.fillRect(0,0,size,size);
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.drawImage(img,0,0,size,size);
+        ctx.restore();
+      });
+    }
+
+    function drawPattern(){
+      const w = patternCanvas.width, h = patternCanvas.height;
+      const cols = 12, rows = 8;
+      const tw = Math.floor(w/cols), th = Math.floor(h/rows);
+      const tile = document.createElement('canvas');
+      tile.width = 200; tile.height = 200;
+      const tctx = tile.getContext('2d');
+      drawBaseOn(tctx, 200);
+
+      pctx.clearRect(0,0,w,h);
+      for(let r=0;r<rows;r++){
+        for(let c=0;c<cols;c++){
+          pctx.save();
+          const x = c*tw, y=r*th;
+          pctx.translate(x+tw/2,y+th/2);
+          let angle = 0;
+          if (category === 'centro') {
+            angle = ((r+c)%4) * (Math.PI/2);
+          }
+          pctx.rotate(angle);
+          pctx.drawImage(tile,-tw/2,-th/2,tw,th);
+          pctx.restore();
+        }
+      }
+    }
+
+    function pointInPoly(x,y,poly){
+      let inside=false;
+      for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+        const xi=poly[i][0], yi=poly[i][1], xj=poly[j][0], yj=poly[j][1];
+        const intersect=((yi>y)!=(yj>y)) && (x < (xj-xi)*(y-yi)/(yj-yi+1e-9)+xi);
+        if(intersect) inside=!inside;
+      }
+      return inside;
+    }
+
+    editCanvas.addEventListener('click',(ev)=>{
+      const rect = editCanvas.getBoundingClientRect();
+      const x = (ev.clientX - rect.left) * (editCanvas.width / rect.width);
+      const y = (ev.clientY - rect.top) * (editCanvas.height / rect.height);
+      for(let i=regionsNorm.length-1;i>=0;i--){
+        const poly = denormRegion(regionsNorm[i], editCanvas.width);
+        if(pointInPoly(x,y,poly)){
+          regionColors[i]=selected;
+          drawBaseOn(ectx, editCanvas.width);
+          drawPattern();
+          break;
+        }
+      }
+    });
+
+    colors.forEach((c)=>{
       const b = document.createElement('button');
-      b.className = 'sw';
-      b.type = 'button';
-      b.style.background = c;
-      b.addEventListener('click', () => {
-        selectedColorRef.value = c;
-        document.querySelectorAll('.sw').forEach((n) => n.classList.remove('active'));
+      b.className='sw';
+      b.type='button';
+      b.style.background=c;
+      b.addEventListener('click',()=>{
+        selected=c;
+        document.querySelectorAll('.sw').forEach((n)=>n.classList.remove('active'));
         b.classList.add('active');
-        if (!isSvg) updatePattern();
       });
       palette.appendChild(b);
     });
 
     const resetBtn = q('resetColor');
     if (resetBtn) {
-      resetBtn.addEventListener('click', () => {
-        if (isSvg) {
-          editor.innerHTML = templateSvg();
-          const nsvg = editor.querySelector('svg');
-          nsvg.setAttribute('class', 'editable-svg');
-          updatePattern = () => {
-            const url = svgToDataUrl(nsvg);
-            big.style.backgroundImage = `url('${url}')`;
-            big.style.backgroundSize = '140px 140px';
-            big.style.backgroundRepeat = 'repeat';
-          };
-          setupInteractiveSvg(nsvg, selectedColorRef, updatePattern);
-          updatePattern();
-        } else {
-          selectedColorRef.value = '#ffffff';
-          updatePattern();
-        }
+      resetBtn.addEventListener('click',()=>{
+        Object.keys(regionColors).forEach(k=>delete regionColors[k]);
+        drawBaseOn(ectx, editCanvas.width);
+        drawPattern();
       });
     }
 
     const dl = q('download');
     if (dl) {
-      dl.addEventListener('click', () => {
-        if (isSvg) {
-          const currentSvg = editor.querySelector('svg');
-          const blob = new Blob([currentSvg ? currentSvg.outerHTML : templateSvg()], { type: 'image/svg+xml' });
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = 'mosaico-personalizado.svg';
-          a.click();
-          URL.revokeObjectURL(a.href);
-        } else {
-          const a = document.createElement('a');
-          a.href = src;
-          a.download = 'mosaico-modelo.png';
-          a.click();
-        }
+      dl.addEventListener('click',()=>{
+        const a=document.createElement('a');
+        a.href=patternCanvas.toDataURL('image/png');
+        a.download='patron-personalizado.png';
+        a.click();
       });
     }
+
+    img.onload = () => {
+      drawBaseOn(ectx, editCanvas.width);
+      drawPattern();
+    };
+    img.onerror = () => {
+      const tmp = document.createElement('canvas');
+      tmp.width = 600; tmp.height = 600;
+      const tx = tmp.getContext('2d');
+      tx.fillStyle = '#ddd'; tx.fillRect(0,0,600,600);
+      tx.fillStyle = '#888'; tx.font = '24px Arial'; tx.fillText('PNG no disponible', 180, 300);
+      img.src = tmp.toDataURL('image/png');
+    };
+    img.src = src;
   }
 
   function initDarkFooter() {

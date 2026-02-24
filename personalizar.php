@@ -42,7 +42,7 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
       <div class="custom-wrap">
         <div>
           <p data-i18n="custom_step1">1. Selecciona un color.</p>
-          <p class="note">2. Si tu modelo es SVG podrás colorear por secciones. Si es PNG se aplicará el tono sobre la vista del patrón.</p>
+          <p class="note">2. Da clic en una sección del mosaico (PNG) para aplicar el color solo en esa zona.</p>
           <div class="vector-editor" id="vectorEditor"></div>
         </div>
         <div>
@@ -51,7 +51,7 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
         </div>
         <div>
           <p data-i18n="custom_step2">Vista principal del patrón personalizado.</p>
-          <div class="preview-big" id="bigPreview" data-image="<?= htmlspecialchars($_GET['img'] ?? 'assets/placeholder-tile.svg', ENT_QUOTES) ?>"></div>
+          <div class="preview-big" id="bigPreview" data-image="<?= htmlspecialchars($_GET['img'] ?? 'assets/placeholder-tile.svg', ENT_QUOTES) ?>" data-category="<?= htmlspecialchars($_GET['cat'] ?? 'centro', ENT_QUOTES) ?>"></div>
           <button id="download" class="action" style="margin-top:8px" data-i18n="custom_download">Descargar imagen</button>
         </div>
       </div>
