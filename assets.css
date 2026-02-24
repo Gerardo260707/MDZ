@@ -57,7 +57,7 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .vector-editor svg,.editable-svg{width:100%;height:100%;display:block}
 .editable-png{width:100%;height:100%;object-fit:contain;display:block}
 .vector-canvas{width:100%;height:100%;display:block;cursor:crosshair;border:1px solid #999;background:#fff}
-.preview-big{width:100%;height:390px;border:1px solid #888;background:#f2f2f2;overflow:hidden}
+.preview-big{width:100%;aspect-ratio:12/8;border:1px solid #888;background:#f2f2f2;overflow:hidden}
 .pattern-canvas{width:100%;height:100%;display:block}
 .palette{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .sw{height:24px;border:1px solid #999;cursor:pointer}
