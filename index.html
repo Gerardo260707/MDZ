@@ -1,109 +1,90 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Inicio | Mosaicos Dzununcan</title>
-    <link rel="stylesheet" href="assets.css" />
-  </head>
-  <body>
-    <main class="site">
-      <header class="top">
-        <div class="brand-row">
-          <div class="logo"><small>// Mosaicos</small>Dzununcán</div>
-          <div class="langs">Idioma ▪ 🇲🇽 ▪ 🇺🇸</div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inicio | Mosaicos Dzununcan</title>
+  <link rel="stylesheet" href="assets.css" />
+</head>
+<body>
+  <main class="site">
+    <header class="top">
+      <div class="brand-row">
+        <div class="logo"><small>// Mosaicos</small>Dzununcán</div>
+        <div class="langs"><span data-i18n="lang_label">Idioma</span> ▪
+          <button class="lang-btn" data-set-lang="es" data-lang-active="es">🇲🇽</button>
+          <button class="lang-btn" data-set-lang="en" data-lang-active="en">🇺🇸</button>
         </div>
-        <nav>
-          <a href="index.html">Inicio</a>
-          <a href="mosaicos.php">Mosaicos</a>
-          <a href="galeria.html">Galería</a>
-          <a href="mantenimiento.html">Mantenimiento</a>
-          <a href="instalacion.html">Instalación</a>
-          <a href="contacto.html">Contacto</a>
-          <a class="btn" href="pago.html">Pago Clip</a>
-        </nav>
-      </header>
-      <div class="mosaic-strip"></div>
+      </div>
+      <nav>
+        <a data-keep-lang href="index.html" data-i18n="nav_home">Inicio</a>
+        <a data-keep-lang href="mosaicos.html" data-i18n="nav_mosaics">Mosaicos</a>
+        <a data-keep-lang href="galeria.html" data-i18n="nav_gallery">Galería</a>
+        <a data-keep-lang href="mantenimiento.html" data-i18n="nav_maintenance">Mantenimiento</a>
+        <a data-keep-lang href="instalacion.html" data-i18n="nav_installation">Instalación</a>
+        <a data-keep-lang href="contacto.html" data-i18n="nav_contact">Contacto</a>
+        <a data-keep-lang class="btn" href="pago.html" data-i18n="nav_pay">Pago Clip</a>
+      </nav>
+    </header>
 
-      <section class="hero" aria-label="Carrusel de promociones">
-        <div class="slides" id="slides"></div>
-      </section>
-      <div class="dots" id="dots"></div>
+    <div class="mosaic-strip"></div>
+    <section class="hero" aria-label="Carrusel de promociones"><div class="slides" id="slides"></div></section>
+    <div class="dots" id="dots"></div>
 
-      <section>
-        <h1>Mosaicos Dzununcan</h1>
-        <p>
-          Ahora cada menú abre su propio archivo independiente. Puedes editar cada página por separado
-          y mantener todo conectado desde la navegación.
-        </p>
+    <section>
+      <h1>Mosaicos Dzununcan</h1>
+      <p data-i18n="home_intro">Ahora cada menú abre su propio archivo independiente.</p>
+      <div class="cards" id="featureCards"></div>
+      <p class="note" data-i18n="home_note">Los 3 cuadros cargan imágenes desde assets/cuadros/.</p>
+    </section>
 
-        <div class="cards" id="featureCards"></div>
-        <p class="note">Los 3 cuadros cargan imágenes desde <code>assets/cuadros/</code>.</p>
-      </section>
+    <footer data-i18n="home_footer">Base preparada para migrar a PHP + base de datos cuando compartas tu estructura.</footer>
+  </main>
 
-      <footer>Base preparada para migrar a PHP + base de datos cuando compartas tu estructura.</footer>
-    </main>
-
-    <script>
-      // PERSONALIZA FÁCIL
-      const CAROUSEL_SLIDES = [
-        {
-          title: '¡50% DE DESCUENTO!',
-          subtitle: 'EN PISOS DECORADOS 20x20 COLLAGE',
-          background: 'repeating-linear-gradient(45deg,#5e7f99 0 32px,#e5dcc1 32px 64px,#8f2a2a 64px 96px,#f4f4f0 96px 128px,#2b8481 128px 160px,#be7a5c 160px 192px)'
-        },
-        {
-          title: 'ENVÍOS A TODO MÉXICO',
-          subtitle: 'COMPRA DESDE CUALQUIER ESTADO',
-          background: 'repeating-linear-gradient(135deg,#295e85 0 26px,#f0deb9 26px 52px,#943636 52px 78px,#f8f7f2 78px 104px,#488780 104px 130px,#d27f5f 130px 156px)'
-        },
-        {
-          title: 'NUEVOS DISEÑOS',
-          subtitle: 'COLECCIONES PERSONALIZADAS',
-          background: 'repeating-linear-gradient(25deg,#33608f 0 25px,#ebdbb8 25px 50px,#7d1f1f 50px 75px,#f4f2e9 75px 100px,#3c8f88 100px 125px,#ca8867 125px 150px)'
-        }
-      ];
-      const AUTO_CHANGE_MS = 4500;
-
-      const FEATURE_CARDS = [
-        { file: 'galeria.jpg', label: 'Galería', href: 'galeria.html' },
-        { file: 'instalacion.jpg', label: 'Instalación', href: 'instalacion.html' },
-        { file: 'contacto.jpg', label: 'Contacto', href: 'contacto.html' }
-      ];
-
-      const slidesContainer = document.getElementById('slides');
-      const dotsContainer = document.getElementById('dots');
-      let activeIndex = 0;
-
-      const slideEls = CAROUSEL_SLIDES.map((slide, index) => {
-        const article = document.createElement('article');
-        article.className = `slide ${index === 0 ? 'active' : ''}`;
-        article.style.setProperty('--slide-bg', slide.background);
-        article.innerHTML = `<div class="promo"><strong>${slide.title}</strong><span>${slide.subtitle}</span></div>`;
-        slidesContainer.appendChild(article);
-
-        const dot = document.createElement('button');
-        dot.className = index === 0 ? 'active' : '';
-        dot.addEventListener('click', () => showSlide(index));
-        dotsContainer.appendChild(dot);
-        return article;
-      });
-      const dotEls = [...dotsContainer.children];
-      function showSlide(index){
-        activeIndex = index;
-        slideEls.forEach((el,i)=>el.classList.toggle('active', i===index));
-        dotEls.forEach((el,i)=>el.classList.toggle('active', i===index));
-      }
-      setInterval(()=>showSlide((activeIndex+1)%CAROUSEL_SLIDES.length), AUTO_CHANGE_MS);
-
-      const cardsContainer = document.getElementById('featureCards');
-      FEATURE_CARDS.forEach(card => {
-        const a = document.createElement('a');
-        a.className = 'tile-card';
-        a.href = card.href;
-        a.innerHTML = `<img src="assets/cuadros/${card.file}" alt="${card.label}" onerror="this.src='assets/placeholder-tile.svg'" /><span>${card.label}</span>`;
-        cardsContainer.appendChild(a);
-      });
-    </script>
-  </body>
+  <script src="app.js"></script>
+  <script>
+    const CAROUSEL_SLIDES = [
+      { title: '¡50% DE DESCUENTO!', subtitle: 'EN PISOS DECORADOS 20x20 COLLAGE', background: 'repeating-linear-gradient(45deg,#5e7f99 0 32px,#e5dcc1 32px 64px,#8f2a2a 64px 96px,#f4f4f0 96px 128px,#2b8481 128px 160px,#be7a5c 160px 192px)' },
+      { title: 'ENVÍOS A TODO MÉXICO', subtitle: 'COMPRA DESDE CUALQUIER ESTADO', background: 'repeating-linear-gradient(135deg,#295e85 0 26px,#f0deb9 26px 52px,#943636 52px 78px,#f8f7f2 78px 104px,#488780 104px 130px,#d27f5f 130px 156px)' },
+      { title: 'NUEVOS DISEÑOS', subtitle: 'COLECCIONES PERSONALIZADAS', background: 'repeating-linear-gradient(25deg,#33608f 0 25px,#ebdbb8 25px 50px,#7d1f1f 50px 75px,#f4f2e9 75px 100px,#3c8f88 100px 125px,#ca8867 125px 150px)' }
+    ];
+    const AUTO_CHANGE_MS = 4500;
+    const FEATURE_CARDS = [
+      { file: 'galeria.jpg', label: 'Galería', href: 'galeria.html' },
+      { file: 'instalacion.jpg', label: 'Instalación', href: 'instalacion.html' },
+      { file: 'contacto.jpg', label: 'Contacto', href: 'contacto.html' }
+    ];
+    const slidesContainer = document.getElementById('slides');
+    const dotsContainer = document.getElementById('dots');
+    let activeIndex = 0;
+    const slideEls = CAROUSEL_SLIDES.map((slide, index) => {
+      const article = document.createElement('article');
+      article.className = `slide ${index === 0 ? 'active' : ''}`;
+      article.style.setProperty('--slide-bg', slide.background);
+      article.innerHTML = `<div class="promo"><strong>${slide.title}</strong><span>${slide.subtitle}</span></div>`;
+      slidesContainer.appendChild(article);
+      const dot = document.createElement('button');
+      dot.className = index === 0 ? 'active' : '';
+      dot.addEventListener('click', () => showSlide(index));
+      dotsContainer.appendChild(dot);
+      return article;
+    });
+    const dotEls = [...dotsContainer.children];
+    function showSlide(index){
+      activeIndex = index;
+      slideEls.forEach((el,i)=>el.classList.toggle('active', i===index));
+      dotEls.forEach((el,i)=>el.classList.toggle('active', i===index));
+    }
+    setInterval(()=>showSlide((activeIndex+1)%CAROUSEL_SLIDES.length), AUTO_CHANGE_MS);
+    const cardsContainer = document.getElementById('featureCards');
+    const lang = window.siteI18n.getLang();
+    FEATURE_CARDS.forEach(card => {
+      const a = document.createElement('a');
+      a.className = 'tile-card';
+      a.href = `${card.href}?lang=${lang}`;
+      a.innerHTML = `<img src="assets/cuadros/${card.file}" alt="${card.label}" onerror="this.src='assets/placeholder-tile.svg'" /><span>${card.label}</span>`;
+      cardsContainer.appendChild(a);
+    });
+  </script>
+</body>
 </html>
