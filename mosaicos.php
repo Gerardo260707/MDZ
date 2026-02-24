@@ -1,4 +1,35 @@
 <?php
+function categoria_prefix(?string $categoria): string {
+    $cat = strtolower(trim((string)$categoria));
+    return match ($cat) {
+        'cenefa' => 'CEN',
+        'esquina' => 'ESQ',
+        'centro' => 'CTR',
+        'hexagonales' => 'HEX',
+        'antiderrapante' => 'ANT',
+        default => 'MOD',
+    };
+}
+
+function normaliza_item(array $m): array {
+    $id = (int)($m['id'] ?? 0);
+    $categoria = $m['categoria'] ?? 'centro';
+    $identificador = $m['identificador'] ?? '';
+    if ($identificador === '') {
+        $identificador = categoria_prefix($categoria) . '-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
+    }
+
+    return [
+        'id' => $id,
+        'nombre' => (string)($m['nombre'] ?? 'Sin nombre'),
+        'imagen' => (string)($m['imagen'] ?? 'assets/placeholder-tile.svg'),
+        'descripcion' => (string)($m['descripcion'] ?? ''),
+        'precio' => (float)($m['precio'] ?? 0),
+        'categoria' => (string)$categoria,
+        'identificador' => (string)$identificador,
+    ];
+}
+
 $items = [];
 $configFile = __DIR__ . '/config/database.php';
 if (file_exists($configFile)) {
@@ -10,23 +41,36 @@ if (file_exists($configFile)) {
             $db['pass'],
             [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
         );
-        $stmt = $pdo->query('SELECT id, nombre, imagen, descripcion, precio FROM mosaicos ORDER BY id DESC');
-        $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $stmt = $pdo->query(
+            "SELECT id, nombre, imagen, descripcion, precio, categoria, identificador
+             FROM mosaicos
+             ORDER BY nombre COLLATE utf8mb4_unicode_ci ASC"
+        );
+        $items = array_map('normaliza_item', $stmt->fetchAll(PDO::FETCH_ASSOC));
     } catch (Throwable $e) {
         $items = [];
     }
 }
+
 if (empty($items)) {
+    $categorias = ['cenefa', 'esquina', 'centro', 'hexagonales', 'antiderrapante'];
     for ($i = 1; $i <= 12; $i++) {
-        $items[] = [
+        $categoria = $categorias[($i - 1) % count($categorias)];
+        $items[] = normaliza_item([
             'id' => $i,
-            'nombre' => 'Mosaico ejemplo ' . $i,
+            'nombre' => 'Mosaico ejemplo ' . chr(64 + (($i % 26) ?: 26)) . ' ' . $i,
             'imagen' => 'assets/placeholder-tile.svg',
             'descripcion' => 'Modelo de demostración',
             'precio' => 0,
-        ];
+            'categoria' => $categoria,
+            'identificador' => '',
+        ]);
     }
+
+    usort($items, static fn($a, $b) => strcasecmp($a['nombre'], $b['nombre']));
 }
+
 $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
 ?>
 <!doctype html>
@@ -69,6 +113,7 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
         <?php foreach ($items as $m): ?>
           <article class="mosaic-card">
             <img src="<?= htmlspecialchars($m['imagen'] ?: 'assets/placeholder-tile.svg', ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" />
+            <p class="code"><?= htmlspecialchars(strtoupper($m['categoria']), ENT_QUOTES) ?> · <?= htmlspecialchars($m['identificador'], ENT_QUOTES) ?></p>
             <p class="name"><?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?></p>
             <a class="action" href="personalizar.php?id=<?= urlencode((string)$m['id']) ?>&lang=<?= $lang ?>&img=<?= urlencode((string)($m['imagen'] ?: "assets/placeholder-tile.svg")) ?>&name=<?= urlencode((string)$m['nombre']) ?>" data-i18n="btn_customize">Personalizar</a>
           </article>
