@@ -77,5 +77,6 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
     </section>
   </main>
   <script src="app.js"></script>
+  <script src="site-pages.js"></script>
 </body>
 </html>

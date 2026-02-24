@@ -42,15 +42,15 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
       <div class="custom-wrap">
         <div>
           <p data-i18n="custom_step1">1. Selecciona un color.</p>
-          <div class="preview-small" id="smallPreview"></div>
+          <p class="note">2. Da clic en una sección del mosaico para colorearla. Puedes repetir en otras secciones.</p>
+          <div class="vector-editor" id="vectorEditor"></div>
         </div>
         <div>
           <div class="palette" id="palette"></div>
-          <button id="applyColor" class="action" data-i18n="custom_apply">Aplicar color</button>
           <button id="resetColor" class="action" style="margin-top:8px" data-i18n="custom_reset">Imagen original</button>
         </div>
         <div>
-          <p data-i18n="custom_step2">2. Haz clic en aplicar para actualizar la vista grande.</p>
+          <p data-i18n="custom_step2">Vista principal del patrón personalizado.</p>
           <div class="preview-big" id="bigPreview" data-image="<?= htmlspecialchars($_GET['img'] ?? 'assets/placeholder-tile.svg', ENT_QUOTES) ?>"></div>
           <button id="download" class="action" style="margin-top:8px" data-i18n="custom_download">Descargar imagen</button>
         </div>

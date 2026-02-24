@@ -1,31 +1,34 @@
 # Cómo personalizar el sitio
 
-## 1) Archivos y JavaScript adaptados
+## 1) Archivos JavaScript (2 scripts)
 - `app.js`: idioma ES/EN, persistencia y propagación de `?lang=`.
-- `site-pages.js`: lógica de páginas (inicio/carrusel, categorías y personalizador).
+- `site-pages.js`: lógica de páginas (home, categorías, personalizador y footer negro global).
 
-## 2) Navegación por archivos independientes
-- `index.html` (inicio)
-- `mosaicos.html` (categorías de mosaicos)
-- `mosaicos.php` (decorados: lista de modelos 4 por fila)
-- `personalizar.php` (simulador por mosaico)
-- `galeria.html`, `mantenimiento.html`, `instalacion.html`, `contacto.html`, `pago.html`
+## 2) Home (3 cuadros)
+Ahora los 3 cuadros muestran:
+- **Mosaicos**
+- **Personalizar**
+- **Colores**
 
-## 3) Idioma real (ES / EN)
-- El selector 🇲🇽 / 🇺🇸 cambia los textos del sitio.
-- Se conserva idioma entre páginas con `?lang=` y `localStorage`.
-- Los nombres de mosaicos NO se traducen (se respetan como vienen de la BD).
+Las imágenes siguen cargando de `assets/cuadros/`.
 
-## 4) Cambiar imágenes de los 3 cuadros (inicio)
-Pega tus imágenes en `assets/cuadros/` con estos nombres:
-- `galeria.jpg`
-- `instalacion.jpg`
-- `contacto.jpg`
+## 3) Personalizador por secciones (vector)
+- Elige un color en la paleta.
+- Da clic con el mouse en una sección del mosaico vectorial para aplicarlo.
+- Puedes seguir cambiando colores en otras secciones del mismo mosaico.
+- La vista grande se actualiza automáticamente con el patrón personalizado.
 
-## 5) Decorados + personalizar
-- En `mosaicos.html`, el bloque **Decorados** dirige a `mosaicos.php`.
-- En `mosaicos.php`, cada mosaico tiene botón **Personalizar** a `personalizar.php?id=...` y manda imagen/modelo por URL.
-- En `personalizar.php`, la paleta aplica color sobre la imagen del mosaico y actualiza la vista grande.
+## 4) Imágenes vectoriales reales
+- Al entrar desde `mosaicos.php`, se envía `img` y `name` al personalizador.
+- Si `img` apunta a un `.svg`, el editor usa ese SVG para recolorar por secciones.
+- Si todavía no hay SVG real, usa una plantilla temporal.
+
+## 5) Footer negro en todas las páginas
+Se agrega automáticamente al final de cada página con:
+- información de contacto
+- dirección
+- políticas
+- redes sociales
 
 ## 6) Conectar base de datos (catálogo)
 1. Copia `config/database.example.php` a `config/database.php`.
