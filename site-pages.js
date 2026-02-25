@@ -258,7 +258,6 @@
     if (!colors.length) return;
 
     let selected = colors[0];
-    const usedColorIds = new Set();
     const undoStack = [];
     const redoStack = [];
 
@@ -271,6 +270,28 @@
       const redoBtn = q('redoColor');
       if (undoBtn) undoBtn.disabled = undoStack.length === 0;
       if (redoBtn) redoBtn.disabled = redoStack.length === 0;
+    }
+
+    function getUsedColorIdsFromDiff() {
+      if (!sourceImageData || !currentImageData) return [];
+      const src = sourceImageData.data;
+      const cur = currentImageData.data;
+      const used = new Set();
+      const colorByRgb = new Map();
+      colors.forEach((c) => {
+        const rgb = hexToRgb(c.hex);
+        colorByRgb.set(`${rgb.r},${rgb.g},${rgb.b}`, c.id);
+      });
+
+      for (let i = 0; i < cur.length; i += 4) {
+        if (cur[i + 3] < 10) continue;
+        const same = cur[i] === src[i] && cur[i + 1] === src[i + 1] && cur[i + 2] === src[i + 2] && cur[i + 3] === src[i + 3];
+        if (same) continue;
+        const key = `${cur[i]},${cur[i + 1]},${cur[i + 2]}`;
+        const colorId = colorByRgb.get(key);
+        if (colorId) used.add(colorId);
+      }
+      return Array.from(used);
     }
 
     editor.innerHTML = '<canvas id="editCanvas" class="vector-canvas" width="600" height="600"></canvas>';
@@ -492,7 +513,6 @@
         }
       }
 
-      usedColorIds.add(colorObj.id);
       renderEdit();
       drawPattern();
       updateHistoryButtons();
@@ -535,7 +555,6 @@
         currentImageData = cloneImageData(sourceImageData);
         undoStack.length = 0;
         redoStack.length = 0;
-        usedColorIds.clear();
         renderEdit();
         drawPattern();
         updateHistoryButtons();
@@ -606,7 +625,8 @@
         rctx.font = '700 28px Arial';
         rctx.fillText(tpl.colorsTitle.text, tpl.colorsTitle.x, tpl.colorsTitle.y);
 
-        const selectedIds = Array.from(usedColorIds.size ? usedColorIds : [selected.id]);
+        const selectedIds = getUsedColorIdsFromDiff();
+        const hasChanges = selectedIds.length > 0;
         const byId = new Map(colors.map((c) => [c.id, c]));
 
         rctx.font = '20px Arial';
@@ -627,7 +647,8 @@
 
         const jpg = reportCanvas.toDataURL('image/jpeg', 0.92);
         const blob = buildPdfFromJpeg(jpg, tpl.page.widthPt, tpl.page.heightPt, reportCanvas.width, reportCanvas.height);
-        const fileName = `${modelName.replace(/[^a-z0-9\-_]+/gi, '_').replace(/^_+|_+$/g, '') || 'modelo'}_personalizado.pdf`;
+        const safeName = modelName.replace(/[^a-z0-9\-_]+/gi, '_').replace(/^_+|_+$/g, '') || 'modelo';
+        const fileName = hasChanges ? `${safeName}_personalizado.pdf` : `${safeName}.pdf`;
 
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
