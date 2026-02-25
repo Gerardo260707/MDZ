@@ -117,7 +117,7 @@
     const fallback = {
       page: { widthPt: 612, heightPt: 792, canvasWidth: 1275, canvasHeight: 1650 },
       logo: { src: '', x: 70, y: 48, width: 200, height: 70 },
-      title: { x: 70, y: 150, text: 'Mosaicos Dzununcan' },
+      title: { x: 70, y: 150, text: 'Mosaicos Dzununcán' },
       model: { x: 70, y: 188 },
       contact: { x: 70, y: 218, text: 'ventas@mosaicosdzununcan.com · (999) 406-9083 · (999) 286-6163' },
       pattern: { x: 70, y: 260, width: 900, height: 600 },
@@ -827,21 +827,54 @@
     const nameEl = q('modelOverlayName');
     if (!overlay || !pattern || !nameEl) return;
 
+    let closeTimer = null;
+    let rotateTimer = null;
+    let rotateIndex = 0;
+    const triggerImgs = Array.from(document.querySelectorAll('.mosaic-preview-trigger'));
+
+    const startRotation = () => {
+      if (!triggerImgs.length) return;
+      clearInterval(rotateTimer);
+      rotateTimer = setInterval(() => {
+        rotateIndex = (rotateIndex + 1) % triggerImgs.length;
+        const next = triggerImgs[rotateIndex];
+        const src = next.getAttribute('src') || '';
+        const modelName = next.dataset.modelName || next.alt || 'Modelo';
+        pattern.style.backgroundImage = `url("${src}")`;
+        nameEl.textContent = `MODELO: ${(modelName || 'Modelo').toUpperCase()}`;
+      }, 2200);
+    };
+
+    const stopRotation = () => {
+      clearInterval(rotateTimer);
+      rotateTimer = null;
+    };
+
     const open = (src, modelName) => {
+      clearTimeout(closeTimer);
+      const idx = triggerImgs.findIndex((img) => (img.getAttribute('src') || '') === src);
+      rotateIndex = idx >= 0 ? idx : 0;
       pattern.style.backgroundImage = `url("${src}")`;
       nameEl.textContent = `MODELO: ${(modelName || 'Modelo').toUpperCase()}`;
+      overlay.classList.remove('closing');
       overlay.classList.add('open');
       overlay.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
+      startRotation();
     };
 
     const close = () => {
       overlay.classList.remove('open');
-      overlay.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
+      overlay.classList.add('closing');
+      stopRotation();
+      closeTimer = setTimeout(() => {
+        overlay.classList.remove('closing');
+        overlay.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      }, 280);
     };
 
-    document.querySelectorAll('.mosaic-preview-trigger').forEach((img) => {
+    triggerImgs.forEach((img) => {
       img.addEventListener('click', () => open(img.getAttribute('src') || '', img.dataset.modelName || img.alt || 'Modelo'));
     });
 
@@ -863,8 +896,8 @@
     const mapUrl = `sitemap.html?lang=${lang}`;
 
     const html = lang === 'en'
-      ? `<footer id="siteDarkFooter" class="dark-footer"><div class="dark-cols"><div><h4>Mosaicos Dzununcan</h4><p>Mexican cement tile manufacturer with custom projects.</p><p><a href="${legalUrl}#privacy">Privacy Policy</a><br><a href="${legalUrl}#terms">Terms and Conditions</a><br><a href="${mapUrl}">Site map</a></p></div><div><h4>Phones</h4><p>Local: +52 (999) 217-9326</p><p>Factory: +52 (999) 249-5158</p><p>Email: ventas@mosaicosdzununcan.com</p></div><div><h4>Address</h4><p>Sales & Showroom:<br/>Calle 37, No. 318 entre 24 y 26, Mérida, Yucatán.</p><p>Factory:<br/>Carretera Mérida - Dzununcan Km 2.5</p></div><div><h4>Social</h4><p><a target="_blank" rel="noopener" href="https://www.facebook.com/">Facebook</a><br><a target="_blank" rel="noopener" href="https://www.instagram.com/">Instagram</a><br><a target="_blank" rel="noopener" href="https://wa.me/529994069083">WhatsApp</a></p></div></div></footer>`
-      : `<footer id="siteDarkFooter" class="dark-footer"><div class="dark-cols"><div><h4>Mosaicos Dzununcan</h4><p>Fabricantes de mosaicos de pasta mexicanos con proyectos personalizados.</p><p><a href="${legalUrl}#privacy">Políticas de privacidad</a><br><a href="${legalUrl}#terms">Términos y condiciones</a><br><a href="${mapUrl}">Mapa del sitio</a></p></div><div><h4>Teléfonos</h4><p>Local: +52 (999) 217-9326</p><p>Fábrica: +52 (999) 249-5158</p><p>Email: ventas@mosaicosdzununcan.com</p></div><div><h4>Dirección</h4><p>Venta y sala de exhibición:<br/>Calle 37, No. 318 entre 24 y 26, Mérida, Yucatán.</p><p>Fábrica:<br/>Carretera Mérida - Dzununcan Km 2.5</p></div><div><h4>Redes</h4><p><a target="_blank" rel="noopener" href="https://www.facebook.com/">Facebook</a><br><a target="_blank" rel="noopener" href="https://www.instagram.com/">Instagram</a><br><a target="_blank" rel="noopener" href="https://wa.me/529994069083">WhatsApp</a></p></div></div></footer>`;
+      ? `<footer id="siteDarkFooter" class="dark-footer"><div class="dark-cols"><div><h4>Mosaicos Dzununcán</h4><p>Mexican cement tile manufacturer with custom projects.</p><p><a href="${legalUrl}#privacy">Privacy Policy</a><br><a href="${legalUrl}#terms">Terms and Conditions</a><br><a href="${mapUrl}">Site map</a></p></div><div><h4>Phones</h4><p>Local: +52 (999) 217-9326</p><p>Factory: +52 (999) 249-5158</p><p>Email: ventas@mosaicosdzununcan.com</p></div><div><h4>Address</h4><p>Sales & Showroom:<br/>Calle 37, No. 318 entre 24 y 26, Mérida, Yucatán.</p><p>Factory:<br/>Carretera Mérida - Dzununcan Km 2.5</p></div><div><h4>Social</h4><p><a target="_blank" rel="noopener" href="https://www.facebook.com/">Facebook</a><br><a target="_blank" rel="noopener" href="https://www.instagram.com/">Instagram</a><br><a target="_blank" rel="noopener" href="https://wa.me/529994069083">WhatsApp</a></p></div></div></footer>`
+      : `<footer id="siteDarkFooter" class="dark-footer"><div class="dark-cols"><div><h4>Mosaicos Dzununcán</h4><p>Fabricantes de mosaicos de pasta mexicanos con proyectos personalizados.</p><p><a href="${legalUrl}#privacy">Políticas de privacidad</a><br><a href="${legalUrl}#terms">Términos y condiciones</a><br><a href="${mapUrl}">Mapa del sitio</a></p></div><div><h4>Teléfonos</h4><p>Local: +52 (999) 217-9326</p><p>Fábrica: +52 (999) 249-5158</p><p>Email: ventas@mosaicosdzununcan.com</p></div><div><h4>Dirección</h4><p>Venta y sala de exhibición:<br/>Calle 37, No. 318 entre 24 y 26, Mérida, Yucatán.</p><p>Fábrica:<br/>Carretera Mérida - Dzununcan Km 2.5</p></div><div><h4>Redes</h4><p><a target="_blank" rel="noopener" href="https://www.facebook.com/">Facebook</a><br><a target="_blank" rel="noopener" href="https://www.instagram.com/">Instagram</a><br><a target="_blank" rel="noopener" href="https://wa.me/529994069083">WhatsApp</a></p></div></div></footer>`;
     main.insertAdjacentHTML('beforeend', html);
   }
 
