@@ -1,7 +1,7 @@
 (function () {
   const DICT = {
     es: {
-      nav_home: 'Inicio', nav_mosaics: 'Mosaicos', nav_gallery: 'Galería', nav_maintenance: 'Mantenimiento', nav_installation: 'Instalación', nav_contact: 'Contacto', nav_pay: 'Pago Clip',
+      nav_home: 'Inicio', nav_mosaics: 'Mosaicos', nav_gallery: 'Galería', nav_maintenance: 'Mantenimiento', nav_installation: 'Instalación', nav_contact: 'Contacto',
       home_intro: 'Ahora cada menú abre su propio archivo independiente. Puedes editar cada página por separado y mantener todo conectado desde la navegación.',
       home_note: 'Los 3 cuadros cargan imágenes desde assets/cuadros/.',
       home_footer: 'Base preparada para migrar a PHP + base de datos cuando compartas tu estructura.',
@@ -13,7 +13,7 @@
       contact_title: 'Contacto', lang_label: 'Idioma'
     },
     en: {
-      nav_home: 'Home', nav_mosaics: 'Mosaics', nav_gallery: 'Gallery', nav_maintenance: 'Maintenance', nav_installation: 'Installation', nav_contact: 'Contact', nav_pay: 'Clip Payment',
+      nav_home: 'Home', nav_mosaics: 'Mosaics', nav_gallery: 'Gallery', nav_maintenance: 'Maintenance', nav_installation: 'Installation', nav_contact: 'Contact',
       home_intro: 'Each menu item now opens its own independent file. You can edit every page separately and keep everything connected through navigation.',
       home_note: 'The 3 square cards load images from assets/cuadros/.',
       home_footer: 'Base ready to migrate to PHP + database when you share your structure.',

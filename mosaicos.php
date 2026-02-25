@@ -146,7 +146,7 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
   <main class="site">
     <header class="top">
       <div class="brand-row">
-        <div class="logo"><small>// Mosaicos</small>Dzununcán</div>
+        <div class="logo"><img src="assets/logo-dzununcan.svg" alt="Mosaicos Dzununcán" /></div>
         <div class="langs"><span data-i18n="lang_label">Idioma</span> ▪
           <button class="lang-btn" data-set-lang="es" data-lang-active="es">🇲🇽</button>
           <button class="lang-btn" data-set-lang="en" data-lang-active="en">🇺🇸</button>
@@ -159,7 +159,7 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
         <a data-keep-lang href="mantenimiento.html" data-i18n="nav_maintenance">Mantenimiento</a>
         <a data-keep-lang href="instalacion.html" data-i18n="nav_installation">Instalación</a>
         <a data-keep-lang href="contacto.html" data-i18n="nav_contact">Contacto</a>
-        <a data-keep-lang class="btn" href="pago.html" data-i18n="nav_pay">Pago Clip</a>
+        
       </nav>
     </header>
     <div class="mosaic-strip"></div>
