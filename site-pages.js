@@ -294,17 +294,19 @@
       const baseMinAlpha = Number(fillOptions.minAlpha);
       const baseHomogeneityTolerance = Number(fillOptions.homogeneityTolerance);
       const baseMinSimilarNeighbors = Number(fillOptions.minSimilarNeighbors);
+      const baseNeighborLumaTolerance = Number(fillOptions.neighborLumaTolerance);
       const useDiagonal = Boolean(fillOptions.useDiagonal);
 
       // Valores conservadores por defecto para evitar que zonas de tonos parecidos se mezclen.
-      const tolerance = clampNumber(Number.isFinite(baseTolerance) ? baseTolerance : 56, 5, 160);
-      const edgeTolerance = clampNumber(Number.isFinite(baseEdgeTolerance) ? baseEdgeTolerance : 20, 2, 120);
-      const lumaTolerance = clampNumber(Number.isFinite(baseLumaTolerance) ? baseLumaTolerance : 16, 2, 100);
-      const channelTolerance = clampNumber(Number.isFinite(baseChannelTolerance) ? baseChannelTolerance : 26, 2, 120);
-      const edgeChannelTolerance = clampNumber(Number.isFinite(baseEdgeChannelTolerance) ? baseEdgeChannelTolerance : 14, 2, 80);
-      const minAlpha = clampNumber(Number.isFinite(baseMinAlpha) ? baseMinAlpha : 245, 0, 255);
-      const homogeneityTolerance = clampNumber(Number.isFinite(baseHomogeneityTolerance) ? baseHomogeneityTolerance : 18, 2, 80);
-      const minSimilarNeighbors = Math.round(clampNumber(Number.isFinite(baseMinSimilarNeighbors) ? baseMinSimilarNeighbors : 2, 0, 4));
+      const tolerance = clampNumber(Number.isFinite(baseTolerance) ? baseTolerance : 48, 5, 160);
+      const edgeTolerance = clampNumber(Number.isFinite(baseEdgeTolerance) ? baseEdgeTolerance : 16, 2, 120);
+      const lumaTolerance = clampNumber(Number.isFinite(baseLumaTolerance) ? baseLumaTolerance : 12, 2, 100);
+      const channelTolerance = clampNumber(Number.isFinite(baseChannelTolerance) ? baseChannelTolerance : 20, 2, 120);
+      const edgeChannelTolerance = clampNumber(Number.isFinite(baseEdgeChannelTolerance) ? baseEdgeChannelTolerance : 10, 2, 80);
+      const minAlpha = clampNumber(Number.isFinite(baseMinAlpha) ? baseMinAlpha : 250, 0, 255);
+      const homogeneityTolerance = clampNumber(Number.isFinite(baseHomogeneityTolerance) ? baseHomogeneityTolerance : 14, 2, 80);
+      const minSimilarNeighbors = Math.round(clampNumber(Number.isFinite(baseMinSimilarNeighbors) ? baseMinSimilarNeighbors : 3, 0, 4));
+      const neighborLumaTolerance = clampNumber(Number.isFinite(baseNeighborLumaTolerance) ? baseNeighborLumaTolerance : 8, 1, 60);
 
       const toleranceSq = tolerance * tolerance;
       const edgeToleranceSq = edgeTolerance * edgeTolerance;
@@ -389,6 +391,8 @@
           const edgeDiffSq = edr * edr + edg * edg + edb * edb;
           if (edgeDiffSq > edgeToleranceSq) return;
           if (Math.max(Math.abs(edr), Math.abs(edg), Math.abs(edb)) > edgeChannelTolerance) return;
+          const lumaCurrent = 0.2126 * src[i] + 0.7152 * src[i + 1] + 0.0722 * src[i + 2];
+          if (Math.abs(nluma - lumaCurrent) > neighborLumaTolerance) return;
           visited[np] = visitToken;
           queueX[tail] = nx;
           queueY[tail] = ny;

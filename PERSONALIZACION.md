@@ -83,15 +83,16 @@ Puedes ajustar tolerancia del flood-fill creando una variable global antes de `s
 ```html
 <script>
 window.CUSTOMIZER_FILL = {
-  tolerance: 56,            // distancia RGB global respecto al píxel semilla
-  channelTolerance: 26,     // límite por canal (evita mezclar tonos cercanos con matiz distinto)
-  lumaTolerance: 16,        // separación por luminosidad
-  edgeTolerance: 20,        // salto RGB permitido entre píxeles vecinos
-  edgeChannelTolerance: 14, // salto máximo por canal entre vecinos
-  minAlpha: 245,            // ignora puentes de borde anti-aliased/transparencias parciales
-  homogeneityTolerance: 18, // qué tan parecido al color semilla deben ser vecinos directos
-  minSimilarNeighbors: 2,   // vecinos requeridos (0-4) para considerar píxel dentro de una zona estable
-  useDiagonal: false        // en true puede cruzar esquinas y “comerse” áreas adyacentes
+  tolerance: 48,             // distancia RGB global respecto al píxel semilla (más estricto)
+  channelTolerance: 20,      // límite por canal semilla
+  lumaTolerance: 12,         // separación por luminosidad contra semilla
+  edgeTolerance: 16,         // salto RGB permitido entre píxeles vecinos
+  edgeChannelTolerance: 10,  // salto máximo por canal entre vecinos
+  neighborLumaTolerance: 8,  // salto de luminosidad permitido entre vecinos
+  minAlpha: 250,             // ignora casi por completo bordes anti-aliased/transparencias
+  homogeneityTolerance: 14,  // qué tan parecido al color semilla deben ser vecinos directos
+  minSimilarNeighbors: 3,    // vecinos requeridos (0-4) para considerar píxel dentro de una zona estable
+  useDiagonal: false         // en true puede cruzar esquinas y “comerse” áreas adyacentes
 };
 </script>
 ```
