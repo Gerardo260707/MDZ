@@ -95,14 +95,7 @@ if (empty($items)) {
             if ($slug === '') {
                 $slug = 'modelo-' . $idx;
             }
-            $targetRel = 'assets/modelos/' . $slug . '.png';
-            $targetAbs = __DIR__ . '/' . $targetRel;
-            if (!is_dir(dirname($targetAbs))) {
-                mkdir(dirname($targetAbs), 0777, true);
-            }
-            if (!file_exists($targetAbs)) {
-                @copy($src, $targetAbs);
-            }
+            $targetRel = 'Tapiz/' . rawurlencode($folder) . '/' . rawurlencode(basename($src));
 
             $categoria = 'centro';
             if (isset($catCounters[$categoria])) {
@@ -178,7 +171,7 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
                 <img src="<?= htmlspecialchars($m['imagen'] ?: 'assets/placeholder-tile.svg', ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" />
                 <p class="code"><?= htmlspecialchars(strtoupper($m['categoria']), ENT_QUOTES) ?> · <?= htmlspecialchars($m['identificador'], ENT_QUOTES) ?></p>
                 <p class="name"><?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?></p>
-                <a class="action" href="personalizar.php?id=<?= urlencode((string)$m['id']) ?>&lang=<?= $lang ?>&img=<?= urlencode((string)($m['imagen'] ?: "assets/placeholder-tile.svg")) ?>&name=<?= urlencode((string)$m['nombre']) ?>&cat=<?= urlencode((string)$m['categoria']) ?>" data-i18n="btn_customize">Personalizar</a>
+                <a class="action" href="personalizar.php?picker=single&id=<?= urlencode((string)$m['id']) ?>&lang=<?= $lang ?>&img=<?= urlencode((string)($m['imagen'] ?: "assets/placeholder-tile.svg")) ?>&name=<?= urlencode((string)$m['nombre']) ?>&cat=<?= urlencode((string)$m['categoria']) ?>" data-i18n="btn_customize">Personalizar</a>
               </article>
             <?php endforeach; ?>
           <?php else: ?>

@@ -77,10 +77,7 @@ function carga_modelos(): array {
                 $src = $pngs[0];
                 $slug = strtolower(trim((string)preg_replace('/[^a-zA-Z0-9]+/', '-', $folder), '-'));
                 if ($slug === '') $slug = 'modelo-' . $idx;
-                $targetRel = 'assets/modelos/' . $slug . '.png';
-                $targetAbs = __DIR__ . '/' . $targetRel;
-                if (!is_dir(dirname($targetAbs))) mkdir(dirname($targetAbs), 0777, true);
-                if (!file_exists($targetAbs)) @copy($src, $targetAbs);
+                $targetRel = 'Tapiz/' . rawurlencode($folder) . '/' . rawurlencode(basename($src));
                 $items[] = normaliza_item([
                     'id' => $idx,
                     'nombre' => ucwords(str_replace(['_', '-'], ' ', $folder)),
@@ -99,6 +96,7 @@ function carga_modelos(): array {
 }
 
 $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
+$pickerMode = (($_GET['picker'] ?? 'dual') === 'single') ? 'single' : 'dual';
 $models = carga_modelos();
 $modelById = [];
 foreach ($models as $item) $modelById[(string)$item['id']] = $item;
@@ -111,8 +109,8 @@ if ($centerId === '' && $legacyId !== '' && isset($modelById[$legacyId]) && $mod
 if ($cenefaId === '' && $legacyId !== '' && isset($modelById[$legacyId]) && $modelById[$legacyId]['categoria'] === 'cenefa') $cenefaId = $legacyId;
 
 $selectedCenter = ($centerId !== '' && isset($modelById[$centerId])) ? $modelById[$centerId] : null;
-$selectedCenefa = ($cenefaId !== '' && isset($modelById[$cenefaId])) ? $modelById[$cenefaId] : null;
-$selectedEsquina = ($esquinaId !== '' && isset($modelById[$esquinaId])) ? $modelById[$esquinaId] : null;
+$selectedCenefa = ($pickerMode === 'dual' && $cenefaId !== '' && isset($modelById[$cenefaId])) ? $modelById[$cenefaId] : null;
+$selectedEsquina = ($pickerMode === 'dual' && $esquinaId !== '' && isset($modelById[$esquinaId])) ? $modelById[$esquinaId] : null;
 
 if ($selectedCenefa && !$selectedEsquina) {
     $k = pair_key($selectedCenefa);
@@ -170,15 +168,21 @@ $editTarget = $selectedCenefa ? 'cenefa' : 'centro';
     <section>
       <h2 data-i18n="custom_title">Personalizar Diseño</h2>
       <p><strong id="selectedModelName"><?= htmlspecialchars($selectedName, ENT_QUOTES) ?></strong></p>
-      <div class="model-search-row">
+      <div class="model-search-row" data-picker-mode="<?= $pickerMode ?>">
         <div class="model-search" id="centerSearchWrap">
           <input id="centerSearchInput" type="search" autocomplete="off" data-i18n-placeholder="custom_select_center" placeholder="Seleccionar centro" />
           <div class="model-search-results" id="centerSearchResults"></div>
         </div>
+        <?php if ($pickerMode === 'dual'): ?>
         <div class="model-search" id="cenefaSearchWrap">
           <input id="cenefaSearchInput" type="search" autocomplete="off" data-i18n-placeholder="custom_select_cenefa" placeholder="Seleccionar cenefa" />
           <div class="model-search-results" id="cenefaSearchResults"></div>
         </div>
+        <div class="model-search" id="esquinaSearchWrap">
+          <input id="esquinaSearchInput" type="search" autocomplete="off" data-i18n-placeholder="custom_select_esquina" placeholder="Seleccionar esquina" />
+          <div class="model-search-results" id="esquinaSearchResults"></div>
+        </div>
+        <?php endif; ?>
       </div>
     </section>
 
@@ -205,7 +209,8 @@ $editTarget = $selectedCenefa ? 'cenefa' : 'centro';
                data-edit-target="<?= htmlspecialchars($editTarget, ENT_QUOTES) ?>"
                data-center-image="<?= htmlspecialchars($selectedCenter['imagen'] ?? '', ENT_QUOTES) ?>"
                data-cenefa-image="<?= htmlspecialchars($selectedCenefa['imagen'] ?? '', ENT_QUOTES) ?>"
-               data-esquina-image="<?= htmlspecialchars($selectedEsquina['imagen'] ?? '', ENT_QUOTES) ?>"></div>
+               data-esquina-image="<?= htmlspecialchars($selectedEsquina['imagen'] ?? '', ENT_QUOTES) ?>"
+               data-picker-mode="<?= htmlspecialchars($pickerMode, ENT_QUOTES) ?>"></div>
           <button id="download" class="action" style="margin-top:8px" data-i18n="custom_download">Descargar imagen</button>
         </div>
       </div>
@@ -218,6 +223,7 @@ $editTarget = $selectedCenefa ? 'cenefa' : 'centro';
       'centerId' => $selectedCenter['id'] ?? null,
       'cenefaId' => $selectedCenefa['id'] ?? null,
       'esquinaId' => $selectedEsquina['id'] ?? null,
+      'pickerMode' => $pickerMode,
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
   </script>
   <script src="app.js"></script>

@@ -185,3 +185,31 @@ Cuando eliges una **cenefa**, el sistema busca automáticamente una **esquina** 
 Para que funcione perfecto:
 - usa nombres consistentes por familia (`Maya_Centro`, `Maya_Cenefa`, `Maya_Esquina`),
 - y asigna bien la categoría (`centro`, `cenefa`, `esquina`).
+
+
+## 14) Archivo único para ruta + categoría (sin duplicar imágenes)
+El archivo que debes revisar/editar es:
+- `config/modelos.json`
+
+Ahí verás automáticamente cada modelo con:
+- `imagen`: ruta al PNG dentro de `Tapiz/`
+- `categoria`: `centro`, `cenefa`, `esquina`, `antiderrapante`, `hexagonales`
+- `identificador`: código del modelo
+
+Ejemplo:
+
+```json
+{
+  "id": 1,
+  "nombre": "Maya Centro",
+  "imagen": "Tapiz/Maya_Centro/modelo.png",
+  "categoria": "centro",
+  "identificador": "CTR-0001"
+}
+```
+
+### Paso a paso recomendado
+1. Crea carpeta del modelo en `Tapiz/` y pon su PNG ahí.
+2. Asigna categoría en `config/categorias.csv` (carpeta vs categoría).
+3. Ejecuta `python3 scripts/import_tapiz.py`.
+4. Se actualiza `config/modelos.json` con rutas directas a `Tapiz/` (ya no se copia a `assets/modelos/`).

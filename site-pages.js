@@ -191,10 +191,14 @@
     const lang = getLang();
     const models = Array.isArray(window.CUSTOMIZER_MODELS) ? window.CUSTOMIZER_MODELS : [];
     const selection = window.CUSTOMIZER_SELECTION || {};
+    const pickerMode = (selection.pickerMode || big.dataset.pickerMode || 'dual').toLowerCase() === 'single' ? 'single' : 'dual';
+
     const centerInput = q('centerSearchInput');
     const cenefaInput = q('cenefaSearchInput');
+    const esquinaInput = q('esquinaSearchInput');
     const centerResults = q('centerSearchResults');
     const cenefaResults = q('cenefaSearchResults');
+    const esquinaResults = q('esquinaSearchResults');
     const selectedModelNameEl = q('selectedModelName');
 
     function norm(text) {
@@ -214,14 +218,21 @@
 
     function goToSelection(centerModel, cenefaModel, esquinaModel) {
       const url = new URL(window.location.href);
+      url.searchParams.set('picker', pickerMode);
       if (centerModel) url.searchParams.set('center_id', String(centerModel.id));
       else url.searchParams.delete('center_id');
-      if (cenefaModel) url.searchParams.set('cenefa_id', String(cenefaModel.id));
-      else url.searchParams.delete('cenefa_id');
-      if (esquinaModel) url.searchParams.set('esquina_id', String(esquinaModel.id));
-      else url.searchParams.delete('esquina_id');
 
-      const editable = cenefaModel || centerModel;
+      if (pickerMode === 'dual') {
+        if (cenefaModel) url.searchParams.set('cenefa_id', String(cenefaModel.id));
+        else url.searchParams.delete('cenefa_id');
+        if (esquinaModel) url.searchParams.set('esquina_id', String(esquinaModel.id));
+        else url.searchParams.delete('esquina_id');
+      } else {
+        url.searchParams.delete('cenefa_id');
+        url.searchParams.delete('esquina_id');
+      }
+
+      const editable = (pickerMode === 'dual' && cenefaModel) ? cenefaModel : centerModel;
       if (editable) {
         url.searchParams.set('id', String(editable.id));
         url.searchParams.set('name', editable.nombre || 'Modelo');
@@ -261,6 +272,7 @@
 
     const selectedCenter = models.find((m) => String(m.id) === String(selection.centerId || '')) || null;
     const selectedCenefa = models.find((m) => String(m.id) === String(selection.cenefaId || '')) || null;
+    const selectedEsquina = models.find((m) => String(m.id) === String(selection.esquinaId || '')) || null;
 
     if (centerInput) {
       if (selectedCenter) centerInput.value = selectedCenter.nombre || '';
@@ -269,13 +281,13 @@
         resultEl: centerResults,
         category: 'centro',
         selectedId: selectedCenter ? selectedCenter.id : null,
-        onPick: (centerModel) => goToSelection(centerModel, selectedCenefa, selectedCenefa ? findEsquinaForCenefa(selectedCenefa) : null),
+        onPick: (centerModel) => goToSelection(centerModel, selectedCenefa, selectedEsquina),
       }));
       centerInput.addEventListener('focus', () => centerInput.dispatchEvent(new Event('input')));
       centerInput.dispatchEvent(new Event('input'));
     }
 
-    if (cenefaInput) {
+    if (pickerMode === 'dual' && cenefaInput) {
       if (selectedCenefa) cenefaInput.value = selectedCenefa.nombre || '';
       cenefaInput.addEventListener('input', () => renderSelector({
         inputEl: cenefaInput,
@@ -286,6 +298,19 @@
       }));
       cenefaInput.addEventListener('focus', () => cenefaInput.dispatchEvent(new Event('input')));
       cenefaInput.dispatchEvent(new Event('input'));
+    }
+
+    if (pickerMode === 'dual' && esquinaInput) {
+      if (selectedEsquina) esquinaInput.value = selectedEsquina.nombre || '';
+      esquinaInput.addEventListener('input', () => renderSelector({
+        inputEl: esquinaInput,
+        resultEl: esquinaResults,
+        category: 'esquina',
+        selectedId: selectedEsquina ? selectedEsquina.id : null,
+        onPick: (esquinaModel) => goToSelection(selectedCenter, selectedCenefa, esquinaModel),
+      }));
+      esquinaInput.addEventListener('focus', () => esquinaInput.dispatchEvent(new Event('input')));
+      esquinaInput.dispatchEvent(new Event('input'));
     }
 
     const src = (big.dataset.image || '').trim();

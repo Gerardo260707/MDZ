@@ -45,12 +45,13 @@ p { margin:0; font-size:15px; line-height:1.5; color:#333; }
 .note { margin-top: 14px; font-size: 13px; color: var(--muted); }
 
 .model-search-row{display:flex;gap:10px;flex-wrap:wrap}
-.model-search{margin-top:8px;max-width:230px;position:relative}
+.model-search{margin-top:8px;max-width:190px;position:relative}
 .model-search input{width:100%;padding:7px 10px;border:1px solid #c7c7c7;border-radius:6px;font-size:12px}
-.model-search-results{margin-top:6px;border:1px solid #e2e2e2;border-radius:6px;max-height:110px;overflow:auto;background:#fff}
+.model-search-results{margin-top:6px;border:1px solid #e2e2e2;border-radius:6px;max-height:96px;overflow:auto;background:#fff}
 .model-search-item{display:block;width:100%;border:0;border-bottom:1px solid #f0f0f0;background:#fff;text-align:left;padding:7px 9px;cursor:pointer;font-size:12px;color:#444}
 .model-search-item:last-child{border-bottom:0}
 .model-search-item:hover{background:#f8f8f8}
+.model-search-item.active{background:#fff4e8;color:#b45600;font-weight:700}
 .model-search-empty{padding:8px 9px;font-size:12px;color:#777}
 
 footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:#666; }
@@ -61,7 +62,8 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .mosaic-card img{width:100%;aspect-ratio:1/1;object-fit:cover;border:1px solid #cfcfcf}
 .mosaic-card .code{font-size:11px;color:#666;letter-spacing:.3px;margin:6px 0 2px}
 .mosaic-card .name{font-size:14px;margin:4px 0 6px}
-.mosaic-card .action{display:inline-block;background:#f39845;color:#fff;padding:4px 8px;text-decoration:none;font-size:12px}
+.mosaic-card .action{display:inline-block;background:#f39845;color:#fff;padding:4px 8px;text-decoration:none;font-size:12px;transition:transform .14s ease,box-shadow .14s ease}
+.mosaic-card .action:hover{transform:scale(1.06);box-shadow:0 3px 10px rgba(0,0,0,.16)}
 .empty-msg{grid-column:1/-1;padding:12px;border:1px dashed #bbb;background:#fafafa;color:#444}
 .custom-wrap{display:grid;grid-template-columns:1fr 160px 1.4fr;gap:14px;align-items:start}
 .vector-editor{width:100%;max-width:300px;aspect-ratio:1;border:1px solid #888;background:#fff;padding:8px}
@@ -82,6 +84,7 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .decorated-layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:22px;align-items:start;padding:22px 28px}
 .mosaic-grid-wrap{min-width:0}
 .mosaic-grid-small{grid-template-columns:repeat(4,minmax(100px,1fr));gap:12px}
+.mosaic-grid-small .mosaic-card{text-align:center}
 .mosaic-grid-small .mosaic-card img{max-width:118px;margin:0 auto;display:block}
 .mosaic-grid-small .name{font-size:11px}
 .mosaic-grid-small .code{font-size:9px}
@@ -90,7 +93,8 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .quote-top{padding-bottom:12px;border-bottom:1px solid #e3e3e3;margin-bottom:14px}
 .quote-top h4{font-size:40px;line-height:1.04;margin:0 0 8px}
 .quote-top p{margin:0 0 8px;font-size:14px;color:#333}
-.quote-top-btn{display:inline-block}
+.quote-top-btn{display:inline-block;padding:10px 14px !important;border-radius:999px !important;background:linear-gradient(90deg,#f39845 0%,#f16800 100%) !important;color:#fff !important;font-weight:700;letter-spacing:.2px;text-decoration:none !important;box-shadow:0 8px 18px rgba(241,104,0,.28);transition:transform .16s ease,box-shadow .16s ease}
+.quote-top-btn:hover{transform:translateY(-1px) scale(1.03);box-shadow:0 12px 24px rgba(241,104,0,.32)}
 
 .quote-box h3{font-size:36px;margin:0 0 10px;line-height:1.05}
 .quote-box p{font-size:15px;line-height:1.5;margin-bottom:12px;color:#333}

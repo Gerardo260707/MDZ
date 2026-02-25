@@ -10,7 +10,7 @@
       decorated_title: 'Mosaicos Decorados', decorated_desc: 'Seleccione un modelo para ver su ficha. Puede personalizar colores en el simulador.',
       btn_customize: 'Personalizar', custom_title: 'Personalizar Diseño', custom_step1: '1. Selecciona un color.', custom_step2: '2. Da clic sobre una sección del mosaico para cambiar solo esa área.',
       custom_apply: 'Aplicar color', custom_reset: 'Imagen original', custom_download: 'Descargar PDF', catalog_ready: 'Esta página está lista para mostrar +300 mosaicos desde base de datos.',
-      custom_model_search_input: 'Escriba el nombre del modelo', custom_select_center: 'Seleccionar centro', custom_select_cenefa: 'Seleccionar cenefa', custom_step_area: '2. Da clic en una sección del mosaico (PNG) para aplicar el color solo en esa zona.', custom_undo: 'Regresar color', custom_redo: 'Adelante color', custom_home: 'Imagen original',
+      custom_model_search_input: 'Escriba el nombre del modelo', custom_select_center: 'Seleccionar centro', custom_select_cenefa: 'Seleccionar cenefa', custom_select_esquina: 'Seleccionar esquina', custom_step_area: '2. Da clic en una sección del mosaico (PNG) para aplicar el color solo en esa zona.', custom_undo: 'Regresar color', custom_redo: 'Adelante color', custom_home: 'Imagen original',
       custom_panel_title: 'Personalizar Diseño', custom_panel_desc: 'Cambie los colores del mosaico de su elección.', custom_panel_cta: 'Pruebe el simulador de colores ahora', quote_title: 'Solicite una Cotización', quote_desc: 'Llene el siguiente formulario, comente los productos que desea y a la brevedad uno de nuestros agentes de venta se comunicará con usted.', quote_name: 'Nombre', quote_email: 'Email', quote_phone: 'Teléfono', quote_comments: 'Comentarios', quote_send: 'Enviar',
       contact_title: 'Contacto', lang_label: 'Idioma'
     },
@@ -24,7 +24,7 @@
       decorated_title: 'Decorated Mosaics', decorated_desc: 'Choose a model to view details. You can customize colors in the simulator.',
       btn_customize: 'Customize', custom_title: 'Customize Design', custom_step1: '1. Select a color.', custom_step2: '2. Click a mosaic section to change only that area.',
       custom_apply: 'Apply color', custom_reset: 'Original image', custom_download: 'Download PDF', catalog_ready: 'This page is ready to show 300+ mosaics from database.',
-      custom_model_search_input: 'Escriba el nombre del modelo', custom_select_center: 'Seleccionar centro', custom_select_cenefa: 'Seleccionar cenefa', custom_step_area: '2. Click a mosaic section (PNG) to apply color only on that zone.', custom_undo: 'Undo color', custom_redo: 'Redo color', custom_home: 'Original image',
+      custom_model_search_input: 'Escriba el nombre del modelo', custom_select_center: 'Seleccionar centro', custom_select_cenefa: 'Seleccionar cenefa', custom_select_esquina: 'Seleccionar esquina', custom_step_area: '2. Click a mosaic section (PNG) to apply color only on that zone.', custom_undo: 'Undo color', custom_redo: 'Redo color', custom_home: 'Original image',
       custom_panel_title: 'Customize Design', custom_panel_desc: 'Change the colors of your selected mosaic.', custom_panel_cta: 'Try the color simulator now', quote_title: 'Request a Quote', quote_desc: 'Fill out the form below, tell us which products you need and one of our sales agents will contact you shortly.', quote_name: 'Name', quote_email: 'Email', quote_phone: 'Phone', quote_comments: 'Comments', quote_send: 'Send',
       contact_title: 'Contact', lang_label: 'Language'
     }
