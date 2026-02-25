@@ -289,12 +289,18 @@
       const baseTolerance = Number(fillOptions.tolerance);
       const baseEdgeTolerance = Number(fillOptions.edgeTolerance);
       const baseLumaTolerance = Number(fillOptions.lumaTolerance);
+      const baseChannelTolerance = Number(fillOptions.channelTolerance);
+      const baseEdgeChannelTolerance = Number(fillOptions.edgeChannelTolerance);
+      const baseMinAlpha = Number(fillOptions.minAlpha);
       const useDiagonal = Boolean(fillOptions.useDiagonal);
 
       // Valores conservadores por defecto para evitar que zonas de tonos parecidos se mezclen.
-      const tolerance = clampNumber(Number.isFinite(baseTolerance) ? baseTolerance : 62, 5, 160);
-      const edgeTolerance = clampNumber(Number.isFinite(baseEdgeTolerance) ? baseEdgeTolerance : 22, 2, 120);
-      const lumaTolerance = clampNumber(Number.isFinite(baseLumaTolerance) ? baseLumaTolerance : 18, 2, 100);
+      const tolerance = clampNumber(Number.isFinite(baseTolerance) ? baseTolerance : 56, 5, 160);
+      const edgeTolerance = clampNumber(Number.isFinite(baseEdgeTolerance) ? baseEdgeTolerance : 20, 2, 120);
+      const lumaTolerance = clampNumber(Number.isFinite(baseLumaTolerance) ? baseLumaTolerance : 16, 2, 100);
+      const channelTolerance = clampNumber(Number.isFinite(baseChannelTolerance) ? baseChannelTolerance : 26, 2, 120);
+      const edgeChannelTolerance = clampNumber(Number.isFinite(baseEdgeChannelTolerance) ? baseEdgeChannelTolerance : 16, 2, 80);
+      const minAlpha = clampNumber(Number.isFinite(baseMinAlpha) ? baseMinAlpha : 220, 0, 255);
 
       const toleranceSq = tolerance * tolerance;
       const edgeToleranceSq = edgeTolerance * edgeTolerance;
@@ -322,13 +328,14 @@
 
         const i = p * 4;
         const da = src[i + 3];
-        if (da < 10) continue;
+        if (da < minAlpha) continue;
 
         const dr = src[i] - tr;
         const dg = src[i + 1] - tg;
         const db = src[i + 2] - tb;
         const diffSq = dr * dr + dg * dg + db * db;
         if (diffSq > toleranceSq) continue;
+        if (Math.max(Math.abs(dr), Math.abs(dg), Math.abs(db)) > channelTolerance) continue;
         const luma = 0.2126 * src[i] + 0.7152 * src[i + 1] + 0.0722 * src[i + 2];
         if (Math.abs(luma - seedLuma) > lumaTolerance) continue;
 
@@ -341,12 +348,13 @@
           const np = ny * w + nx;
           if (visited[np] === visitToken) return;
           const ni = np * 4;
-          if (src[ni + 3] < 10) return;
+          if (src[ni + 3] < minAlpha) return;
           const ndr = src[ni] - tr;
           const ndg = src[ni + 1] - tg;
           const ndb = src[ni + 2] - tb;
           const ndiffSq = ndr * ndr + ndg * ndg + ndb * ndb;
           if (ndiffSq > toleranceSq) return;
+          if (Math.max(Math.abs(ndr), Math.abs(ndg), Math.abs(ndb)) > channelTolerance) return;
           const nluma = 0.2126 * src[ni] + 0.7152 * src[ni + 1] + 0.0722 * src[ni + 2];
           if (Math.abs(nluma - seedLuma) > lumaTolerance) return;
 
@@ -355,6 +363,7 @@
           const edb = src[ni + 2] - src[i + 2];
           const edgeDiffSq = edr * edr + edg * edg + edb * edb;
           if (edgeDiffSq > edgeToleranceSq) return;
+          if (Math.max(Math.abs(edr), Math.abs(edg), Math.abs(edb)) > edgeChannelTolerance) return;
           visited[np] = visitToken;
           queueX[tail] = nx;
           queueY[tail] = ny;
