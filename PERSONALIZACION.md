@@ -87,8 +87,10 @@ window.CUSTOMIZER_FILL = {
   channelTolerance: 26,     // límite por canal (evita mezclar tonos cercanos con matiz distinto)
   lumaTolerance: 16,        // separación por luminosidad
   edgeTolerance: 20,        // salto RGB permitido entre píxeles vecinos
-  edgeChannelTolerance: 16, // salto máximo por canal entre vecinos
-  minAlpha: 220,            // ignora bordes anti-aliased/transparencias parciales
+  edgeChannelTolerance: 14, // salto máximo por canal entre vecinos
+  minAlpha: 245,            // ignora puentes de borde anti-aliased/transparencias parciales
+  homogeneityTolerance: 18, // qué tan parecido al color semilla deben ser vecinos directos
+  minSimilarNeighbors: 2,   // vecinos requeridos (0-4) para considerar píxel dentro de una zona estable
   useDiagonal: false        // en true puede cruzar esquinas y “comerse” áreas adyacentes
 };
 </script>

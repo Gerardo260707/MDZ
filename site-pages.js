@@ -292,6 +292,8 @@
       const baseChannelTolerance = Number(fillOptions.channelTolerance);
       const baseEdgeChannelTolerance = Number(fillOptions.edgeChannelTolerance);
       const baseMinAlpha = Number(fillOptions.minAlpha);
+      const baseHomogeneityTolerance = Number(fillOptions.homogeneityTolerance);
+      const baseMinSimilarNeighbors = Number(fillOptions.minSimilarNeighbors);
       const useDiagonal = Boolean(fillOptions.useDiagonal);
 
       // Valores conservadores por defecto para evitar que zonas de tonos parecidos se mezclen.
@@ -299,12 +301,33 @@
       const edgeTolerance = clampNumber(Number.isFinite(baseEdgeTolerance) ? baseEdgeTolerance : 20, 2, 120);
       const lumaTolerance = clampNumber(Number.isFinite(baseLumaTolerance) ? baseLumaTolerance : 16, 2, 100);
       const channelTolerance = clampNumber(Number.isFinite(baseChannelTolerance) ? baseChannelTolerance : 26, 2, 120);
-      const edgeChannelTolerance = clampNumber(Number.isFinite(baseEdgeChannelTolerance) ? baseEdgeChannelTolerance : 16, 2, 80);
-      const minAlpha = clampNumber(Number.isFinite(baseMinAlpha) ? baseMinAlpha : 220, 0, 255);
+      const edgeChannelTolerance = clampNumber(Number.isFinite(baseEdgeChannelTolerance) ? baseEdgeChannelTolerance : 14, 2, 80);
+      const minAlpha = clampNumber(Number.isFinite(baseMinAlpha) ? baseMinAlpha : 245, 0, 255);
+      const homogeneityTolerance = clampNumber(Number.isFinite(baseHomogeneityTolerance) ? baseHomogeneityTolerance : 18, 2, 80);
+      const minSimilarNeighbors = Math.round(clampNumber(Number.isFinite(baseMinSimilarNeighbors) ? baseMinSimilarNeighbors : 2, 0, 4));
 
       const toleranceSq = tolerance * tolerance;
       const edgeToleranceSq = edgeTolerance * edgeTolerance;
       const seedLuma = 0.2126 * tr + 0.7152 * tg + 0.0722 * tb;
+
+      function isHomogeneousSeedNeighborhood(px, py) {
+        if (minSimilarNeighbors <= 0) return true;
+        let similar = 0;
+        function check(nx, ny) {
+          if (nx < 0 || ny < 0 || nx >= w || ny >= h) return;
+          const ni = (ny * w + nx) * 4;
+          if (src[ni + 3] < minAlpha) return;
+          const cdr = Math.abs(src[ni] - tr);
+          const cdg = Math.abs(src[ni + 1] - tg);
+          const cdb = Math.abs(src[ni + 2] - tb);
+          if (Math.max(cdr, cdg, cdb) <= homogeneityTolerance) similar += 1;
+        }
+        check(px - 1, py);
+        check(px + 1, py);
+        check(px, py - 1);
+        check(px, py + 1);
+        return similar >= minSimilarNeighbors;
+      }
 
       visitToken += 1;
       if (visitToken > 0xffffff00) {
@@ -338,6 +361,7 @@
         if (Math.max(Math.abs(dr), Math.abs(dg), Math.abs(db)) > channelTolerance) continue;
         const luma = 0.2126 * src[i] + 0.7152 * src[i + 1] + 0.0722 * src[i + 2];
         if (Math.abs(luma - seedLuma) > lumaTolerance) continue;
+        if (!isHomogeneousSeedNeighborhood(cx, cy)) continue;
 
         dst[i] = next.r;
         dst[i + 1] = next.g;
@@ -357,6 +381,7 @@
           if (Math.max(Math.abs(ndr), Math.abs(ndg), Math.abs(ndb)) > channelTolerance) return;
           const nluma = 0.2126 * src[ni] + 0.7152 * src[ni + 1] + 0.0722 * src[ni + 2];
           if (Math.abs(nluma - seedLuma) > lumaTolerance) return;
+          if (!isHomogeneousSeedNeighborhood(nx, ny)) return;
 
           const edr = src[ni] - src[i];
           const edg = src[ni + 1] - src[i + 1];
