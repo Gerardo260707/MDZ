@@ -38,6 +38,20 @@
       <p class="note" data-i18n="home_note">Los 3 cuadros cargan imágenes desde assets/cuadros/.</p>
     </section>
 
+    <section class="panel quote-home-wrap">
+      <aside class="quote-box quote-box-home">
+        <h3 data-i18n="quote_title">Solicite una Cotización</h3>
+        <p data-i18n="quote_desc">Llene el siguiente formulario, comente los productos que desea y a la brevedad uno de nuestros agentes de venta se comunicará con usted.</p>
+        <form class="quote-form" action="mailto:ventas@mosaicosdzununcan.com" method="post" enctype="text/plain">
+          <input type="text" name="nombre" data-i18n-placeholder="quote_name" placeholder="Nombre" required />
+          <input type="email" name="email" data-i18n-placeholder="quote_email" placeholder="Email" required />
+          <input type="tel" name="telefono" data-i18n-placeholder="quote_phone" placeholder="Teléfono" />
+          <textarea name="comentarios" rows="6" data-i18n-placeholder="quote_comments" placeholder="Comentarios" required></textarea>
+          <button type="submit" class="action quote-submit" data-i18n="quote_send">Enviar</button>
+        </form>
+      </aside>
+    </section>
+
     <footer data-i18n="home_footer">Base preparada para migrar a PHP + base de datos cuando compartas tu estructura.</footer>
   </main>
 

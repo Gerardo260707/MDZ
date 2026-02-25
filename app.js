@@ -11,6 +11,7 @@
       btn_customize: 'Personalizar', custom_title: 'Personalizar Diseño', custom_step1: '1. Selecciona un color.', custom_step2: '2. Da clic sobre una sección del mosaico para cambiar solo esa área.',
       custom_apply: 'Aplicar color', custom_reset: 'Imagen original', custom_download: 'Descargar PDF', catalog_ready: 'Esta página está lista para mostrar +300 mosaicos desde base de datos.',
       custom_model_search_label: 'Buscar modelo para personalizar', custom_step_area: '2. Da clic en una sección del mosaico (PNG) para aplicar el color solo en esa zona.',
+      quote_title: 'Solicite una Cotización', quote_desc: 'Llene el siguiente formulario, comente los productos que desea y a la brevedad uno de nuestros agentes de venta se comunicará con usted.', quote_name: 'Nombre', quote_email: 'Email', quote_phone: 'Teléfono', quote_comments: 'Comentarios', quote_send: 'Enviar',
       contact_title: 'Contacto', lang_label: 'Idioma'
     },
     en: {
@@ -24,6 +25,7 @@
       btn_customize: 'Customize', custom_title: 'Customize Design', custom_step1: '1. Select a color.', custom_step2: '2. Click a mosaic section to change only that area.',
       custom_apply: 'Apply color', custom_reset: 'Original image', custom_download: 'Download PDF', catalog_ready: 'This page is ready to show 300+ mosaics from database.',
       custom_model_search_label: 'Search model to customize', custom_step_area: '2. Click a mosaic section (PNG) to apply color only on that zone.',
+      quote_title: 'Request a Quote', quote_desc: 'Fill out the form below, tell us which products you need and one of our sales agents will contact you shortly.', quote_name: 'Name', quote_email: 'Email', quote_phone: 'Phone', quote_comments: 'Comments', quote_send: 'Send',
       contact_title: 'Contact', lang_label: 'Language'
     }
   };
@@ -60,6 +62,11 @@
 
     document.querySelectorAll('[data-lang-active]').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.langActive === safeLang);
+    });
+
+    document.querySelectorAll('[data-i18n-placeholder]').forEach((node) => {
+      const key = node.getAttribute('data-i18n-placeholder');
+      if (dict[key]) node.setAttribute('placeholder', dict[key]);
     });
 
     document.querySelectorAll('a[data-keep-lang]').forEach((a) => {
