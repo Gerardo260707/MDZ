@@ -83,8 +83,10 @@ Puedes ajustar tolerancia del flood-fill creando una variable global antes de `s
 ```html
 <script>
 window.CUSTOMIZER_FILL = {
-  tolerance: 105,      // similitud respecto al color semilla
-  edgeTolerance: 50    // qué tanto salto de borde permite entre píxeles vecinos
+  tolerance: 62,       // similitud respecto al color semilla (más alto = más riesgo de mezclar zonas)
+  edgeTolerance: 22,   // qué tanto salto de borde permite entre píxeles vecinos
+  lumaTolerance: 18,   // limita cambios por luminosidad para separar tonos parecidos
+  useDiagonal: false   // en true puede cruzar esquinas y “comerse” áreas adyacentes
 };
 </script>
 ```

@@ -268,6 +268,10 @@
       }
     }
 
+    function clampNumber(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
     function floodFillAt(x, y, colorObj) {
       if (!sourceImageData || !currentImageData || !colorObj) return;
       const w = sourceImageData.width;
@@ -282,8 +286,19 @@
 
       const next = hexToRgb(colorObj.hex);
       const fillOptions = window.CUSTOMIZER_FILL || {};
-      const toleranceSq = Math.pow(Number(fillOptions.tolerance || 82), 2);
-      const edgeToleranceSq = Math.pow(Number(fillOptions.edgeTolerance || 30), 2);
+      const baseTolerance = Number(fillOptions.tolerance);
+      const baseEdgeTolerance = Number(fillOptions.edgeTolerance);
+      const baseLumaTolerance = Number(fillOptions.lumaTolerance);
+      const useDiagonal = Boolean(fillOptions.useDiagonal);
+
+      // Valores conservadores por defecto para evitar que zonas de tonos parecidos se mezclen.
+      const tolerance = clampNumber(Number.isFinite(baseTolerance) ? baseTolerance : 62, 5, 160);
+      const edgeTolerance = clampNumber(Number.isFinite(baseEdgeTolerance) ? baseEdgeTolerance : 22, 2, 120);
+      const lumaTolerance = clampNumber(Number.isFinite(baseLumaTolerance) ? baseLumaTolerance : 18, 2, 100);
+
+      const toleranceSq = tolerance * tolerance;
+      const edgeToleranceSq = edgeTolerance * edgeTolerance;
+      const seedLuma = 0.2126 * tr + 0.7152 * tg + 0.0722 * tb;
 
       visitToken += 1;
       if (visitToken > 0xffffff00) {
@@ -314,6 +329,8 @@
         const db = src[i + 2] - tb;
         const diffSq = dr * dr + dg * dg + db * db;
         if (diffSq > toleranceSq) continue;
+        const luma = 0.2126 * src[i] + 0.7152 * src[i + 1] + 0.0722 * src[i + 2];
+        if (Math.abs(luma - seedLuma) > lumaTolerance) continue;
 
         dst[i] = next.r;
         dst[i + 1] = next.g;
@@ -330,6 +347,9 @@
           const ndb = src[ni + 2] - tb;
           const ndiffSq = ndr * ndr + ndg * ndg + ndb * ndb;
           if (ndiffSq > toleranceSq) return;
+          const nluma = 0.2126 * src[ni] + 0.7152 * src[ni + 1] + 0.0722 * src[ni + 2];
+          if (Math.abs(nluma - seedLuma) > lumaTolerance) return;
+
           const edr = src[ni] - src[i];
           const edg = src[ni + 1] - src[i + 1];
           const edb = src[ni + 2] - src[i + 2];
@@ -345,10 +365,12 @@
         if (cx < w - 1) push(cx + 1, cy);
         if (cy > 0) push(cx, cy - 1);
         if (cy < h - 1) push(cx, cy + 1);
-        if (cx > 0 && cy > 0) push(cx - 1, cy - 1);
-        if (cx < w - 1 && cy > 0) push(cx + 1, cy - 1);
-        if (cx > 0 && cy < h - 1) push(cx - 1, cy + 1);
-        if (cx < w - 1 && cy < h - 1) push(cx + 1, cy + 1);
+        if (useDiagonal) {
+          if (cx > 0 && cy > 0) push(cx - 1, cy - 1);
+          if (cx < w - 1 && cy > 0) push(cx + 1, cy - 1);
+          if (cx > 0 && cy < h - 1) push(cx - 1, cy + 1);
+          if (cx < w - 1 && cy < h - 1) push(cx + 1, cy + 1);
+        }
       }
 
       usedColorIds.add(colorObj.id);
