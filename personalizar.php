@@ -21,7 +21,7 @@ function pair_key(array $m): string {
 
 function normaliza_item(array $m): array {
     $id = (int)($m['id'] ?? 0);
-    $categoria = strtolower((string)($m['categoria'] ?? 'centro'));
+    $categoria = strtolower(trim((string)($m['categoria'] ?? '')));
     $identificador = (string)($m['identificador'] ?? '');
     if ($identificador === '') {
         $identificador = categoria_prefix($categoria) . '-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
@@ -82,7 +82,7 @@ function carga_modelos(): array {
                     'id' => $idx,
                     'nombre' => ucwords(str_replace(['_', '-'], ' ', $folder)),
                     'imagen' => $targetRel,
-                    'categoria' => 'centro',
+                    'categoria' => '',
                     'identificador' => '',
                     'carpeta_modelo' => $folder,
                 ]);
@@ -125,7 +125,7 @@ if (!$editable && isset($_GET['img']) && (string)$_GET['img'] !== '') {
         'id' => (int)($_GET['id'] ?? 0),
         'nombre' => (string)($_GET['name'] ?? 'Modelo'),
         'imagen' => (string)$_GET['img'],
-        'categoria' => strtolower((string)($_GET['cat'] ?? 'centro')),
+        'categoria' => strtolower(trim((string)($_GET['cat'] ?? ''))),
         'identificador' => '',
         'carpeta_modelo' => '',
     ];
@@ -133,7 +133,7 @@ if (!$editable && isset($_GET['img']) && (string)$_GET['img'] !== '') {
 
 $selectedName = $editable['nombre'] ?? ($lang === 'en' ? 'Choose center and border to begin' : 'Elige centro y cenefa para comenzar');
 $selectedImage = $editable['imagen'] ?? '';
-$selectedCategory = $editable['categoria'] ?? 'centro';
+$selectedCategory = $editable['categoria'] ?? '';
 $editTarget = $selectedCenefa ? 'cenefa' : 'centro';
 ?>
 <!doctype html>
@@ -178,10 +178,6 @@ $editTarget = $selectedCenefa ? 'cenefa' : 'centro';
           <input id="cenefaSearchInput" type="search" autocomplete="off" data-i18n-placeholder="custom_select_cenefa" placeholder="Seleccionar cenefa" />
           <div class="model-search-results" id="cenefaSearchResults"></div>
         </div>
-        <div class="model-search" id="esquinaSearchWrap">
-          <input id="esquinaSearchInput" type="search" autocomplete="off" data-i18n-placeholder="custom_select_esquina" placeholder="Seleccionar esquina" />
-          <div class="model-search-results" id="esquinaSearchResults"></div>
-        </div>
         <?php endif; ?>
       </div>
     </section>
@@ -192,6 +188,12 @@ $editTarget = $selectedCenefa ? 'cenefa' : 'centro';
           <p data-i18n="custom_step1">1. Selecciona un color.</p>
           <p class="note" data-i18n="custom_step_area">2. Da clic en una sección del mosaico (PNG) para aplicar el color solo en esa zona.</p>
           <div class="vector-editor" id="vectorEditor"></div>
+          <?php if ($selectedCenefa): ?>
+          <div class="extra-editors">
+            <div class="vector-editor extra-editor" id="extraCenterPreview" data-extra-src="<?= htmlspecialchars($selectedCenter['imagen'] ?? '', ENT_QUOTES) ?>" aria-label="Centro"></div>
+            <div class="vector-editor extra-editor" id="extraCornerPreview" data-extra-src="<?= htmlspecialchars($selectedEsquina['imagen'] ?? '', ENT_QUOTES) ?>" aria-label="Esquina"></div>
+          </div>
+          <?php endif; ?>
         </div>
         <div>
           <div class="palette" id="palette"></div>

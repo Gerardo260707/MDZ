@@ -25,7 +25,7 @@ function carga_mapa_categorias_csv(string $csvPath): array {
             continue;
         }
         if (!in_array($category, VALID_CATEGORIAS, true)) {
-            $category = 'centro';
+            $category = '';
         }
         $map[$folder] = $category;
     }
@@ -47,7 +47,7 @@ function sincroniza_categorias_csv(array $folders, string $csvPath): array {
         if ($key === '') {
             continue;
         }
-        $map[$key] = $existing[$key] ?? 'centro';
+        $map[$key] = $existing[$key] ?? '';
     }
 
     $handle = fopen($csvPath, 'w');
@@ -58,7 +58,7 @@ function sincroniza_categorias_csv(array $folders, string $csvPath): array {
             if ($key === '') {
                 continue;
             }
-            fputcsv($handle, [$folder, $map[$key] ?? 'centro']);
+            fputcsv($handle, [$folder, $map[$key] ?? '']);
         }
         fclose($handle);
     }
@@ -91,7 +91,7 @@ function categoria_rank(?string $categoria): int {
 
 function normaliza_item(array $m): array {
     $id = (int)($m['id'] ?? 0);
-    $categoria = $m['categoria'] ?? 'centro';
+    $categoria = trim((string)($m['categoria'] ?? ''));
     $identificador = $m['identificador'] ?? '';
     if ($identificador === '') {
         $identificador = categoria_prefix($categoria) . '-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
@@ -167,10 +167,7 @@ if (empty($items)) {
             }
             $targetRel = 'Tapiz/' . rawurlencode($folder) . '/' . rawurlencode(basename($src));
 
-            $categoria = $mapCategorias[strtolower($folder)] ?? 'centro';
-            if (!isset($catCounters[$categoria])) {
-                $categoria = 'centro';
-            }
+            $categoria = trim((string)($mapCategorias[strtolower($folder)] ?? ''));
             if (isset($catCounters[$categoria])) {
                 $catCounters[$categoria]++;
             }
@@ -242,7 +239,8 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
             <?php foreach ($items as $m): ?>
               <article class="mosaic-card">
                 <img class="mosaic-preview-trigger" src="<?= htmlspecialchars($m['imagen'] ?: 'assets/placeholder-tile.svg', ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-model-name="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" />
-                <p class="code"><?= htmlspecialchars(strtoupper($m['categoria']), ENT_QUOTES) ?> · <?= htmlspecialchars($m['identificador'], ENT_QUOTES) ?></p>
+                <?php $catLabel = $m['categoria'] !== '' ? strtoupper((string)$m['categoria']) : 'SIN CATEGORÍA'; ?>
+                <p class="code"><?= htmlspecialchars($catLabel, ENT_QUOTES) ?> · <?= htmlspecialchars($m['identificador'], ENT_QUOTES) ?></p>
                 <p class="name"><?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?></p>
                 <a class="action cta-pill" href="personalizar.php?picker=single&id=<?= urlencode((string)$m['id']) ?>&lang=<?= $lang ?>&img=<?= urlencode((string)($m['imagen'] ?: "assets/placeholder-tile.svg")) ?>&name=<?= urlencode((string)$m['nombre']) ?>&cat=<?= urlencode((string)$m['categoria']) ?>" data-i18n="btn_customize">Personalizar</a>
               </article>
@@ -274,7 +272,7 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
     <div class="model-overlay-backdrop" data-overlay-close="true"></div>
     <div class="model-overlay-card" role="dialog" aria-modal="true" aria-label="Vista previa del modelo">
       <button type="button" class="model-overlay-close" data-overlay-close="true" aria-label="Cerrar vista previa">×</button>
-      <div id="modelOverlayPattern" class="model-overlay-pattern" aria-hidden="true"></div>
+      <canvas id="modelOverlayPattern" class="model-overlay-pattern" width="1200" height="900" aria-hidden="true"></canvas>
       <div class="model-overlay-footer"><strong id="modelOverlayName">MODELO</strong></div>
     </div>
   </div>

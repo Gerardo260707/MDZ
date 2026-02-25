@@ -30,7 +30,7 @@ def load_mapping() -> dict[str, str]:
             if not carpeta or carpeta.startswith('#'):
                 continue
             if categoria not in VALID_CATS:
-                categoria = 'centro'
+                categoria = ''
             m[carpeta] = categoria
     return m
 
@@ -39,7 +39,7 @@ def ensure_mapping_template(model_dirs: list[Path], current: dict[str, str]) -> 
     ordered: dict[str, str] = {}
     for d in model_dirs:
         key = d.name.lower()
-        ordered[key] = current.get(key, 'centro')
+        ordered[key] = current.get(key, '')
 
     MAP_PATH.parent.mkdir(parents=True, exist_ok=True)
     with MAP_PATH.open('w', encoding='utf-8', newline='') as f:
@@ -70,8 +70,8 @@ def main() -> int:
     mapping = ensure_mapping_template(model_dirs, mapping)
 
     records = []
-    counters = {'centro': 0, 'cenefa': 0, 'esquina': 0, 'hexagonales': 0, 'antiderrapante': 0}
-    pref = {'centro': 'CTR', 'cenefa': 'CEN', 'esquina': 'ESQ', 'hexagonales': 'HEX', 'antiderrapante': 'ANT'}
+    counters = {'centro': 0, 'cenefa': 0, 'esquina': 0, 'hexagonales': 0, 'antiderrapante': 0, '': 0}
+    pref = {'centro': 'CTR', 'cenefa': 'CEN', 'esquina': 'ESQ', 'hexagonales': 'HEX', 'antiderrapante': 'ANT', '': 'MOD'}
 
     idx = 1
     for model_dir in model_dirs:
@@ -80,9 +80,9 @@ def main() -> int:
             continue
 
         folder_name = model_dir.name
-        cat = mapping.get(folder_name.lower(), 'centro')
+        cat = mapping.get(folder_name.lower(), '')
         if cat not in counters:
-            cat = 'centro'
+            cat = ''
         counters[cat] += 1
         ident = f"{pref[cat]}-{counters[cat]:04d}"
 

@@ -237,7 +237,7 @@
         url.searchParams.set('id', String(editable.id));
         url.searchParams.set('name', editable.nombre || 'Modelo');
         url.searchParams.set('img', editable.imagen || 'assets/placeholder-tile.svg');
-        url.searchParams.set('cat', (editable.categoria || 'centro').toLowerCase());
+        url.searchParams.set('cat', (editable.categoria || '').toLowerCase());
       }
       url.searchParams.set('lang', lang);
       window.location.assign(url.pathname + url.search + url.hash);
@@ -298,19 +298,6 @@
       }));
       cenefaInput.addEventListener('focus', () => cenefaInput.dispatchEvent(new Event('input')));
       cenefaInput.dispatchEvent(new Event('input'));
-    }
-
-    if (pickerMode === 'dual' && esquinaInput) {
-      if (selectedEsquina) esquinaInput.value = selectedEsquina.nombre || '';
-      esquinaInput.addEventListener('input', () => renderSelector({
-        inputEl: esquinaInput,
-        resultEl: esquinaResults,
-        category: 'esquina',
-        selectedId: selectedEsquina ? selectedEsquina.id : null,
-        onPick: (esquinaModel) => goToSelection(selectedCenter, selectedCenefa, esquinaModel),
-      }));
-      esquinaInput.addEventListener('focus', () => esquinaInput.dispatchEvent(new Event('input')));
-      esquinaInput.dispatchEvent(new Event('input'));
     }
 
     const src = (big.dataset.image || '').trim();
@@ -792,6 +779,27 @@
       });
     }
 
+
+    function renderStaticSquare(containerId, imageSrc) {
+      const host = q(containerId);
+      if (!host) return;
+      host.innerHTML = '';
+      if (!imageSrc) {
+        host.innerHTML = '<p class="empty-msg" style="font-size:11px">Sin imagen</p>';
+        return;
+      }
+      const c = document.createElement('canvas');
+      c.className = 'vector-canvas';
+      c.width = 300;
+      c.height = 300;
+      host.appendChild(c);
+      const cx = c.getContext('2d');
+      loadImageSafe(imageSrc).then((img) => {
+        if (!img) return;
+        drawImageCover(cx, img, 300, 300);
+      });
+    }
+
     Promise.all([loadImageSafe(centerSrc), loadImageSafe(cenefaSrc), loadImageSafe(esquinaSrc)]).then((loaded) => {
       [centerImg, cenefaImg, esquinaImg] = loaded;
       const img = new Image();
@@ -817,56 +825,60 @@
         updateHistoryButtons();
       };
       img.src = src;
+      renderStaticSquare('extraCenterPreview', centerSrc);
+      renderStaticSquare('extraCornerPreview', esquinaSrc);
     });
   }
 
-
   function initDecoratedOverlay() {
     const overlay = q('modelOverlay');
-    const pattern = q('modelOverlayPattern');
+    const patternCanvas = q('modelOverlayPattern');
     const nameEl = q('modelOverlayName');
-    if (!overlay || !pattern || !nameEl) return;
+    if (!overlay || !patternCanvas || !nameEl) return;
 
+    const pctx = patternCanvas.getContext('2d');
     let closeTimer = null;
-    let rotateTimer = null;
-    let rotateIndex = 0;
-    const triggerImgs = Array.from(document.querySelectorAll('.mosaic-preview-trigger'));
 
-    const startRotation = () => {
-      if (!triggerImgs.length) return;
-      clearInterval(rotateTimer);
-      rotateTimer = setInterval(() => {
-        rotateIndex = (rotateIndex + 1) % triggerImgs.length;
-        const next = triggerImgs[rotateIndex];
-        const src = next.getAttribute('src') || '';
-        const modelName = next.dataset.modelName || next.alt || 'Modelo';
-        pattern.style.backgroundImage = `url("${src}")`;
-        nameEl.textContent = `MODELO: ${(modelName || 'Modelo').toUpperCase()}`;
-      }, 2200);
-    };
+    function drawRotatedPattern(img) {
+      if (!img || !pctx) return;
+      const w = patternCanvas.width;
+      const h = patternCanvas.height;
+      pctx.clearRect(0, 0, w, h);
 
-    const stopRotation = () => {
-      clearInterval(rotateTimer);
-      rotateTimer = null;
-    };
+      const cols = 8;
+      const rows = 6;
+      const tileW = w / cols;
+      const tileH = h / rows;
+
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          const angle = ((x + y) % 4) * (Math.PI / 2);
+          pctx.save();
+          pctx.translate(x * tileW + tileW / 2, y * tileH + tileH / 2);
+          pctx.rotate(angle);
+          pctx.drawImage(img, -tileW / 2, -tileH / 2, tileW, tileH);
+          pctx.restore();
+        }
+      }
+    }
 
     const open = (src, modelName) => {
       clearTimeout(closeTimer);
-      const idx = triggerImgs.findIndex((img) => (img.getAttribute('src') || '') === src);
-      rotateIndex = idx >= 0 ? idx : 0;
-      pattern.style.backgroundImage = `url("${src}")`;
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => drawRotatedPattern(img);
+      img.src = src;
+
       nameEl.textContent = `MODELO: ${(modelName || 'Modelo').toUpperCase()}`;
       overlay.classList.remove('closing');
       overlay.classList.add('open');
       overlay.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
-      startRotation();
     };
 
     const close = () => {
       overlay.classList.remove('open');
       overlay.classList.add('closing');
-      stopRotation();
       closeTimer = setTimeout(() => {
         overlay.classList.remove('closing');
         overlay.setAttribute('aria-hidden', 'true');
@@ -874,7 +886,7 @@
       }, 280);
     };
 
-    triggerImgs.forEach((img) => {
+    document.querySelectorAll('.mosaic-preview-trigger').forEach((img) => {
       img.addEventListener('click', () => open(img.getAttribute('src') || '', img.dataset.modelName || img.alt || 'Modelo'));
     });
 
