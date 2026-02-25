@@ -1,4 +1,66 @@
 <?php
+const VALID_CATEGORIAS = ['centro', 'cenefa', 'esquina', 'hexagonales', 'antiderrapante'];
+
+function carga_mapa_categorias_csv(string $csvPath): array {
+    if (!file_exists($csvPath)) return [];
+    $h = fopen($csvPath, 'r');
+    if ($h === false) return [];
+    $header = fgetcsv($h);
+    if (!is_array($header)) {
+        fclose($h);
+        return [];
+    }
+    $map = [];
+    while (($row = fgetcsv($h)) !== false) {
+        $folder = strtolower(trim((string)($row[0] ?? '')));
+        $cat = strtolower(trim((string)($row[1] ?? '')));
+        if ($folder === '' || str_starts_with($folder, '#')) continue;
+        $map[$folder] = in_array($cat, VALID_CATEGORIAS, true) ? $cat : '';
+    }
+    fclose($h);
+    return $map;
+}
+
+function carpeta_modelo_de_item(array $item): string {
+    $folder = trim((string)($item['carpeta_modelo'] ?? ''));
+    if ($folder !== '') return strtolower($folder);
+    $img = trim((string)($item['imagen'] ?? ''));
+    if (preg_match('#(?:^|/)Tapiz/([^/]+)/#i', $img, $m)) {
+        return strtolower(rawurldecode($m[1]));
+    }
+    return '';
+}
+
+function carga_conexiones_cenefa_esquina(string $csvPath): array {
+    if (!file_exists($csvPath)) {
+        $dir = dirname($csvPath);
+        if (!is_dir($dir)) mkdir($dir, 0775, true);
+        $h = fopen($csvPath, 'w');
+        if ($h !== false) {
+            fputcsv($h, ['cenefa', 'esquina']);
+            fclose($h);
+        }
+        return [];
+    }
+
+    $h = fopen($csvPath, 'r');
+    if ($h === false) return [];
+    $header = fgetcsv($h);
+    if (!is_array($header)) {
+        fclose($h);
+        return [];
+    }
+    $map = [];
+    while (($row = fgetcsv($h)) !== false) {
+        $cenefa = strtolower(trim((string)($row[0] ?? '')));
+        $esquina = strtolower(trim((string)($row[1] ?? '')));
+        if ($cenefa === '' || $esquina === '' || str_starts_with($cenefa, '#')) continue;
+        $map[$cenefa] = $esquina;
+    }
+    fclose($h);
+    return $map;
+}
+
 function categoria_prefix(?string $categoria): string {
     $cat = strtolower(trim((string)$categoria));
     return match ($cat) {
@@ -91,6 +153,17 @@ function carga_modelos(): array {
         }
     }
 
+    $catMap = carga_mapa_categorias_csv(__DIR__ . '/config/categorias.csv');
+    if (!empty($catMap)) {
+        foreach ($items as &$item) {
+            $folder = carpeta_modelo_de_item($item);
+            if ($folder !== '' && array_key_exists($folder, $catMap)) {
+                $item['categoria'] = $catMap[$folder];
+            }
+        }
+        unset($item);
+    }
+
     usort($items, static fn($a, $b) => strcasecmp((string)$a['nombre'], (string)$b['nombre']));
     return $items;
 }
@@ -98,6 +171,7 @@ function carga_modelos(): array {
 $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
 $pickerMode = (($_GET['picker'] ?? 'dual') === 'single') ? 'single' : 'dual';
 $models = carga_modelos();
+$conexionesCsv = carga_conexiones_cenefa_esquina(__DIR__ . '/config/conexiones_cenefa_esquina.csv');
 $modelById = [];
 foreach ($models as $item) $modelById[(string)$item['id']] = $item;
 
@@ -111,6 +185,20 @@ if ($cenefaId === '' && $legacyId !== '' && isset($modelById[$legacyId]) && $mod
 $selectedCenter = ($centerId !== '' && isset($modelById[$centerId])) ? $modelById[$centerId] : null;
 $selectedCenefa = ($pickerMode === 'dual' && $cenefaId !== '' && isset($modelById[$cenefaId])) ? $modelById[$cenefaId] : null;
 $selectedEsquina = ($pickerMode === 'dual' && $esquinaId !== '' && isset($modelById[$esquinaId])) ? $modelById[$esquinaId] : null;
+
+if ($selectedCenefa && !$selectedEsquina) {
+    $cenefaFolder = carpeta_modelo_de_item($selectedCenefa);
+    $mappedCornerFolder = $conexionesCsv[$cenefaFolder] ?? '';
+    if ($mappedCornerFolder !== '') {
+        foreach ($models as $m) {
+            if (($m['categoria'] ?? '') !== 'esquina') continue;
+            if (carpeta_modelo_de_item($m) === $mappedCornerFolder) {
+                $selectedEsquina = $m;
+                break;
+            }
+        }
+    }
+}
 
 if ($selectedCenefa && !$selectedEsquina) {
     $k = pair_key($selectedCenefa);
@@ -135,6 +223,7 @@ $selectedName = $editable['nombre'] ?? ($lang === 'en' ? 'Choose center and bord
 $selectedImage = $editable['imagen'] ?? '';
 $selectedCategory = $editable['categoria'] ?? '';
 $editTarget = $selectedCenefa ? 'cenefa' : 'centro';
+$entryCategory = strtolower(trim((string)($_GET['cat'] ?? ($editable['categoria'] ?? ''))));
 ?>
 <!doctype html>
 <html lang="<?= $lang ?>">
@@ -208,6 +297,7 @@ $editTarget = $selectedCenefa ? 'cenefa' : 'centro';
           <div id="bigPreview" class="preview-big"
                data-image="<?= htmlspecialchars($selectedImage, ENT_QUOTES) ?>"
                data-category="<?= htmlspecialchars($selectedCategory, ENT_QUOTES) ?>"
+               data-entry-category="<?= htmlspecialchars($entryCategory, ENT_QUOTES) ?>"
                data-edit-target="<?= htmlspecialchars($editTarget, ENT_QUOTES) ?>"
                data-center-image="<?= htmlspecialchars($selectedCenter['imagen'] ?? '', ENT_QUOTES) ?>"
                data-cenefa-image="<?= htmlspecialchars($selectedCenefa['imagen'] ?? '', ENT_QUOTES) ?>"
@@ -227,6 +317,7 @@ $editTarget = $selectedCenefa ? 'cenefa' : 'centro';
       'esquinaId' => $selectedEsquina['id'] ?? null,
       'pickerMode' => $pickerMode,
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    window.CUSTOMIZER_CONNECTIONS = <?= json_encode($conexionesCsv, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
   </script>
   <script src="app.js"></script>
   <script src="customizer-colors.js"></script>

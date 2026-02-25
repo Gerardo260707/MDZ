@@ -195,11 +195,10 @@
 
     const centerInput = q('centerSearchInput');
     const cenefaInput = q('cenefaSearchInput');
-    const esquinaInput = q('esquinaSearchInput');
     const centerResults = q('centerSearchResults');
     const cenefaResults = q('cenefaSearchResults');
-    const esquinaResults = q('esquinaSearchResults');
     const selectedModelNameEl = q('selectedModelName');
+    const manualConnections = (window.CUSTOMIZER_CONNECTIONS && typeof window.CUSTOMIZER_CONNECTIONS === 'object') ? window.CUSTOMIZER_CONNECTIONS : {};
 
     function norm(text) {
       return String(text || '').toLowerCase().replace(/[\s_\-]+/g, ' ').trim();
@@ -212,6 +211,12 @@
 
     function findEsquinaForCenefa(cenefaModel) {
       if (!cenefaModel) return null;
+      const folderRaw = (cenefaModel.carpeta_modelo || '').toString().toLowerCase();
+      const mappedFolder = manualConnections[folderRaw] || null;
+      if (mappedFolder) {
+        const mapped = models.find((m) => (m.categoria || '').toLowerCase() === 'esquina' && (m.carpeta_modelo || '').toString().toLowerCase() === mappedFolder);
+        if (mapped) return mapped;
+      }
       const key = familyKey(cenefaModel);
       return models.find((m) => (m.categoria || '').toLowerCase() === 'esquina' && familyKey(m) === key) || null;
     }
@@ -274,12 +279,23 @@
     const selectedCenefa = models.find((m) => String(m.id) === String(selection.cenefaId || '')) || null;
     const selectedEsquina = models.find((m) => String(m.id) === String(selection.esquinaId || '')) || null;
 
+    const forcedSingleCategory = pickerMode === 'single'
+      ? ((big.dataset.entryCategory || big.dataset.category || '').toLowerCase().trim() || 'centro')
+      : 'centro';
+
     if (centerInput) {
+      if (pickerMode === 'single') {
+        centerInput.placeholder = (forcedSingleCategory === 'cenefa')
+          ? (lang === 'en' ? 'Select border' : 'Seleccionar cenefa')
+          : (forcedSingleCategory === 'esquina'
+            ? (lang === 'en' ? 'Select corner' : 'Seleccionar esquina')
+            : (lang === 'en' ? 'Select center' : 'Seleccionar centro'));
+      }
       if (selectedCenter) centerInput.value = selectedCenter.nombre || '';
       centerInput.addEventListener('input', () => renderSelector({
         inputEl: centerInput,
         resultEl: centerResults,
-        category: 'centro',
+        category: forcedSingleCategory,
         selectedId: selectedCenter ? selectedCenter.id : null,
         onPick: (centerModel) => goToSelection(centerModel, selectedCenefa, selectedEsquina),
       }));
@@ -850,13 +866,27 @@
       const tileW = w / cols;
       const tileH = h / rows;
 
+      const tileSource = document.createElement('canvas');
+      tileSource.width = 512;
+      tileSource.height = 512;
+      const tsctx = tileSource.getContext('2d');
+      const sw = img.naturalWidth || img.width;
+      const sh = img.naturalHeight || img.height;
+      const scale = Math.max(tileSource.width / sw, tileSource.height / sh);
+      const dw = sw * scale;
+      const dh = sh * scale;
+      const dx = (tileSource.width - dw) / 2;
+      const dy = (tileSource.height - dh) / 2;
+      tsctx.clearRect(0, 0, tileSource.width, tileSource.height);
+      tsctx.drawImage(img, dx, dy, dw, dh);
+
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
           const angle = ((x + y) % 4) * (Math.PI / 2);
           pctx.save();
           pctx.translate(x * tileW + tileW / 2, y * tileH + tileH / 2);
           pctx.rotate(angle);
-          pctx.drawImage(img, -tileW / 2, -tileH / 2, tileW, tileH);
+          pctx.drawImage(tileSource, -tileW / 2, -tileH / 2, tileW, tileH);
           pctx.restore();
         }
       }

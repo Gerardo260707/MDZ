@@ -66,6 +66,16 @@ function sincroniza_categorias_csv(array $folders, string $csvPath): array {
     return $map;
 }
 
+function carpeta_modelo_de_item(array $item): string {
+    $folder = trim((string)($item['carpeta_modelo'] ?? ''));
+    if ($folder !== '') return strtolower($folder);
+    $img = trim((string)($item['imagen'] ?? ''));
+    if (preg_match('#(?:^|/)Tapiz/([^/]+)/#i', $img, $m)) {
+        return strtolower(rawurldecode($m[1]));
+    }
+    return '';
+}
+
 function categoria_prefix(?string $categoria): string {
     $cat = strtolower(trim((string)$categoria));
     return match ($cat) {
@@ -139,6 +149,21 @@ if (empty($items)) {
             $items = array_map('normaliza_item', $decoded);
         }
     }
+}
+
+$categoriasPath = __DIR__ . '/config/categorias.csv';
+$mapCategoriasGlobal = carga_mapa_categorias_csv($categoriasPath);
+if (!empty($mapCategoriasGlobal)) {
+    foreach ($items as &$item) {
+        $folder = carpeta_modelo_de_item($item);
+        if ($folder !== '' && array_key_exists($folder, $mapCategoriasGlobal)) {
+            $item['categoria'] = $mapCategoriasGlobal[$folder];
+            if (($item['identificador'] ?? '') === '' && (int)($item['id'] ?? 0) > 0) {
+                $item['identificador'] = categoria_prefix($item['categoria']) . '-' . str_pad((string)$item['id'], 4, '0', STR_PAD_LEFT);
+            }
+        }
+    }
+    unset($item);
 }
 
 if (empty($items)) {
