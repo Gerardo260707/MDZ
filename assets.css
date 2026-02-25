@@ -60,7 +60,8 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .preview-big{width:100%;aspect-ratio:12/8;border:1px solid #888;background:#f2f2f2;overflow:hidden}
 .pattern-canvas{width:100%;height:100%;display:block}
 .palette{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
-.sw{height:24px;border:1px solid #999;cursor:pointer}
+.sw{height:32px;border:1px solid #999;cursor:pointer;position:relative;color:#fff;font-size:10px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.75)}
+.sw span{position:absolute;left:4px;bottom:2px;letter-spacing:.2px}
 .sw.active{outline:2px solid #111}
 .side-box{border:1px solid #ddd;background:#f8f8f8;padding:12px}
 @media (max-width:760px){ .site{margin:0;border-left:0;border-right:0}.btn{margin-left:0}.logo{font-size:42px}h1{font-size:46px}h2{font-size:34px}.hero{height:260px}.category-grid,.mosaic-grid{grid-template-columns:repeat(2,1fr)}.custom-wrap{grid-template-columns:1fr}.dark-cols{grid-template-columns:1fr} }

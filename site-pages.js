@@ -84,35 +84,81 @@
     });
   }
 
-  function templateSvg() {
-    return `
-      <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-        <rect data-part="base" x="0" y="0" width="400" height="400" fill="#f1f1f1"/>
-        <polygon data-part="a" points="0,0 200,0 0,200" fill="#2f658c"/>
-        <polygon data-part="b" points="400,0 200,0 400,200" fill="#8da7c8"/>
-        <polygon data-part="c" points="0,400 0,200 200,400" fill="#33495f"/>
-        <polygon data-part="d" points="400,400 200,400 400,200" fill="#5f748d"/>
-        <polygon data-part="center" points="200,90 310,200 200,310 90,200" fill="#d8dee8"/>
-      </svg>
-    `;
+  function getCustomizerPalette() {
+    const fallback = [
+      { id: 'R57', hex: '#9B3536', name: 'Rojo barro' },
+      { id: 'R58', hex: '#A83232', name: 'Rojo terracota' },
+      { id: 'V37', hex: '#4F8F6C', name: 'Verde selva' },
+      { id: 'V38', hex: '#6F928C', name: 'Verde salvia' },
+      { id: 'A21', hex: '#D9A12D', name: 'Amarillo ocre' },
+      { id: 'A22', hex: '#E6BC6E', name: 'Amarillo arena' },
+      { id: 'AZ11', hex: '#436C99', name: 'Azul colonial' },
+      { id: 'GR10', hex: '#D8D8DA', name: 'Gris claro' }
+    ];
+
+    const source = Array.isArray(window.CUSTOMIZER_COLORS) ? window.CUSTOMIZER_COLORS : fallback;
+    return source
+      .filter((c) => c && typeof c.id === 'string' && typeof c.hex === 'string')
+      .map((c) => ({
+        id: c.id.trim(),
+        hex: c.hex.trim().toUpperCase(),
+        name: (c.name || c.id).trim()
+      }))
+      .filter((c) => /^#[0-9A-F]{6}$/.test(c.hex) && c.id.length > 0);
   }
 
-  function setupInteractiveSvg(svg, selectedColorRef, onChange) {
-    const parts = svg.querySelectorAll('[data-part], path, polygon, rect, circle, ellipse');
-    parts.forEach((part, index) => {
-      if (part.closest('defs, clipPath, mask')) return;
-      if (!part.dataset.part) part.dataset.part = `part-${index}`;
-      part.style.cursor = 'pointer';
-      part.addEventListener('click', () => {
-        part.setAttribute('fill', selectedColorRef.value);
-        onChange();
-      });
+  function hexToRgb(hex) {
+    return {
+      r: parseInt(hex.slice(1, 3), 16),
+      g: parseInt(hex.slice(3, 5), 16),
+      b: parseInt(hex.slice(5, 7), 16)
+    };
+  }
+
+  function buildPdfFromJpeg(jpegDataUrl, pageWidthPt, pageHeightPt) {
+    const base64 = jpegDataUrl.split(',')[1] || '';
+    const binary = atob(base64);
+    const imgBytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) imgBytes[i] = binary.charCodeAt(i);
+
+    const header = '%PDF-1.3\n';
+    const objects = [];
+    const offsets = [];
+    const encoder = new TextEncoder();
+
+    function addObject(body) {
+      const index = objects.length + 1;
+      const obj = `${index} 0 obj\n${body}\nendobj\n`;
+      objects.push(encoder.encode(obj));
+      return index;
+    }
+
+    addObject('<< /Type /Catalog /Pages 2 0 R >>');
+    addObject('<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+    addObject(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidthPt} ${pageHeightPt}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>`);
+
+    const imageHeader = encoder.encode(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width 1240 /Height 1754 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imgBytes.length} >>\nstream\n`);
+    const imageFooter = encoder.encode('\nendstream\nendobj\n');
+    objects.push(new Uint8Array([...imageHeader, ...imgBytes, ...imageFooter]));
+
+    const contentStream = `q\n${pageWidthPt} 0 0 ${pageHeightPt} 0 0 cm\n/Im0 Do\nQ\n`;
+    addObject(`<< /Length ${contentStream.length} >>\nstream\n${contentStream}endstream`);
+
+    let size = encoder.encode(header).length;
+    for (const obj of objects) {
+      offsets.push(size);
+      size += obj.length;
+    }
+
+    let xref = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+    offsets.forEach((off) => {
+      xref += `${String(off).padStart(10, '0')} 00000 n \n`;
     });
-  }
 
-  function svgToDataUrl(svgEl) {
-    const str = new XMLSerializer().serializeToString(svgEl);
-    return `data:image/svg+xml;utf8,${encodeURIComponent(str)}`;
+    const trailer = `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${size}\n%%EOF`;
+
+    const allParts = [encoder.encode(header), ...objects, encoder.encode(xref + trailer)];
+    return new Blob(allParts, { type: 'application/pdf' });
   }
 
   async function initCustomizer() {
@@ -124,23 +170,11 @@
     const src = big.dataset.image || 'assets/placeholder-tile.svg';
     const category = (big.dataset.category || 'centro').toLowerCase();
     const modelName = new URLSearchParams(window.location.search).get('name') || 'Modelo';
-    const colors = [
-      '#9b3536','#a02f2f','#a83232','#6e4648','#633737','#7d5545',
-      '#ad9764','#906643','#955f49','#cc6f4a','#b85a3d','#1f2426',
-      '#7f4044','#89767e','#767791','#b0a3a3','#d1b3a9','#dcd2bf',
-      '#b69b77','#c0b1b1','#d8b3af','#d88582','#c46d78','#6f928c',
-      '#c7bbb0','#d8cbb8','#f79a06','#d9a12d','#e2b451','#85a389',
-      '#80a38a','#6f8682','#e6cd69','#e6bc6e','#e1af2f','#94994d',
-      '#979167','#7d9c7c','#7f8e7d','#5c6e62','#7fa35d','#37495f',
-      '#b7b7a8','#8ea88b','#77786b','#83b4af','#4f8f6c','#75806a',
-      '#5b6a98','#5b5ee0','#6685b1','#2f80b3','#8db5b4','#c8d9d4',
-      '#a6a6a6','#7a8a91','#8f8f8d','#757575','#a7c7c1','#9ab9d2',
-      '#979797','#bdbbbb','#c3c2c1','#cececd','#e7e2d6','#d8d8da',
-      '#6f978e','#436c99','#b7b7ae'
-    ];
+    const colors = getCustomizerPalette();
+    if (!colors.length) return;
 
     let selected = colors[0];
-    const usedColors = new Set();
+    const usedColorIds = new Set();
 
     editor.innerHTML = '<canvas id="editCanvas" class="vector-canvas" width="600" height="600"></canvas>';
     big.innerHTML = '<canvas id="patternCanvas" class="pattern-canvas" width="1200" height="800"></canvas>';
@@ -157,6 +191,11 @@
 
     let sourceImageData = null;
     let currentImageData = null;
+
+    const queueX = new Int32Array(600 * 600);
+    const queueY = new Int32Array(600 * 600);
+    const visited = new Uint32Array(600 * 600);
+    let visitToken = 1;
 
     function drawImageCover(ctx, img, w, h) {
       const scale = Math.max(w / img.width, h / img.height);
@@ -213,8 +252,8 @@
       }
     }
 
-    function floodFillAt(x, y, hexColor) {
-      if (!sourceImageData || !currentImageData) return;
+    function floodFillAt(x, y, colorObj) {
+      if (!sourceImageData || !currentImageData || !colorObj) return;
       const w = sourceImageData.width;
       const h = sourceImageData.height;
       const sx = Math.max(0, Math.min(w - 1, Math.floor(x)));
@@ -225,47 +264,50 @@
       const tr = src[i0], tg = src[i0 + 1], tb = src[i0 + 2], ta = src[i0 + 3];
       if (ta < 10) return;
 
-      const r = parseInt(hexColor.slice(1, 3), 16);
-      const g = parseInt(hexColor.slice(3, 5), 16);
-      const b = parseInt(hexColor.slice(5, 7), 16);
-
-      const visited = new Uint8Array(w * h);
-      const qx = new Int32Array(w * h);
-      const qy = new Int32Array(w * h);
-      let head = 0, tail = 0;
-      qx[tail] = sx;
-      qy[tail] = sy;
-      tail++;
-
-      const tol = 42;
-      while (head < tail) {
-        const cx = qx[head];
-        const cy = qy[head];
-        head++;
-        const p = cy * w + cx;
-        if (visited[p]) continue;
-        visited[p] = 1;
-
-        const i = p * 4;
-        const dr = Math.abs(src[i] - tr);
-        const dg = Math.abs(src[i + 1] - tg);
-        const db = Math.abs(src[i + 2] - tb);
-        const da = src[i + 3];
-        if (da < 10 || dr + dg + db > tol) continue;
-
-        const lum = (src[i] * 0.299 + src[i + 1] * 0.587 + src[i + 2] * 0.114) / 255;
-        dst[i] = Math.max(0, Math.min(255, Math.round(r * lum)));
-        dst[i + 1] = Math.max(0, Math.min(255, Math.round(g * lum)));
-        dst[i + 2] = Math.max(0, Math.min(255, Math.round(b * lum)));
-        dst[i + 3] = da;
-
-        if (cx > 0) { qx[tail] = cx - 1; qy[tail] = cy; tail++; }
-        if (cx < w - 1) { qx[tail] = cx + 1; qy[tail] = cy; tail++; }
-        if (cy > 0) { qx[tail] = cx; qy[tail] = cy - 1; tail++; }
-        if (cy < h - 1) { qx[tail] = cx; qy[tail] = cy + 1; tail++; }
+      const next = hexToRgb(colorObj.hex);
+      const toleranceSq = 95 * 95;
+      visitToken += 1;
+      if (visitToken > 0xffffff00) {
+        visited.fill(0);
+        visitToken = 1;
       }
 
-      usedColors.add(hexColor.toUpperCase());
+      let head = 0;
+      let tail = 0;
+      queueX[tail] = sx;
+      queueY[tail] = sy;
+      tail += 1;
+
+      while (head < tail) {
+        const cx = queueX[head];
+        const cy = queueY[head];
+        head += 1;
+        const p = cy * w + cx;
+        if (visited[p] === visitToken) continue;
+        visited[p] = visitToken;
+
+        const i = p * 4;
+        const da = src[i + 3];
+        if (da < 10) continue;
+
+        const dr = src[i] - tr;
+        const dg = src[i + 1] - tg;
+        const db = src[i + 2] - tb;
+        const diffSq = dr * dr + dg * dg + db * db;
+        if (diffSq > toleranceSq) continue;
+
+        dst[i] = next.r;
+        dst[i + 1] = next.g;
+        dst[i + 2] = next.b;
+        dst[i + 3] = da;
+
+        if (cx > 0) { queueX[tail] = cx - 1; queueY[tail] = cy; tail += 1; }
+        if (cx < w - 1) { queueX[tail] = cx + 1; queueY[tail] = cy; tail += 1; }
+        if (cy > 0) { queueX[tail] = cx; queueY[tail] = cy - 1; tail += 1; }
+        if (cy < h - 1) { queueX[tail] = cx; queueY[tail] = cy + 1; tail += 1; }
+      }
+
+      usedColorIds.add(colorObj.id);
       renderEdit();
       drawPattern();
     }
@@ -277,11 +319,14 @@
       floodFillAt(x, y, selected);
     });
 
-    colors.forEach((c) => {
+    colors.forEach((c, idx) => {
       const b = document.createElement('button');
-      b.className = 'sw';
+      b.className = `sw${idx === 0 ? ' active' : ''}`;
       b.type = 'button';
-      b.style.background = c;
+      b.style.background = c.hex;
+      b.title = `${c.id} · ${c.name}`;
+      b.setAttribute('aria-label', `${c.id} ${c.name}`);
+      b.innerHTML = `<span>${c.id}</span>`;
       b.addEventListener('click', () => {
         selected = c;
         document.querySelectorAll('.sw').forEach((n) => n.classList.remove('active'));
@@ -295,7 +340,7 @@
       resetBtn.addEventListener('click', () => {
         if (!sourceImageData) return;
         currentImageData = new ImageData(new Uint8ClampedArray(sourceImageData.data), sourceImageData.width, sourceImageData.height);
-        usedColors.clear();
+        usedColorIds.clear();
         renderEdit();
         drawPattern();
       });
@@ -304,35 +349,60 @@
     const dl = q('download');
     if (dl) {
       dl.addEventListener('click', () => {
-        const patternUrl = patternCanvas.toDataURL('image/png');
-        const colorsHtml = (Array.from(usedColors).length ? Array.from(usedColors) : [selected.toUpperCase()])
-          .map((c) => `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;"><span style="width:14px;height:14px;background:${c};display:inline-block;border:1px solid #333"></span><span>${c}</span></div>`)
-          .join('');
+        const reportCanvas = document.createElement('canvas');
+        reportCanvas.width = 1240;
+        reportCanvas.height = 1754;
+        const rctx = reportCanvas.getContext('2d');
 
-        const w = window.open('', '_blank');
-        if (!w) return;
-        w.document.write(`
-          <html><head><title>${modelName}</title></head>
-          <body style="font-family:Arial;padding:20px;">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-              <div>
-                <h2 style="margin:0;">Mosaicos Dzununcan</h2>
-                <p style="margin:4px 0 0;">ventas@mosaicosdzununcan.com<br/>Tel: (999) 406-9083 · (999) 286-6163</p>
-              </div>
-              <div><strong>${modelName}</strong></div>
-            </div>
-            <div style="display:flex;gap:16px;margin-top:14px;align-items:flex-start;">
-              <img src="${patternUrl}" style="width:780px;max-width:78vw;border:1px solid #999;" />
-              <div>
-                <h4 style="margin:0 0 8px;">Colores usados</h4>
-                ${colorsHtml}
-              </div>
-            </div>
-          </body></html>
-        `);
-        w.document.close();
-        w.focus();
-        w.print();
+        rctx.fillStyle = '#ffffff';
+        rctx.fillRect(0, 0, reportCanvas.width, reportCanvas.height);
+        rctx.fillStyle = '#111';
+        rctx.font = '700 42px Arial';
+        rctx.fillText('Mosaicos Dzununcan', 70, 90);
+        rctx.font = '24px Arial';
+        rctx.fillStyle = '#333';
+        rctx.fillText(modelName, 70, 130);
+        rctx.fillText('ventas@mosaicosdzununcan.com · (999) 406-9083 · (999) 286-6163', 70, 166);
+
+        rctx.strokeStyle = '#bbb';
+        rctx.strokeRect(70, 210, 900, 900 * (8 / 12));
+        rctx.drawImage(patternCanvas, 70, 210, 900, 900 * (8 / 12));
+
+        rctx.fillStyle = '#111';
+        rctx.font = '700 28px Arial';
+        rctx.fillText('Colores usados', 70, 930);
+
+        const selectedIds = Array.from(usedColorIds.size ? usedColorIds : [selected.id]);
+        const byId = new Map(colors.map((c) => [c.id, c]));
+
+        rctx.font = '20px Arial';
+        selectedIds.forEach((id, idx) => {
+          const item = byId.get(id);
+          if (!item) return;
+          const col = idx % 2;
+          const row = Math.floor(idx / 2);
+          const x = 70 + col * 450;
+          const y = 980 + row * 48;
+          rctx.fillStyle = item.hex;
+          rctx.fillRect(x, y - 16, 28, 28);
+          rctx.strokeStyle = '#333';
+          rctx.strokeRect(x, y - 16, 28, 28);
+          rctx.fillStyle = '#222';
+          rctx.fillText(`${item.id} · ${item.name} (${item.hex})`, x + 40, y + 4);
+        });
+
+        const jpg = reportCanvas.toDataURL('image/jpeg', 0.92);
+        const blob = buildPdfFromJpeg(jpg, 595, 842);
+        const fileName = `${modelName.replace(/[^a-z0-9\-_]+/gi, '_').replace(/^_+|_+$/g, '') || 'modelo'}_personalizado.pdf`;
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
       });
     }
 
@@ -362,10 +432,14 @@
   function initDarkFooter() {
     const main = document.querySelector('main.site');
     if (!main || document.getElementById('siteDarkFooter')) return;
+
     const lang = getLang();
+    const legalUrl = `legal.html?lang=${lang}`;
+    const mapUrl = `sitemap.html?lang=${lang}`;
+
     const html = lang === 'en'
-      ? `<footer id="siteDarkFooter" class="dark-footer"><div class="dark-cols"><div><h4>Mosaicos Dzununcan</h4><p>Mexican cement tile manufacturer with custom projects.</p><p><a href="#">Privacy Policy</a><br><a href="#">Terms and Conditions</a><br><a href="#">Site map</a></p></div><div><h4>Phones</h4><p>Local: +52 (999) 217-9326</p><p>Factory: +52 (999) 249-5158</p><p>Email: ventas@mosaicosdzununcan.com</p></div><div><h4>Address</h4><p>Sales & Showroom:<br/>Calle 37, No. 318 entre 24 y 26, Mérida, Yucatán.</p><p>Factory:<br/>Carretera Mérida - Dzununcan Km 2.5</p></div><div><h4>Social</h4><p>Facebook<br>Instagram<br>WhatsApp</p></div></div></footer>`
-      : `<footer id="siteDarkFooter" class="dark-footer"><div class="dark-cols"><div><h4>Mosaicos Dzununcan</h4><p>Fabricantes de mosaicos de pasta mexicanos con proyectos personalizados.</p><p><a href="#">Políticas de privacidad</a><br><a href="#">Términos y condiciones</a><br><a href="#">Mapa del sitio</a></p></div><div><h4>Teléfonos</h4><p>Local: +52 (999) 217-9326</p><p>Fábrica: +52 (999) 249-5158</p><p>Email: ventas@mosaicosdzununcan.com</p></div><div><h4>Dirección</h4><p>Venta y sala de exhibición:<br/>Calle 37, No. 318 entre 24 y 26, Mérida, Yucatán.</p><p>Fábrica:<br/>Carretera Mérida - Dzununcan Km 2.5</p></div><div><h4>Redes</h4><p>Facebook<br>Instagram<br>WhatsApp</p></div></div></footer>`;
+      ? `<footer id="siteDarkFooter" class="dark-footer"><div class="dark-cols"><div><h4>Mosaicos Dzununcan</h4><p>Mexican cement tile manufacturer with custom projects.</p><p><a href="${legalUrl}#privacy">Privacy Policy</a><br><a href="${legalUrl}#terms">Terms and Conditions</a><br><a href="${mapUrl}">Site map</a></p></div><div><h4>Phones</h4><p>Local: +52 (999) 217-9326</p><p>Factory: +52 (999) 249-5158</p><p>Email: ventas@mosaicosdzununcan.com</p></div><div><h4>Address</h4><p>Sales & Showroom:<br/>Calle 37, No. 318 entre 24 y 26, Mérida, Yucatán.</p><p>Factory:<br/>Carretera Mérida - Dzununcan Km 2.5</p></div><div><h4>Social</h4><p><a target="_blank" rel="noopener" href="https://www.facebook.com/">Facebook</a><br><a target="_blank" rel="noopener" href="https://www.instagram.com/">Instagram</a><br><a target="_blank" rel="noopener" href="https://wa.me/529994069083">WhatsApp</a></p></div></div></footer>`
+      : `<footer id="siteDarkFooter" class="dark-footer"><div class="dark-cols"><div><h4>Mosaicos Dzununcan</h4><p>Fabricantes de mosaicos de pasta mexicanos con proyectos personalizados.</p><p><a href="${legalUrl}#privacy">Políticas de privacidad</a><br><a href="${legalUrl}#terms">Términos y condiciones</a><br><a href="${mapUrl}">Mapa del sitio</a></p></div><div><h4>Teléfonos</h4><p>Local: +52 (999) 217-9326</p><p>Fábrica: +52 (999) 249-5158</p><p>Email: ventas@mosaicosdzununcan.com</p></div><div><h4>Dirección</h4><p>Venta y sala de exhibición:<br/>Calle 37, No. 318 entre 24 y 26, Mérida, Yucatán.</p><p>Fábrica:<br/>Carretera Mérida - Dzununcan Km 2.5</p></div><div><h4>Redes</h4><p><a target="_blank" rel="noopener" href="https://www.facebook.com/">Facebook</a><br><a target="_blank" rel="noopener" href="https://www.instagram.com/">Instagram</a><br><a target="_blank" rel="noopener" href="https://wa.me/529994069083">WhatsApp</a></p></div></div></footer>`;
     main.insertAdjacentHTML('beforeend', html);
   }
 
