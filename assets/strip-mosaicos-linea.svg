@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="528" height="22" viewBox="0 0 528 22" preserveAspectRatio="none">
+  <defs>
+    <pattern id="tiles" width="132" height="22" patternUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="22" height="22" fill="#2b5a7f"/>
+      <rect x="22" y="0" width="22" height="22" fill="#e9d4b4"/>
+      <rect x="44" y="0" width="22" height="22" fill="#872f2d"/>
+      <rect x="66" y="0" width="22" height="22" fill="#3f8b8a"/>
+      <rect x="88" y="0" width="22" height="22" fill="#d77855"/>
+      <rect x="110" y="0" width="22" height="22" fill="#1d2d45"/>
+      <g fill="none" stroke="#ffffff" stroke-opacity=".55" stroke-width="1">
+        <path d="M0 22 L22 0"/><path d="M22 22 L44 0"/><path d="M44 22 L66 0"/><path d="M66 22 L88 0"/><path d="M88 22 L110 0"/><path d="M110 22 L132 0"/>
+      </g>
+    </pattern>
+  </defs>
+  <rect width="528" height="22" fill="url(#tiles)"/>
+</svg>
