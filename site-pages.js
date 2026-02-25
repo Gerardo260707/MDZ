@@ -84,7 +84,7 @@
       const card = document.createElement('article');
       card.className = 'category-card';
       const href = c.href + (c.href.includes('?') ? '&' : '?') + 'lang=' + lang;
-      card.innerHTML = `<img src="${c.img}" alt="${t[c.key]}"/><h3>${t[c.key]}</h3><a href="${href}">${t.btn}</a>`;
+      card.innerHTML = `<img src="${c.img}" alt="${t[c.key]}"/><h3>${t[c.key]}</h3><a class="cta-pill" href="${href}">${t.btn}</a>`;
       el.appendChild(card);
     });
   }
@@ -820,6 +820,40 @@
     });
   }
 
+
+  function initDecoratedOverlay() {
+    const overlay = q('modelOverlay');
+    const pattern = q('modelOverlayPattern');
+    const nameEl = q('modelOverlayName');
+    if (!overlay || !pattern || !nameEl) return;
+
+    const open = (src, modelName) => {
+      pattern.style.backgroundImage = `url("${src}")`;
+      nameEl.textContent = `MODELO: ${(modelName || 'Modelo').toUpperCase()}`;
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    };
+
+    const close = () => {
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    };
+
+    document.querySelectorAll('.mosaic-preview-trigger').forEach((img) => {
+      img.addEventListener('click', () => open(img.getAttribute('src') || '', img.dataset.modelName || img.alt || 'Modelo'));
+    });
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target.closest('[data-overlay-close="true"]')) close();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && overlay.classList.contains('open')) close();
+    });
+  }
+
   function initDarkFooter() {
     const main = document.querySelector('main.site');
     if (!main || document.getElementById('siteDarkFooter')) return;
@@ -838,6 +872,7 @@
     initHome();
     initCategories();
     initCustomizer();
+    initDecoratedOverlay();
     initDarkFooter();
   });
 })();
