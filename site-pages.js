@@ -24,7 +24,7 @@
     const lang = getLang();
     const FEATURE_CARDS = [
       { file: 'galeria.jpg', label: tByLang(lang, 'Mosaicos', 'Mosaics'), href: 'mosaicos.html' },
-      { file: 'instalacion.jpg', label: tByLang(lang, 'Personalizar', 'Customize'), href: 'personalizar.php?id=1&name=Mosaico%20ejemplo%201&img=assets/placeholder-tile.svg' },
+      { file: 'instalacion.jpg', label: tByLang(lang, 'Personalizar', 'Customize'), href: 'personalizar.php' },
       { file: 'contacto.jpg', label: tByLang(lang, 'Colores', 'Colors'), href: 'galeria.html' }
     ];
 
@@ -68,7 +68,7 @@
       { key: 'cat_colors', img: 'assets/placeholder-tile.svg', href: 'galeria.html' },
       { key: 'cat_decorated', img: 'assets/placeholder-tile.svg', href: 'mosaicos.php' },
       { key: 'cat_specials', img: 'assets/placeholder-tile.svg', href: 'galeria.html' },
-      { key: 'cat_customize', img: 'assets/placeholder-tile.svg', href: 'personalizar.php?id=1&name=Mosaico%20ejemplo%201&img=assets/placeholder-tile.svg' }
+      { key: 'cat_customize', img: 'assets/placeholder-tile.svg', href: 'personalizar.php' }
     ];
     const dict = {
       es: { cat_colors: 'Lisos', cat_decorated: 'Decorados', cat_specials: 'Especiales', cat_customize: 'Personalizar', btn: 'Ver modelos » clic aquí' },
@@ -183,7 +183,71 @@
     const big = q('bigPreview');
     if (!palette || !editor || !big) return;
 
-    const src = big.dataset.image || 'assets/placeholder-tile.svg';
+    const lang = getLang();
+    const models = Array.isArray(window.CUSTOMIZER_MODELS) ? window.CUSTOMIZER_MODELS : [];
+    const searchInput = q('modelSearchInput');
+    const searchResults = q('modelSearchResults');
+    const selectedModelNameEl = q('selectedModelName');
+
+    function goToModel(model) {
+      if (!model) return;
+      const url = new URL(window.location.href);
+      url.searchParams.set('id', String(model.id || ''));
+      url.searchParams.set('name', model.nombre || 'Modelo');
+      url.searchParams.set('img', model.imagen || 'assets/placeholder-tile.svg');
+      url.searchParams.set('cat', (model.categoria || 'centro').toLowerCase());
+      url.searchParams.set('lang', lang);
+      window.location.assign(url.pathname + url.search + url.hash);
+    }
+
+    function renderModelSearch(query) {
+      if (!searchResults) return;
+      const text = (query || '').trim().toLowerCase();
+      const filtered = models.filter((m) => {
+        if (!text) return true;
+        const name = String(m.nombre || '').toLowerCase();
+        const code = String(m.identificador || '').toLowerCase();
+        return name.includes(text) || code.includes(text);
+      }).slice(0, 24);
+
+      if (!filtered.length) {
+        searchResults.innerHTML = `<div class="model-search-empty">${lang === 'en' ? 'No models found.' : 'No se encontraron modelos.'}</div>`;
+        return;
+      }
+
+      searchResults.innerHTML = '';
+      filtered.forEach((m) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'model-search-item';
+        const code = m.identificador ? ` · ${m.identificador}` : '';
+        item.textContent = `${m.nombre || 'Modelo'}${code}`;
+        item.addEventListener('click', () => goToModel(m));
+        searchResults.appendChild(item);
+      });
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', () => renderModelSearch(searchInput.value));
+      searchInput.addEventListener('focus', () => renderModelSearch(searchInput.value));
+      renderModelSearch('');
+    }
+
+    const src = (big.dataset.image || '').trim();
+    if (!src) {
+      editor.innerHTML = `<p class="empty-msg">${lang === 'en' ? 'Select a model from the search bar above to start customizing.' : 'Selecciona un modelo en la barra de búsqueda para comenzar a personalizar.'}</p>`;
+      big.innerHTML = `<p class="empty-msg">${lang === 'en' ? 'Pattern preview will appear here once a model is selected.' : 'La vista previa aparecerá aquí cuando elijas un modelo.'}</p>`;
+      palette.innerHTML = '';
+      const resetBtn = q('resetColor');
+      const downloadBtn = q('download');
+      if (resetBtn) resetBtn.style.display = 'none';
+      if (downloadBtn) downloadBtn.style.display = 'none';
+      if (selectedModelNameEl && !selectedModelNameEl.textContent.trim()) {
+        selectedModelNameEl.textContent = lang === 'en' ? 'Choose a model to begin' : 'Elige un modelo para comenzar';
+      }
+      return;
+    }
+
     const category = (big.dataset.category || 'centro').toLowerCase();
     const modelName = new URLSearchParams(window.location.search).get('name') || 'Modelo';
     const colors = getCustomizerPalette();

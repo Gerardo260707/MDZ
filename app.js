@@ -10,6 +10,7 @@
       decorated_title: 'Mosaicos Decorados', decorated_desc: 'Seleccione un modelo para ver su ficha. Puede personalizar colores en el simulador.',
       btn_customize: 'Personalizar', custom_title: 'Personalizar Diseño', custom_step1: '1. Selecciona un color.', custom_step2: '2. Da clic sobre una sección del mosaico para cambiar solo esa área.',
       custom_apply: 'Aplicar color', custom_reset: 'Imagen original', custom_download: 'Descargar PDF', catalog_ready: 'Esta página está lista para mostrar +300 mosaicos desde base de datos.',
+      custom_model_search_label: 'Buscar modelo para personalizar', custom_step_area: '2. Da clic en una sección del mosaico (PNG) para aplicar el color solo en esa zona.',
       contact_title: 'Contacto', lang_label: 'Idioma'
     },
     en: {
@@ -22,6 +23,7 @@
       decorated_title: 'Decorated Mosaics', decorated_desc: 'Choose a model to view details. You can customize colors in the simulator.',
       btn_customize: 'Customize', custom_title: 'Customize Design', custom_step1: '1. Select a color.', custom_step2: '2. Click a mosaic section to change only that area.',
       custom_apply: 'Apply color', custom_reset: 'Original image', custom_download: 'Download PDF', catalog_ready: 'This page is ready to show 300+ mosaics from database.',
+      custom_model_search_label: 'Search model to customize', custom_step_area: '2. Click a mosaic section (PNG) to apply color only on that zone.',
       contact_title: 'Contact', lang_label: 'Language'
     }
   };
