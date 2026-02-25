@@ -282,8 +282,8 @@
 
       const next = hexToRgb(colorObj.hex);
       const fillOptions = window.CUSTOMIZER_FILL || {};
-      const toleranceSq = Math.pow(Number(fillOptions.tolerance || 105), 2);
-      const edgeToleranceSq = Math.pow(Number(fillOptions.edgeTolerance || 50), 2);
+      const toleranceSq = Math.pow(Number(fillOptions.tolerance || 82), 2);
+      const edgeToleranceSq = Math.pow(Number(fillOptions.edgeTolerance || 30), 2);
 
       visitToken += 1;
       if (visitToken > 0xffffff00) {
@@ -334,7 +334,7 @@
           const edg = src[ni + 1] - src[i + 1];
           const edb = src[ni + 2] - src[i + 2];
           const edgeDiffSq = edr * edr + edg * edg + edb * edb;
-          if (edgeDiffSq > edgeToleranceSq * 4) return;
+          if (edgeDiffSq > edgeToleranceSq) return;
           visited[np] = visitToken;
           queueX[tail] = nx;
           queueY[tail] = ny;
@@ -345,6 +345,10 @@
         if (cx < w - 1) push(cx + 1, cy);
         if (cy > 0) push(cx, cy - 1);
         if (cy < h - 1) push(cx, cy + 1);
+        if (cx > 0 && cy > 0) push(cx - 1, cy - 1);
+        if (cx < w - 1 && cy > 0) push(cx + 1, cy - 1);
+        if (cx > 0 && cy < h - 1) push(cx - 1, cy + 1);
+        if (cx < w - 1 && cy < h - 1) push(cx + 1, cy + 1);
       }
 
       usedColorIds.add(colorObj.id);
