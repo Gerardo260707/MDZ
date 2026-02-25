@@ -11,9 +11,17 @@ function categoria_prefix(?string $categoria): string {
     };
 }
 
+function pair_key(array $m): string {
+    $base = (string)($m['carpeta_modelo'] ?? $m['nombre'] ?? '');
+    $base = strtolower($base);
+    $base = str_replace(['centro', 'cenefa', 'esquina', 'corner', 'bord', 'border'], '', $base);
+    $base = preg_replace('/[^a-z0-9]+/', '-', $base);
+    return trim((string)$base, '-');
+}
+
 function normaliza_item(array $m): array {
     $id = (int)($m['id'] ?? 0);
-    $categoria = (string)($m['categoria'] ?? 'centro');
+    $categoria = strtolower((string)($m['categoria'] ?? 'centro'));
     $identificador = (string)($m['identificador'] ?? '');
     if ($identificador === '') {
         $identificador = categoria_prefix($categoria) . '-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
@@ -25,6 +33,7 @@ function normaliza_item(array $m): array {
         'imagen' => (string)($m['imagen'] ?? 'assets/placeholder-tile.svg'),
         'categoria' => $categoria,
         'identificador' => $identificador,
+        'carpeta_modelo' => (string)($m['carpeta_modelo'] ?? ''),
     ];
 }
 
@@ -40,7 +49,7 @@ function carga_modelos(): array {
                 $db['pass'],
                 [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
             );
-            $stmt = $pdo->query("SELECT id, nombre, imagen, categoria, identificador FROM mosaicos");
+            $stmt = $pdo->query("SELECT id, nombre, imagen, categoria, identificador, carpeta_modelo FROM mosaicos");
             $items = array_map('normaliza_item', $stmt->fetchAll(PDO::FETCH_ASSOC));
         } catch (Throwable $e) {
             $items = [];
@@ -51,9 +60,7 @@ function carga_modelos(): array {
         $jsonPath = __DIR__ . '/config/modelos.json';
         if (file_exists($jsonPath)) {
             $decoded = json_decode((string)file_get_contents($jsonPath), true);
-            if (is_array($decoded)) {
-                $items = array_map('normaliza_item', $decoded);
-            }
+            if (is_array($decoded)) $items = array_map('normaliza_item', $decoded);
         }
     }
 
@@ -80,6 +87,7 @@ function carga_modelos(): array {
                     'imagen' => $targetRel,
                     'categoria' => 'centro',
                     'identificador' => '',
+                    'carpeta_modelo' => $folder,
                 ]);
                 $idx++;
             }
@@ -93,28 +101,42 @@ function carga_modelos(): array {
 $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
 $models = carga_modelos();
 $modelById = [];
-foreach ($models as $item) {
-    $modelById[(string)$item['id']] = $item;
+foreach ($models as $item) $modelById[(string)$item['id']] = $item;
+
+$centerId = (string)($_GET['center_id'] ?? '');
+$cenefaId = (string)($_GET['cenefa_id'] ?? '');
+$esquinaId = (string)($_GET['esquina_id'] ?? '');
+$legacyId = (string)($_GET['id'] ?? '');
+if ($centerId === '' && $legacyId !== '' && isset($modelById[$legacyId]) && $modelById[$legacyId]['categoria'] === 'centro') $centerId = $legacyId;
+if ($cenefaId === '' && $legacyId !== '' && isset($modelById[$legacyId]) && $modelById[$legacyId]['categoria'] === 'cenefa') $cenefaId = $legacyId;
+
+$selectedCenter = ($centerId !== '' && isset($modelById[$centerId])) ? $modelById[$centerId] : null;
+$selectedCenefa = ($cenefaId !== '' && isset($modelById[$cenefaId])) ? $modelById[$cenefaId] : null;
+$selectedEsquina = ($esquinaId !== '' && isset($modelById[$esquinaId])) ? $modelById[$esquinaId] : null;
+
+if ($selectedCenefa && !$selectedEsquina) {
+    $k = pair_key($selectedCenefa);
+    foreach ($models as $m) {
+        if ($m['categoria'] === 'esquina' && pair_key($m) === $k) { $selectedEsquina = $m; break; }
+    }
 }
 
-$selected = null;
-$requestedId = (string)($_GET['id'] ?? '');
-if ($requestedId !== '' && isset($modelById[$requestedId])) {
-    $selected = $modelById[$requestedId];
-}
-if ($selected === null && isset($_GET['img']) && (string)$_GET['img'] !== '') {
-    $selected = [
+$editable = $selectedCenefa ?: $selectedCenter;
+if (!$editable && isset($_GET['img']) && (string)$_GET['img'] !== '') {
+    $editable = [
         'id' => (int)($_GET['id'] ?? 0),
         'nombre' => (string)($_GET['name'] ?? 'Modelo'),
         'imagen' => (string)$_GET['img'],
-        'categoria' => (string)($_GET['cat'] ?? 'centro'),
+        'categoria' => strtolower((string)($_GET['cat'] ?? 'centro')),
         'identificador' => '',
+        'carpeta_modelo' => '',
     ];
 }
 
-$selectedName = $selected['nombre'] ?? ($lang === 'en' ? 'Choose a model to begin' : 'Elige un modelo para comenzar');
-$selectedImage = $selected['imagen'] ?? '';
-$selectedCategory = $selected['categoria'] ?? 'centro';
+$selectedName = $editable['nombre'] ?? ($lang === 'en' ? 'Choose center and border to begin' : 'Elige centro y cenefa para comenzar');
+$selectedImage = $editable['imagen'] ?? '';
+$selectedCategory = $editable['categoria'] ?? 'centro';
+$editTarget = $selectedCenefa ? 'cenefa' : 'centro';
 ?>
 <!doctype html>
 <html lang="<?= $lang ?>">
@@ -148,20 +170,20 @@ $selectedCategory = $selected['categoria'] ?? 'centro';
     <section>
       <h2 data-i18n="custom_title">Personalizar Diseño</h2>
       <p><strong id="selectedModelName"><?= htmlspecialchars($selectedName, ENT_QUOTES) ?></strong></p>
-      <div class="model-search" id="modelSearchWrap">
-        <input
-          id="modelSearchInput"
-          type="search"
-          autocomplete="off"
-          data-i18n-placeholder="custom_model_search_input"
-          placeholder="Escriba el nombre del modelo"
-        />
-        <div class="model-search-results" id="modelSearchResults" role="listbox" aria-label="Resultados"></div>
+      <div class="model-search-row">
+        <div class="model-search" id="centerSearchWrap">
+          <input id="centerSearchInput" type="search" autocomplete="off" data-i18n-placeholder="custom_select_center" placeholder="Seleccionar centro" />
+          <div class="model-search-results" id="centerSearchResults"></div>
+        </div>
+        <div class="model-search" id="cenefaSearchWrap">
+          <input id="cenefaSearchInput" type="search" autocomplete="off" data-i18n-placeholder="custom_select_cenefa" placeholder="Seleccionar cenefa" />
+          <div class="model-search-results" id="cenefaSearchResults"></div>
+        </div>
       </div>
     </section>
 
     <section class="panel">
-      <div class="custom-wrap" id="customWrap" data-has-model="<?= $selected ? '1' : '0' ?>">
+      <div class="custom-wrap" id="customWrap" data-has-model="<?= $editable ? '1' : '0' ?>">
         <div>
           <p data-i18n="custom_step1">1. Selecciona un color.</p>
           <p class="note" data-i18n="custom_step_area">2. Da clic en una sección del mosaico (PNG) para aplicar el color solo en esa zona.</p>
@@ -177,7 +199,13 @@ $selectedCategory = $selected['categoria'] ?? 'centro';
         </div>
         <div>
           <p data-i18n="custom_step2">Vista principal del patrón personalizado.</p>
-          <div class="preview-big" id="bigPreview" data-image="<?= htmlspecialchars($selectedImage, ENT_QUOTES) ?>" data-category="<?= htmlspecialchars($selectedCategory, ENT_QUOTES) ?>"></div>
+          <div id="bigPreview" class="preview-big"
+               data-image="<?= htmlspecialchars($selectedImage, ENT_QUOTES) ?>"
+               data-category="<?= htmlspecialchars($selectedCategory, ENT_QUOTES) ?>"
+               data-edit-target="<?= htmlspecialchars($editTarget, ENT_QUOTES) ?>"
+               data-center-image="<?= htmlspecialchars($selectedCenter['imagen'] ?? '', ENT_QUOTES) ?>"
+               data-cenefa-image="<?= htmlspecialchars($selectedCenefa['imagen'] ?? '', ENT_QUOTES) ?>"
+               data-esquina-image="<?= htmlspecialchars($selectedEsquina['imagen'] ?? '', ENT_QUOTES) ?>"></div>
           <button id="download" class="action" style="margin-top:8px" data-i18n="custom_download">Descargar imagen</button>
         </div>
       </div>
@@ -186,6 +214,11 @@ $selectedCategory = $selected['categoria'] ?? 'centro';
 
   <script>
     window.CUSTOMIZER_MODELS = <?= json_encode($models, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    window.CUSTOMIZER_SELECTION = <?= json_encode([
+      'centerId' => $selectedCenter['id'] ?? null,
+      'cenefaId' => $selectedCenefa['id'] ?? null,
+      'esquinaId' => $selectedEsquina['id'] ?? null,
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
   </script>
   <script src="app.js"></script>
   <script src="customizer-colors.js"></script>

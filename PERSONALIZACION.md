@@ -117,3 +117,71 @@ Por defecto apunta a:
 - `assets/strip-mosaicos-linea.svg`
 
 Puedes reemplazar ese archivo o cambiar la ruta en CSS.
+
+## 11) Carrusel principal con imágenes reales
+Para usar imágenes en el carrusel del inicio:
+
+1. Sube tus imágenes a esta carpeta exacta:
+   - `assets/carrusel/`
+2. Edita este archivo:
+   - `config/home-carousel.js`
+3. Agrega cada slide así:
+
+```js
+window.HOME_CAROUSEL = [
+  {
+    image: 'assets/carrusel/promo-1.jpg',
+    title: '¡NUEVAS COLECCIONES!',
+    subtitle: 'DISEÑOS PERSONALIZADOS PARA TU ESPACIO'
+  },
+  {
+    image: 'assets/carrusel/promo-2.jpg',
+    title: 'ENVÍOS A TODO MÉXICO',
+    subtitle: 'COMPRA DESDE CUALQUIER ESTADO'
+  }
+];
+```
+
+> Si `window.HOME_CAROUSEL` queda vacío, el sitio usa los slides de respaldo.
+
+## 12) Dónde definir si un modelo es centro/cenefa/esquina
+Tienes 3 rutas válidas (en este orden de prioridad):
+
+1. **Base de datos** (`mosaicos.categoria`)
+2. **JSON** (`config/modelos.json` → campo `categoria`)
+3. **CSV de mapeo** (`config/categorias.csv`)
+
+Valores válidos de `categoria`:
+- `centro`
+- `cenefa`
+- `esquina`
+- `hexagonales`
+- `antiderrapante`
+
+### Opción más simple (carpetas Tapiz)
+1. Edita `config/categorias.csv` con columnas:
+   - `carpeta_modelo,categoria`
+2. Ejemplo:
+
+```csv
+carpeta_modelo,categoria
+Maya_Centro,centro
+Maya_Cenefa,cenefa
+Maya_Esquina,esquina
+```
+
+3. Ejecuta:
+   - `python3 scripts/import_tapiz.py`
+
+Eso genera `config/modelos.json` con categoría correcta.
+
+## 13) Vincular cenefa con esquina en personalización
+La página `personalizar.php` ahora tiene dos buscadores:
+- `Seleccionar centro`
+- `Seleccionar cenefa`
+
+Cuando eliges una **cenefa**, el sistema busca automáticamente una **esquina** compatible por familia (nombre/carpeta parecida, por ejemplo `Maya_Cenefa` con `Maya_Esquina`).
+
+Para que funcione perfecto:
+- usa nombres consistentes por familia (`Maya_Centro`, `Maya_Cenefa`, `Maya_Esquina`),
+- y asigna bien la categoría (`centro`, `cenefa`, `esquina`).

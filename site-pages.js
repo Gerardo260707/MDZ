@@ -15,11 +15,12 @@
     const cardsContainer = q('featureCards');
     if (!slidesContainer || !dotsContainer || !cardsContainer) return;
 
-    const CAROUSEL_SLIDES = [
+    const fallbackSlides = [
       { title: '¡50% DE DESCUENTO!', subtitle: 'EN PISOS DECORADOS 20x20 COLLAGE', background: 'repeating-linear-gradient(45deg,#5e7f99 0 32px,#e5dcc1 32px 64px,#8f2a2a 64px 96px,#f4f4f0 96px 128px,#2b8481 128px 160px,#be7a5c 160px 192px)' },
       { title: 'ENVÍOS A TODO MÉXICO', subtitle: 'COMPRA DESDE CUALQUIER ESTADO', background: 'repeating-linear-gradient(135deg,#295e85 0 26px,#f0deb9 26px 52px,#943636 52px 78px,#f8f7f2 78px 104px,#488780 104px 130px,#d27f5f 130px 156px)' },
       { title: 'NUEVOS DISEÑOS', subtitle: 'COLECCIONES PERSONALIZADAS', background: 'repeating-linear-gradient(25deg,#33608f 0 25px,#ebdbb8 25px 50px,#7d1f1f 50px 75px,#f4f2e9 75px 100px,#3c8f88 100px 125px,#ca8867 125px 150px)' }
     ];
+    const CAROUSEL_SLIDES = Array.isArray(window.HOME_CAROUSEL) && window.HOME_CAROUSEL.length ? window.HOME_CAROUSEL : fallbackSlides;
 
     const lang = getLang();
     const FEATURE_CARDS = [
@@ -40,8 +41,12 @@
     const slideEls = CAROUSEL_SLIDES.map((slide, index) => {
       const article = document.createElement('article');
       article.className = `slide ${index === 0 ? 'active' : ''}`;
-      article.style.setProperty('--slide-bg', slide.background);
-      article.innerHTML = `<div class="promo"><strong>${slide.title}</strong><span>${slide.subtitle}</span></div>`;
+      if (slide.image) {
+        article.style.background = `center/cover no-repeat url('${slide.image}')`;
+      } else {
+        article.style.setProperty('--slide-bg', slide.background);
+      }
+      article.innerHTML = `<div class="promo"><strong>${slide.title || ''}</strong><span>${slide.subtitle || ''}</span></div>`;
       slidesContainer.appendChild(article);
 
       const dot = document.createElement('button');
@@ -185,66 +190,114 @@
 
     const lang = getLang();
     const models = Array.isArray(window.CUSTOMIZER_MODELS) ? window.CUSTOMIZER_MODELS : [];
-    const searchInput = q('modelSearchInput');
-    const searchResults = q('modelSearchResults');
+    const selection = window.CUSTOMIZER_SELECTION || {};
+    const centerInput = q('centerSearchInput');
+    const cenefaInput = q('cenefaSearchInput');
+    const centerResults = q('centerSearchResults');
+    const cenefaResults = q('cenefaSearchResults');
     const selectedModelNameEl = q('selectedModelName');
 
-    function goToModel(model) {
-      if (!model) return;
+    function norm(text) {
+      return String(text || '').toLowerCase().replace(/[\s_\-]+/g, ' ').trim();
+    }
+
+    function familyKey(model) {
+      const raw = model.carpeta_modelo || model.nombre || '';
+      return norm(raw).replace(/(centro|cenefa|esquina|corner|borde|border)/g, '').trim();
+    }
+
+    function findEsquinaForCenefa(cenefaModel) {
+      if (!cenefaModel) return null;
+      const key = familyKey(cenefaModel);
+      return models.find((m) => (m.categoria || '').toLowerCase() === 'esquina' && familyKey(m) === key) || null;
+    }
+
+    function goToSelection(centerModel, cenefaModel, esquinaModel) {
       const url = new URL(window.location.href);
-      url.searchParams.set('id', String(model.id || ''));
-      url.searchParams.set('name', model.nombre || 'Modelo');
-      url.searchParams.set('img', model.imagen || 'assets/placeholder-tile.svg');
-      url.searchParams.set('cat', (model.categoria || 'centro').toLowerCase());
+      if (centerModel) url.searchParams.set('center_id', String(centerModel.id));
+      else url.searchParams.delete('center_id');
+      if (cenefaModel) url.searchParams.set('cenefa_id', String(cenefaModel.id));
+      else url.searchParams.delete('cenefa_id');
+      if (esquinaModel) url.searchParams.set('esquina_id', String(esquinaModel.id));
+      else url.searchParams.delete('esquina_id');
+
+      const editable = cenefaModel || centerModel;
+      if (editable) {
+        url.searchParams.set('id', String(editable.id));
+        url.searchParams.set('name', editable.nombre || 'Modelo');
+        url.searchParams.set('img', editable.imagen || 'assets/placeholder-tile.svg');
+        url.searchParams.set('cat', (editable.categoria || 'centro').toLowerCase());
+      }
       url.searchParams.set('lang', lang);
       window.location.assign(url.pathname + url.search + url.hash);
     }
 
-    function renderModelSearch(query) {
-      if (!searchResults) return;
-      const text = (query || '').trim().toLowerCase();
+    function renderSelector({ inputEl, resultEl, category, selectedId, onPick }) {
+      if (!inputEl || !resultEl) return;
+      const query = norm(inputEl.value);
       const filtered = models.filter((m) => {
-        if (!text) return true;
-        const name = String(m.nombre || '').toLowerCase();
-        const code = String(m.identificador || '').toLowerCase();
-        return name.includes(text) || code.includes(text);
-      }).slice(0, 24);
+        if ((m.categoria || '').toLowerCase() !== category) return false;
+        if (!query) return true;
+        return norm(m.nombre).includes(query) || norm(m.identificador).includes(query);
+      }).slice(0, 6);
 
       if (!filtered.length) {
-        searchResults.innerHTML = `<div class="model-search-empty">${lang === 'en' ? 'No models found.' : 'No se encontraron modelos.'}</div>`;
+        resultEl.innerHTML = `<div class="model-search-empty">${lang === 'en' ? 'No models found.' : 'No se encontraron modelos.'}</div>`;
         return;
       }
 
-      searchResults.innerHTML = '';
+      resultEl.innerHTML = '';
       filtered.forEach((m) => {
         const item = document.createElement('button');
         item.type = 'button';
         item.className = 'model-search-item';
+        if (String(m.id) === String(selectedId || '')) item.classList.add('active');
         const code = m.identificador ? ` · ${m.identificador}` : '';
         item.textContent = `${m.nombre || 'Modelo'}${code}`;
-        item.addEventListener('click', () => goToModel(m));
-        searchResults.appendChild(item);
+        item.addEventListener('click', () => onPick(m));
+        resultEl.appendChild(item);
       });
     }
 
-    if (searchInput) {
-      searchInput.addEventListener('input', () => renderModelSearch(searchInput.value));
-      searchInput.addEventListener('focus', () => renderModelSearch(searchInput.value));
-      renderModelSearch('');
+    const selectedCenter = models.find((m) => String(m.id) === String(selection.centerId || '')) || null;
+    const selectedCenefa = models.find((m) => String(m.id) === String(selection.cenefaId || '')) || null;
+
+    if (centerInput) {
+      if (selectedCenter) centerInput.value = selectedCenter.nombre || '';
+      centerInput.addEventListener('input', () => renderSelector({
+        inputEl: centerInput,
+        resultEl: centerResults,
+        category: 'centro',
+        selectedId: selectedCenter ? selectedCenter.id : null,
+        onPick: (centerModel) => goToSelection(centerModel, selectedCenefa, selectedCenefa ? findEsquinaForCenefa(selectedCenefa) : null),
+      }));
+      centerInput.addEventListener('focus', () => centerInput.dispatchEvent(new Event('input')));
+      centerInput.dispatchEvent(new Event('input'));
+    }
+
+    if (cenefaInput) {
+      if (selectedCenefa) cenefaInput.value = selectedCenefa.nombre || '';
+      cenefaInput.addEventListener('input', () => renderSelector({
+        inputEl: cenefaInput,
+        resultEl: cenefaResults,
+        category: 'cenefa',
+        selectedId: selectedCenefa ? selectedCenefa.id : null,
+        onPick: (cenefaModel) => goToSelection(selectedCenter, cenefaModel, findEsquinaForCenefa(cenefaModel)),
+      }));
+      cenefaInput.addEventListener('focus', () => cenefaInput.dispatchEvent(new Event('input')));
+      cenefaInput.dispatchEvent(new Event('input'));
     }
 
     const src = (big.dataset.image || '').trim();
+    const centerSrc = (big.dataset.centerImage || '').trim();
+    const cenefaSrc = (big.dataset.cenefaImage || '').trim();
+    const esquinaSrc = (big.dataset.esquinaImage || '').trim();
+    const editTarget = (big.dataset.editTarget || '').toLowerCase();
     if (!src) {
       editor.innerHTML = `<p class="empty-msg">${lang === 'en' ? 'Select a model from the search bar above to start customizing.' : 'Selecciona un modelo en la barra de búsqueda para comenzar a personalizar.'}</p>`;
       big.innerHTML = `<p class="empty-msg">${lang === 'en' ? 'Pattern preview will appear here once a model is selected.' : 'La vista previa aparecerá aquí cuando elijas un modelo.'}</p>`;
       palette.innerHTML = '';
-      const resetBtn = q('resetColor');
-      const undoBtn = q('undoColor');
-      const redoBtn = q('redoColor');
       const downloadBtn = q('download');
-      if (resetBtn) resetBtn.style.display = 'none';
-      if (undoBtn) undoBtn.style.display = 'none';
-      if (redoBtn) redoBtn.style.display = 'none';
       if (downloadBtn) downloadBtn.style.display = 'none';
       if (selectedModelNameEl && !selectedModelNameEl.textContent.trim()) {
         selectedModelNameEl.textContent = lang === 'en' ? 'Choose a model to begin' : 'Elige un modelo para comenzar';
@@ -330,6 +383,10 @@
       ectx.putImageData(currentImageData, 0, 0);
     }
 
+    let centerImg = null;
+    let cenefaImg = null;
+    let esquinaImg = null;
+
     function drawPattern() {
       if (!currentImageData) return;
       const tile = document.createElement('canvas');
@@ -344,25 +401,63 @@
 
       const w = patternCanvas.width;
       const h = patternCanvas.height;
+      pctx.clearRect(0, 0, w, h);
+
+      if (centerSrc && cenefaSrc) {
+        const border = Math.round(Math.min(w, h) * 0.16);
+        const innerX = border;
+        const innerY = border;
+        const innerW = w - border * 2;
+        const innerH = h - border * 2;
+
+        const centerSource = (editTarget === 'centro') ? tile : centerImg;
+        if (centerSource) pctx.drawImage(centerSource, innerX, innerY, innerW, innerH);
+        else {
+          pctx.fillStyle = '#f3f3f3';
+          pctx.fillRect(innerX, innerY, innerW, innerH);
+        }
+
+        const cenefaSource = (editTarget === 'cenefa') ? tile : cenefaImg;
+        if (cenefaSource) {
+          pctx.drawImage(cenefaSource, innerX, 0, innerW, border);
+          pctx.drawImage(cenefaSource, innerX, h - border, innerW, border);
+          pctx.save();
+          pctx.translate(0, innerY + innerH);
+          pctx.rotate(-Math.PI / 2);
+          pctx.drawImage(cenefaSource, 0, 0, innerH, border);
+          pctx.restore();
+          pctx.save();
+          pctx.translate(w, innerY);
+          pctx.rotate(Math.PI / 2);
+          pctx.drawImage(cenefaSource, 0, 0, innerH, border);
+          pctx.restore();
+        }
+
+        const cornerSource = esquinaImg || cenefaSource;
+        if (cornerSource) {
+          pctx.drawImage(cornerSource, 0, 0, border, border);
+          pctx.drawImage(cornerSource, w - border, 0, border, border);
+          pctx.drawImage(cornerSource, 0, h - border, border, border);
+          pctx.drawImage(cornerSource, w - border, h - border, border, border);
+        }
+        return;
+      }
+
       const cols = 12;
       const rows = 8;
       const tw = Math.floor(w / cols);
       const th = Math.floor(h / rows);
-
-      pctx.clearRect(0, 0, w, h);
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           const x = c * tw;
           const y = r * th;
           pctx.save();
           pctx.translate(x + tw / 2, y + th / 2);
-
           let angle = 0;
           if (category === 'centro') {
             const map = [[0, Math.PI / 2], [3 * Math.PI / 2, Math.PI]];
             angle = map[r % 2][c % 2];
           }
-
           pctx.rotate(angle);
           pctx.drawImage(tile, -tw / 2, -th / 2, tw, th);
           pctx.restore();
@@ -661,29 +756,43 @@
       });
     }
 
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      drawImageCover(sctx, img, 600, 600);
-      sourceImageData = sctx.getImageData(0, 0, 600, 600);
-      currentImageData = new ImageData(new Uint8ClampedArray(sourceImageData.data), sourceImageData.width, sourceImageData.height);
-      renderEdit();
-      drawPattern();
-      updateHistoryButtons();
-    };
-    img.onerror = () => {
-      sctx.fillStyle = '#ddd';
-      sctx.fillRect(0, 0, 600, 600);
-      sctx.fillStyle = '#666';
-      sctx.font = '24px Arial';
-      sctx.fillText('PNG no disponible', 180, 300);
-      sourceImageData = sctx.getImageData(0, 0, 600, 600);
-      currentImageData = new ImageData(new Uint8ClampedArray(sourceImageData.data), sourceImageData.width, sourceImageData.height);
-      renderEdit();
-      drawPattern();
-      updateHistoryButtons();
-    };
-    img.src = src;
+    function loadImageSafe(imageSrc) {
+      return new Promise((resolve) => {
+        if (!imageSrc) return resolve(null);
+        const image = new Image();
+        image.crossOrigin = 'anonymous';
+        image.onload = () => resolve(image);
+        image.onerror = () => resolve(null);
+        image.src = imageSrc;
+      });
+    }
+
+    Promise.all([loadImageSafe(centerSrc), loadImageSafe(cenefaSrc), loadImageSafe(esquinaSrc)]).then((loaded) => {
+      [centerImg, cenefaImg, esquinaImg] = loaded;
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        drawImageCover(sctx, img, 600, 600);
+        sourceImageData = sctx.getImageData(0, 0, 600, 600);
+        currentImageData = new ImageData(new Uint8ClampedArray(sourceImageData.data), sourceImageData.width, sourceImageData.height);
+        renderEdit();
+        drawPattern();
+        updateHistoryButtons();
+      };
+      img.onerror = () => {
+        sctx.fillStyle = '#ddd';
+        sctx.fillRect(0, 0, 600, 600);
+        sctx.fillStyle = '#666';
+        sctx.font = '24px Arial';
+        sctx.fillText('PNG no disponible', 180, 300);
+        sourceImageData = sctx.getImageData(0, 0, 600, 600);
+        currentImageData = new ImageData(new Uint8ClampedArray(sourceImageData.data), sourceImageData.width, sourceImageData.height);
+        renderEdit();
+        drawPattern();
+        updateHistoryButtons();
+      };
+      img.src = src;
+    });
   }
 
   function initDarkFooter() {
