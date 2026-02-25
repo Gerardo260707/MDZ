@@ -107,6 +107,22 @@
       .filter((c) => /^#[0-9A-F]{6}$/.test(c.hex) && c.id.length > 0);
   }
 
+
+  function getPdfTemplate() {
+    const fallback = {
+      page: { widthPt: 612, heightPt: 792, canvasWidth: 1275, canvasHeight: 1650 },
+      logo: { src: '', x: 70, y: 48, width: 200, height: 70 },
+      title: { x: 70, y: 150, text: 'Mosaicos Dzununcan' },
+      model: { x: 70, y: 188 },
+      contact: { x: 70, y: 218, text: 'ventas@mosaicosdzununcan.com · (999) 406-9083 · (999) 286-6163' },
+      pattern: { x: 70, y: 260, width: 900, height: 600 },
+      colorsTitle: { x: 70, y: 910, text: 'Colores usados' },
+      colors: { startX: 70, startY: 958, rowGap: 48, colGap: 450, columns: 2 }
+    };
+    const external = window.CUSTOMIZER_PDF_TEMPLATE || {};
+    return { ...fallback, ...external, page: { ...fallback.page, ...(external.page || {}) }, logo: { ...fallback.logo, ...(external.logo || {}) }, title: { ...fallback.title, ...(external.title || {}) }, model: { ...fallback.model, ...(external.model || {}) }, contact: { ...fallback.contact, ...(external.contact || {}) }, pattern: { ...fallback.pattern, ...(external.pattern || {}) }, colorsTitle: { ...fallback.colorsTitle, ...(external.colorsTitle || {}) }, colors: { ...fallback.colors, ...(external.colors || {}) } };
+  }
+
   function hexToRgb(hex) {
     return {
       r: parseInt(hex.slice(1, 3), 16),
@@ -115,7 +131,7 @@
     };
   }
 
-  function buildPdfFromJpeg(jpegDataUrl, pageWidthPt, pageHeightPt) {
+  function buildPdfFromJpeg(jpegDataUrl, pageWidthPt, pageHeightPt, imageWidth, imageHeight) {
     const base64 = jpegDataUrl.split(',')[1] || '';
     const binary = atob(base64);
     const imgBytes = new Uint8Array(binary.length);
@@ -137,7 +153,7 @@
     addObject('<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
     addObject(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidthPt} ${pageHeightPt}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>`);
 
-    const imageHeader = encoder.encode(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width 1240 /Height 1754 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imgBytes.length} >>\nstream\n`);
+    const imageHeader = encoder.encode(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${imageWidth} /Height ${imageHeight} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imgBytes.length} >>\nstream\n`);
     const imageFooter = encoder.encode('\nendstream\nendobj\n');
     objects.push(new Uint8Array([...imageHeader, ...imgBytes, ...imageFooter]));
 
@@ -265,7 +281,10 @@
       if (ta < 10) return;
 
       const next = hexToRgb(colorObj.hex);
-      const toleranceSq = 95 * 95;
+      const fillOptions = window.CUSTOMIZER_FILL || {};
+      const toleranceSq = Math.pow(Number(fillOptions.tolerance || 105), 2);
+      const edgeToleranceSq = Math.pow(Number(fillOptions.edgeTolerance || 50), 2);
+
       visitToken += 1;
       if (visitToken > 0xffffff00) {
         visited.fill(0);
@@ -274,6 +293,8 @@
 
       let head = 0;
       let tail = 0;
+      const startP = sy * w + sx;
+      visited[startP] = visitToken;
       queueX[tail] = sx;
       queueY[tail] = sy;
       tail += 1;
@@ -283,8 +304,6 @@
         const cy = queueY[head];
         head += 1;
         const p = cy * w + cx;
-        if (visited[p] === visitToken) continue;
-        visited[p] = visitToken;
 
         const i = p * 4;
         const da = src[i + 3];
@@ -301,10 +320,31 @@
         dst[i + 2] = next.b;
         dst[i + 3] = da;
 
-        if (cx > 0) { queueX[tail] = cx - 1; queueY[tail] = cy; tail += 1; }
-        if (cx < w - 1) { queueX[tail] = cx + 1; queueY[tail] = cy; tail += 1; }
-        if (cy > 0) { queueX[tail] = cx; queueY[tail] = cy - 1; tail += 1; }
-        if (cy < h - 1) { queueX[tail] = cx; queueY[tail] = cy + 1; tail += 1; }
+        function push(nx, ny) {
+          const np = ny * w + nx;
+          if (visited[np] === visitToken) return;
+          const ni = np * 4;
+          if (src[ni + 3] < 10) return;
+          const ndr = src[ni] - tr;
+          const ndg = src[ni + 1] - tg;
+          const ndb = src[ni + 2] - tb;
+          const ndiffSq = ndr * ndr + ndg * ndg + ndb * ndb;
+          if (ndiffSq > toleranceSq) return;
+          const edr = src[ni] - src[i];
+          const edg = src[ni + 1] - src[i + 1];
+          const edb = src[ni + 2] - src[i + 2];
+          const edgeDiffSq = edr * edr + edg * edg + edb * edb;
+          if (edgeDiffSq > edgeToleranceSq * 4) return;
+          visited[np] = visitToken;
+          queueX[tail] = nx;
+          queueY[tail] = ny;
+          tail += 1;
+        }
+
+        if (cx > 0) push(cx - 1, cy);
+        if (cx < w - 1) push(cx + 1, cy);
+        if (cy > 0) push(cx, cy - 1);
+        if (cy < h - 1) push(cx, cy + 1);
       }
 
       usedColorIds.add(colorObj.id);
@@ -348,29 +388,43 @@
 
     const dl = q('download');
     if (dl) {
-      dl.addEventListener('click', () => {
+      dl.addEventListener('click', async () => {
+        const tpl = getPdfTemplate();
         const reportCanvas = document.createElement('canvas');
-        reportCanvas.width = 1240;
-        reportCanvas.height = 1754;
+        reportCanvas.width = tpl.page.canvasWidth;
+        reportCanvas.height = tpl.page.canvasHeight;
         const rctx = reportCanvas.getContext('2d');
 
         rctx.fillStyle = '#ffffff';
         rctx.fillRect(0, 0, reportCanvas.width, reportCanvas.height);
+
+        if (tpl.logo && tpl.logo.src) {
+          const logo = new Image();
+          logo.src = tpl.logo.src;
+          try {
+            if (logo.decode) await logo.decode();
+            else await new Promise((resolve, reject) => { logo.onload = resolve; logo.onerror = reject; });
+            rctx.drawImage(logo, tpl.logo.x, tpl.logo.y, tpl.logo.width, tpl.logo.height);
+          } catch (e) {
+            // Si falla el logo, se genera PDF sin logo
+          }
+        }
+
         rctx.fillStyle = '#111';
         rctx.font = '700 42px Arial';
-        rctx.fillText('Mosaicos Dzununcan', 70, 90);
+        rctx.fillText(tpl.title.text, tpl.title.x, tpl.title.y);
         rctx.font = '24px Arial';
         rctx.fillStyle = '#333';
-        rctx.fillText(modelName, 70, 130);
-        rctx.fillText('ventas@mosaicosdzununcan.com · (999) 406-9083 · (999) 286-6163', 70, 166);
+        rctx.fillText(modelName, tpl.model.x, tpl.model.y);
+        rctx.fillText(tpl.contact.text, tpl.contact.x, tpl.contact.y);
 
         rctx.strokeStyle = '#bbb';
-        rctx.strokeRect(70, 210, 900, 900 * (8 / 12));
-        rctx.drawImage(patternCanvas, 70, 210, 900, 900 * (8 / 12));
+        rctx.strokeRect(tpl.pattern.x, tpl.pattern.y, tpl.pattern.width, tpl.pattern.height);
+        rctx.drawImage(patternCanvas, tpl.pattern.x, tpl.pattern.y, tpl.pattern.width, tpl.pattern.height);
 
         rctx.fillStyle = '#111';
         rctx.font = '700 28px Arial';
-        rctx.fillText('Colores usados', 70, 930);
+        rctx.fillText(tpl.colorsTitle.text, tpl.colorsTitle.x, tpl.colorsTitle.y);
 
         const selectedIds = Array.from(usedColorIds.size ? usedColorIds : [selected.id]);
         const byId = new Map(colors.map((c) => [c.id, c]));
@@ -379,10 +433,10 @@
         selectedIds.forEach((id, idx) => {
           const item = byId.get(id);
           if (!item) return;
-          const col = idx % 2;
-          const row = Math.floor(idx / 2);
-          const x = 70 + col * 450;
-          const y = 980 + row * 48;
+          const col = idx % tpl.colors.columns;
+          const row = Math.floor(idx / tpl.colors.columns);
+          const x = tpl.colors.startX + col * tpl.colors.colGap;
+          const y = tpl.colors.startY + row * tpl.colors.rowGap;
           rctx.fillStyle = item.hex;
           rctx.fillRect(x, y - 16, 28, 28);
           rctx.strokeStyle = '#333';
@@ -392,7 +446,7 @@
         });
 
         const jpg = reportCanvas.toDataURL('image/jpeg', 0.92);
-        const blob = buildPdfFromJpeg(jpg, 595, 842);
+        const blob = buildPdfFromJpeg(jpg, tpl.page.widthPt, tpl.page.heightPt, reportCanvas.width, reportCanvas.height);
         const fileName = `${modelName.replace(/[^a-z0-9\-_]+/gi, '_').replace(/^_+|_+$/g, '') || 'modelo'}_personalizado.pdf`;
 
         const url = URL.createObjectURL(blob);

@@ -75,3 +75,37 @@ Y dentro de cada grupo, orden alfabético por nombre.
 2. Ajusta credenciales.
 3. Crea tabla `mosaicos` (puedes usar `config/mosaicos_schema.sql`).
 4. Abre `mosaicos.php` y se listarán automáticamente.
+
+## 10) Ajustes finos del personalizador
+### Relleno por zona (pixel a pixel)
+Puedes ajustar tolerancia del flood-fill creando una variable global antes de `site-pages.js`:
+
+```html
+<script>
+window.CUSTOMIZER_FILL = {
+  tolerance: 105,      // similitud respecto al color semilla
+  edgeTolerance: 50    // qué tanto salto de borde permite entre píxeles vecinos
+};
+</script>
+```
+
+### Paleta editable con identificadores únicos
+Edita `customizer-colors.js` con este formato:
+
+```js
+{ id: 'R57', hex: '#9B3536', name: 'Rojo barro' }
+```
+
+### Plantilla del PDF (tamaño carta y layout editable)
+Edita `customizer-pdf-template.js` para mover elementos, cambiar textos y agregar logo.
+- Tamaño carta: `page.widthPt = 612`, `page.heightPt = 792`
+- Para logo usa ruta en `logo.src` (ejemplo: `assets/logo.png`).
+
+### Imagen de franja de mosaicos (línea superior)
+La franja usa la variable CSS:
+- `--mosaic-strip-image` en `assets.css`
+
+Por defecto apunta a:
+- `assets/strip-mosaicos-linea.svg`
+
+Puedes reemplazar ese archivo o cambiar la ruta en CSS.

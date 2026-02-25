@@ -60,6 +60,7 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
 
   <script src="app.js"></script>
   <script src="customizer-colors.js"></script>
+  <script src="customizer-pdf-template.js"></script>
   <script src="site-pages.js"></script>
 </body>
 </html>
