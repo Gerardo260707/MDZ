@@ -239,8 +239,12 @@
       big.innerHTML = `<p class="empty-msg">${lang === 'en' ? 'Pattern preview will appear here once a model is selected.' : 'La vista previa aparecerá aquí cuando elijas un modelo.'}</p>`;
       palette.innerHTML = '';
       const resetBtn = q('resetColor');
+      const undoBtn = q('undoColor');
+      const redoBtn = q('redoColor');
       const downloadBtn = q('download');
       if (resetBtn) resetBtn.style.display = 'none';
+      if (undoBtn) undoBtn.style.display = 'none';
+      if (redoBtn) redoBtn.style.display = 'none';
       if (downloadBtn) downloadBtn.style.display = 'none';
       if (selectedModelNameEl && !selectedModelNameEl.textContent.trim()) {
         selectedModelNameEl.textContent = lang === 'en' ? 'Choose a model to begin' : 'Elige un modelo para comenzar';
@@ -255,6 +259,19 @@
 
     let selected = colors[0];
     const usedColorIds = new Set();
+    const undoStack = [];
+    const redoStack = [];
+
+    function cloneImageData(imageData) {
+      return new ImageData(new Uint8ClampedArray(imageData.data), imageData.width, imageData.height);
+    }
+
+    function updateHistoryButtons() {
+      const undoBtn = q('undoColor');
+      const redoBtn = q('redoColor');
+      if (undoBtn) undoBtn.disabled = undoStack.length === 0;
+      if (redoBtn) redoBtn.disabled = redoStack.length === 0;
+    }
 
     editor.innerHTML = '<canvas id="editCanvas" class="vector-canvas" width="600" height="600"></canvas>';
     big.innerHTML = '<canvas id="patternCanvas" class="pattern-canvas" width="1200" height="800"></canvas>';
@@ -478,13 +495,21 @@
       usedColorIds.add(colorObj.id);
       renderEdit();
       drawPattern();
+      updateHistoryButtons();
+      updateHistoryButtons();
     }
 
     editCanvas.addEventListener('click', (ev) => {
       const rect = editCanvas.getBoundingClientRect();
       const x = (ev.clientX - rect.left) * (editCanvas.width / rect.width);
       const y = (ev.clientY - rect.top) * (editCanvas.height / rect.height);
+      if (currentImageData) {
+        undoStack.push(cloneImageData(currentImageData));
+        if (undoStack.length > 40) undoStack.shift();
+        redoStack.length = 0;
+      }
       floodFillAt(x, y, selected);
+      updateHistoryButtons();
     });
 
     colors.forEach((c, idx) => {
@@ -507,10 +532,37 @@
     if (resetBtn) {
       resetBtn.addEventListener('click', () => {
         if (!sourceImageData) return;
-        currentImageData = new ImageData(new Uint8ClampedArray(sourceImageData.data), sourceImageData.width, sourceImageData.height);
+        currentImageData = cloneImageData(sourceImageData);
+        undoStack.length = 0;
+        redoStack.length = 0;
         usedColorIds.clear();
         renderEdit();
         drawPattern();
+        updateHistoryButtons();
+      });
+    }
+
+    const undoBtn = q('undoColor');
+    if (undoBtn) {
+      undoBtn.addEventListener('click', () => {
+        if (!undoStack.length || !currentImageData) return;
+        redoStack.push(cloneImageData(currentImageData));
+        currentImageData = undoStack.pop();
+        renderEdit();
+        drawPattern();
+        updateHistoryButtons();
+      });
+    }
+
+    const redoBtn = q('redoColor');
+    if (redoBtn) {
+      redoBtn.addEventListener('click', () => {
+        if (!redoStack.length || !currentImageData) return;
+        undoStack.push(cloneImageData(currentImageData));
+        currentImageData = redoStack.pop();
+        renderEdit();
+        drawPattern();
+        updateHistoryButtons();
       });
     }
 
@@ -596,6 +648,7 @@
       currentImageData = new ImageData(new Uint8ClampedArray(sourceImageData.data), sourceImageData.width, sourceImageData.height);
       renderEdit();
       drawPattern();
+      updateHistoryButtons();
     };
     img.onerror = () => {
       sctx.fillStyle = '#ddd';
@@ -607,6 +660,7 @@
       currentImageData = new ImageData(new Uint8ClampedArray(sourceImageData.data), sourceImageData.width, sourceImageData.height);
       renderEdit();
       drawPattern();
+      updateHistoryButtons();
     };
     img.src = src;
   }

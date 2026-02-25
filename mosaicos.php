@@ -187,6 +187,11 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
         </div>
       </div>
       <aside class="quote-box">
+        <div class="quote-top">
+          <h4 data-i18n="custom_panel_title">Personalizar Diseño</h4>
+          <p data-i18n="custom_panel_desc">Cambie los colores del mosaico de su elección.</p>
+          <a class="action quote-top-btn" data-keep-lang href="personalizar.php" data-i18n="custom_panel_cta">Pruebe el simulador de colores ahora</a>
+        </div>
         <h3 data-i18n="quote_title">Solicite una Cotización</h3>
         <p data-i18n="quote_desc">Llene el siguiente formulario, comente los productos que desea y a la brevedad uno de nuestros agentes de venta se comunicará con usted.</p>
         <form class="quote-form" action="mailto:ventas@mosaicosdzununcan.com" method="post" enctype="text/plain">

@@ -149,14 +149,12 @@ $selectedCategory = $selected['categoria'] ?? 'centro';
       <h2 data-i18n="custom_title">Personalizar Diseño</h2>
       <p><strong id="selectedModelName"><?= htmlspecialchars($selectedName, ENT_QUOTES) ?></strong></p>
       <div class="model-search" id="modelSearchWrap">
-        <label for="modelSearchInput" data-i18n="custom_model_search_label">Buscar modelo para personalizar</label>
         <input
           id="modelSearchInput"
           type="search"
           autocomplete="off"
-          data-placeholder-es="Escribe nombre o código del modelo..."
-          data-placeholder-en="Type model name or code..."
-          placeholder="<?= $lang === 'en' ? 'Type model name or code...' : 'Escribe nombre o código del modelo...' ?>"
+          data-i18n-placeholder="custom_model_search_input"
+          placeholder="Escriba el nombre del modelo"
         />
         <div class="model-search-results" id="modelSearchResults" role="listbox" aria-label="Resultados"></div>
       </div>
@@ -171,7 +169,11 @@ $selectedCategory = $selected['categoria'] ?? 'centro';
         </div>
         <div>
           <div class="palette" id="palette"></div>
-          <button id="resetColor" class="action" style="margin-top:8px" data-i18n="custom_reset">Imagen original</button>
+          <div class="custom-controls">
+            <button id="undoColor" class="action control-btn" type="button" data-i18n-title="custom_undo" title="Regresar color" aria-label="Regresar color">↶</button>
+            <button id="redoColor" class="action control-btn" type="button" data-i18n-title="custom_redo" title="Adelante color" aria-label="Adelante color">↷</button>
+            <button id="resetColor" class="action control-btn" type="button" data-i18n-title="custom_home" title="Imagen original" aria-label="Imagen original">⌂</button>
+          </div>
         </div>
         <div>
           <p data-i18n="custom_step2">Vista principal del patrón personalizado.</p>
