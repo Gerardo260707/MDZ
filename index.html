@@ -10,7 +10,7 @@
   <main class="site">
     <header class="top">
       <div class="brand-row">
-        <div class="logo"><small>// Mosaicos</small>Dzununcán</div>
+        <div class="logo"><img src="assets/logo-dzununcan.svg" alt="Mosaicos Dzununcán" /></div>
         <div class="langs"><span data-i18n="lang_label">Idioma</span> ▪
           <button class="lang-btn" data-set-lang="es" data-lang-active="es">🇲🇽</button>
           <button class="lang-btn" data-set-lang="en" data-lang-active="en">🇺🇸</button>
@@ -23,7 +23,7 @@
         <a data-keep-lang href="mantenimiento.html" data-i18n="nav_maintenance">Mantenimiento</a>
         <a data-keep-lang href="instalacion.html" data-i18n="nav_installation">Instalación</a>
         <a data-keep-lang href="contacto.html" data-i18n="nav_contact">Contacto</a>
-        <a data-keep-lang class="btn" href="pago.html" data-i18n="nav_pay">Pago Clip</a>
+        
       </nav>
     </header>
 
@@ -31,17 +31,31 @@
     <section class="hero" aria-label="Carrusel de promociones"><div class="slides" id="slides"></div></section>
     <div class="dots" id="dots"></div>
 
-    <section>
-      <h1>Mosaicos Dzununcan</h1>
-      <p data-i18n="home_intro">Ahora cada menú abre su propio archivo independiente.</p>
-      <div class="cards" id="featureCards"></div>
-      <p class="note" data-i18n="home_note">Los 3 cuadros cargan imágenes desde assets/cuadros/.</p>
+    <section class="panel decorated-layout home-sales-layout">
+      <div class="mosaic-grid-wrap">
+        <h1>Mosaicos Dzununcan</h1>
+        <p data-i18n="home_intro">Ahora cada menú abre su propio archivo independiente.</p>
+        <div class="cards" id="featureCards"></div>
+        <p class="note" data-i18n="home_note">Los 3 cuadros cargan imágenes desde assets/cuadros/.</p>
+      </div>
+      <aside class="quote-box">
+        <h3 data-i18n="quote_title">Solicite una Cotización</h3>
+        <p data-i18n="quote_desc">Llene el siguiente formulario, comente los productos que desea y a la brevedad uno de nuestros agentes de venta se comunicará con usted.</p>
+        <form class="quote-form" action="mailto:ventas@mosaicosdzununcan.com" method="post" enctype="text/plain">
+          <input type="text" name="nombre" data-i18n-placeholder="quote_name" placeholder="Nombre" required />
+          <input type="email" name="email" data-i18n-placeholder="quote_email" placeholder="Email" required />
+          <input type="tel" name="telefono" data-i18n-placeholder="quote_phone" placeholder="Teléfono" />
+          <textarea name="comentarios" rows="8" data-i18n-placeholder="quote_comments" placeholder="Comentarios" required></textarea>
+          <button type="submit" class="action quote-submit" data-i18n="quote_send">Enviar</button>
+        </form>
+      </aside>
     </section>
 
     <footer data-i18n="home_footer">Base preparada para migrar a PHP + base de datos cuando compartas tu estructura.</footer>
   </main>
 
   <script src="app.js"></script>
+  <script src="config/home-carousel.js"></script>
   <script src="site-pages.js"></script>
 </body>
 </html>

@@ -95,14 +95,7 @@ if (empty($items)) {
             if ($slug === '') {
                 $slug = 'modelo-' . $idx;
             }
-            $targetRel = 'assets/modelos/' . $slug . '.png';
-            $targetAbs = __DIR__ . '/' . $targetRel;
-            if (!is_dir(dirname($targetAbs))) {
-                mkdir(dirname($targetAbs), 0777, true);
-            }
-            if (!file_exists($targetAbs)) {
-                @copy($src, $targetAbs);
-            }
+            $targetRel = 'Tapiz/' . rawurlencode($folder) . '/' . rawurlencode(basename($src));
 
             $categoria = 'centro';
             if (isset($catCounters[$categoria])) {
@@ -146,7 +139,7 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
   <main class="site">
     <header class="top">
       <div class="brand-row">
-        <div class="logo"><small>// Mosaicos</small>Dzununcán</div>
+        <div class="logo"><img src="assets/logo-dzununcan.svg" alt="Mosaicos Dzununcán" /></div>
         <div class="langs"><span data-i18n="lang_label">Idioma</span> ▪
           <button class="lang-btn" data-set-lang="es" data-lang-active="es">🇲🇽</button>
           <button class="lang-btn" data-set-lang="en" data-lang-active="en">🇺🇸</button>
@@ -159,7 +152,7 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
         <a data-keep-lang href="mantenimiento.html" data-i18n="nav_maintenance">Mantenimiento</a>
         <a data-keep-lang href="instalacion.html" data-i18n="nav_installation">Instalación</a>
         <a data-keep-lang href="contacto.html" data-i18n="nav_contact">Contacto</a>
-        <a data-keep-lang class="btn" href="pago.html" data-i18n="nav_pay">Pago Clip</a>
+        
       </nav>
     </header>
     <div class="mosaic-strip"></div>
@@ -169,21 +162,39 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
       <p data-i18n="decorated_desc">Seleccione un modelo para ver su ficha. Puede personalizar colores en el simulador.</p>
     </section>
 
-    <section class="panel">
-      <div class="mosaic-grid">
-        <?php if (!empty($items)): ?>
-          <?php foreach ($items as $m): ?>
-            <article class="mosaic-card">
-              <img src="<?= htmlspecialchars($m['imagen'] ?: 'assets/placeholder-tile.svg', ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" />
-              <p class="code"><?= htmlspecialchars(strtoupper($m['categoria']), ENT_QUOTES) ?> · <?= htmlspecialchars($m['identificador'], ENT_QUOTES) ?></p>
-              <p class="name"><?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?></p>
-              <a class="action" href="personalizar.php?id=<?= urlencode((string)$m['id']) ?>&lang=<?= $lang ?>&img=<?= urlencode((string)($m['imagen'] ?: "assets/placeholder-tile.svg")) ?>&name=<?= urlencode((string)$m['nombre']) ?>&cat=<?= urlencode((string)$m['categoria']) ?>" data-i18n="btn_customize">Personalizar</a>
-            </article>
-          <?php endforeach; ?>
-        <?php else: ?>
-          <p class="empty-msg">Aún no hay modelos cargados en <strong>Tapiz/</strong>. Agrega carpetas con PNG y ejecuta <code>python3 scripts/import_tapiz.py</code>.</p>
-        <?php endif; ?>
+    <section class="panel decorated-layout">
+      <div class="mosaic-grid-wrap">
+        <div class="mosaic-grid mosaic-grid-small">
+          <?php if (!empty($items)): ?>
+            <?php foreach ($items as $m): ?>
+              <article class="mosaic-card">
+                <img src="<?= htmlspecialchars($m['imagen'] ?: 'assets/placeholder-tile.svg', ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" />
+                <p class="code"><?= htmlspecialchars(strtoupper($m['categoria']), ENT_QUOTES) ?> · <?= htmlspecialchars($m['identificador'], ENT_QUOTES) ?></p>
+                <p class="name"><?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?></p>
+                <a class="action" href="personalizar.php?picker=single&id=<?= urlencode((string)$m['id']) ?>&lang=<?= $lang ?>&img=<?= urlencode((string)($m['imagen'] ?: "assets/placeholder-tile.svg")) ?>&name=<?= urlencode((string)$m['nombre']) ?>&cat=<?= urlencode((string)$m['categoria']) ?>" data-i18n="btn_customize">Personalizar</a>
+              </article>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <p class="empty-msg">Aún no hay modelos cargados en <strong>Tapiz/</strong>. Agrega carpetas con PNG y ejecuta <code>python3 scripts/import_tapiz.py</code>.</p>
+          <?php endif; ?>
+        </div>
       </div>
+      <aside class="quote-box">
+        <div class="quote-top">
+          <h4 data-i18n="custom_panel_title">Personalizar Diseño</h4>
+          <p data-i18n="custom_panel_desc">Cambie los colores del mosaico de su elección.</p>
+          <a class="action quote-top-btn" data-keep-lang href="personalizar.php" data-i18n="custom_panel_cta">Pruebe el simulador de colores ahora</a>
+        </div>
+        <h3 data-i18n="quote_title">Solicite una Cotización</h3>
+        <p data-i18n="quote_desc">Llene el siguiente formulario, comente los productos que desea y a la brevedad uno de nuestros agentes de venta se comunicará con usted.</p>
+        <form class="quote-form" action="mailto:ventas@mosaicosdzununcan.com" method="post" enctype="text/plain">
+          <input type="text" name="nombre" data-i18n-placeholder="quote_name" placeholder="Nombre" required />
+          <input type="email" name="email" data-i18n-placeholder="quote_email" placeholder="Email" required />
+          <input type="tel" name="telefono" data-i18n-placeholder="quote_phone" placeholder="Teléfono" />
+          <textarea name="comentarios" rows="8" data-i18n-placeholder="quote_comments" placeholder="Comentarios" required></textarea>
+          <button type="submit" class="action quote-submit" data-i18n="quote_send">Enviar</button>
+        </form>
+      </aside>
     </section>
   </main>
   <script src="app.js"></script>
