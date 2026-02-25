@@ -139,7 +139,7 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
   <main class="site">
     <header class="top">
       <div class="brand-row">
-        <div class="logo"><img src="assets/logo-dzununcan.svg" alt="Mosaicos Dzununcán" /></div>
+        <div class="logo"><img src="assets/logo-dzununcan.svg" alt="Mosaicos Dzununcan" /></div>
         <div class="langs"><span data-i18n="lang_label">Idioma</span> ▪
           <button class="lang-btn" data-set-lang="es" data-lang-active="es">🇲🇽</button>
           <button class="lang-btn" data-set-lang="en" data-lang-active="en">🇺🇸</button>
