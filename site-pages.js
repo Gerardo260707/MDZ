@@ -30,11 +30,12 @@
     ];
 
     FEATURE_CARDS.forEach((card) => {
-      const article = document.createElement('article');
-      article.className = 'tile-card';
+      const a = document.createElement('a');
+      a.className = 'tile-card';
       const href = `${card.href}${card.href.includes('?') ? '&' : '?'}lang=${lang}`;
-      article.innerHTML = `<img src="assets/cuadros/${card.file}" alt="${card.label}" onerror="this.src='assets/placeholder-tile.svg'" /><span>${card.label}</span><a class="action cta-pill home-tile-btn" href="${href}">${card.button || card.label}</a>`;
-      cardsContainer.appendChild(article);
+      a.href = href;
+      a.innerHTML = `<img src="assets/cuadros/${card.file}" alt="${card.label}" onerror="this.src='assets/placeholder-tile.svg'" /><span>${card.label}</span>`;
+      cardsContainer.appendChild(a);
     });
 
     let activeIndex = 0;
@@ -521,8 +522,8 @@
         const th = Math.floor(h / rows);
 
         const centerSource = centerSrc ? tile : null;
-        const cenefaSource = cenefaEditedCanvas || cenefaImg;
-        const cornerSource = esquinaEditedCanvas || esquinaImg || cenefaSource;
+        const cenefaSource = (editTarget === 'cenefa') ? tile : (cenefaEditedCanvas || cenefaImg || tile);
+        const cornerSource = (editTarget === 'esquina') ? tile : (esquinaEditedCanvas || esquinaImg || cenefaSource);
 
         const centerMap = [[0, Math.PI / 2], [3 * Math.PI / 2, Math.PI]];
 
@@ -530,8 +531,8 @@
         pctx.fillRect(0, 0, w, h);
 
         if (centerSource) {
-          for (let r = 1; r < rows - 1; r++) {
-            for (let c = 1; c < cols - 1; c++) {
+          for (let r = 1; r <= 6; r++) {
+            for (let c = 1; c <= 9; c++) {
               drawTile(pctx, centerSource, r, c, tw, th, centerMap[r % 2][c % 2]);
             }
           }
@@ -1187,8 +1188,8 @@
 
       const centerMap = [[0, Math.PI / 2], [3 * Math.PI / 2, Math.PI]];
       if (centerImg) {
-        for (let r = 1; r < rows - 1; r++) {
-          for (let c = 1; c < cols - 1; c++) {
+        for (let r = 1; r <= 6; r++) {
+          for (let c = 1; c <= 9; c++) {
             drawTile(pctx, centerImg, r, c, tw, th, centerMap[r % 2][c % 2]);
           }
         }

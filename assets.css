@@ -29,12 +29,11 @@ p { margin:0; font-size:15px; line-height:1.5; color:#333; }
 .panel { border-top:1px solid #e2e2e2; }
 .grid { display:grid; gap:16px; }
 .cards { display:flex; justify-content: space-around; margin-top: 34px; gap: 18px; }
-.tile-card { color:inherit; text-align:center; }
+.tile-card { color:inherit; text-align:center; text-decoration:none; display:flex; }
 .tile-card img { width:110px; height:110px; object-fit:cover; border:1px solid #bbb; display:block; margin:0 auto 4px; }
 .tile-card span { font-size: 13px; color:#444; }
 
 .tile-card{display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px 6px}
-.home-tile-btn{padding:6px 10px !important;font-size:11px !important;box-shadow:0 6px 14px rgba(241,104,0,.24)}
 .tapetes-cta-wrap{padding:20px 28px}
 
 .hero { border:1px solid #d4d4d4; margin:4px; height:330px; overflow:hidden; position:relative; }
@@ -141,3 +140,6 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .tapete-meta{padding-top:10px}
 .tapete-meta h3{margin:0 0 6px;font-size:26px}
 .tapete-meta p{font-size:14px}
+
+.tapete-meta-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.tapete-meta-head .cta-pill{padding:6px 12px !important;font-size:12px !important}

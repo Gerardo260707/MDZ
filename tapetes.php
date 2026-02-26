@@ -220,7 +220,25 @@ $tapetes = carga_tapetes_csv(__DIR__ . '/config/tapetes.csv', $models);
               data-cenefa-image="<?= htmlspecialchars($tapete['cenefa']['imagen'] ?? '', ENT_QUOTES) ?>"
               data-esquina-image="<?= htmlspecialchars($tapete['esquina']['imagen'] ?? '', ENT_QUOTES) ?>"></canvas>
             <div class="tapete-meta">
-              <h3><?= htmlspecialchars($tapete['nombre'], ENT_QUOTES) ?></h3>
+              <?php
+                $centerId = (string)($tapete['centro']['id'] ?? '');
+                $cenefaId = (string)($tapete['cenefa']['id'] ?? '');
+                $esquinaId = (string)($tapete['esquina']['id'] ?? '');
+                $params = [
+                  'picker' => 'dual',
+                  'lang' => $lang,
+                  'name' => (string)$tapete['nombre'],
+                  'cat' => 'centro',
+                ];
+                if ($centerId !== '') $params['center_id'] = $centerId;
+                if ($cenefaId !== '') $params['cenefa_id'] = $cenefaId;
+                if ($esquinaId !== '') $params['esquina_id'] = $esquinaId;
+                $customizeUrl = 'personalizar.php?' . http_build_query($params);
+              ?>
+              <div class="tapete-meta-head">
+                <h3><?= htmlspecialchars($tapete['nombre'], ENT_QUOTES) ?></h3>
+                <a class="action cta-pill" href="<?= htmlspecialchars($customizeUrl, ENT_QUOTES) ?>">Personalizar tapete</a>
+              </div>
               <p>
                 Centro: <strong><?= htmlspecialchars($tapete['centro']['nombre'] ?? '—', ENT_QUOTES) ?></strong> ·
                 Cenefa: <strong><?= htmlspecialchars($tapete['cenefa']['nombre'] ?? '—', ENT_QUOTES) ?></strong> ·
