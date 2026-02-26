@@ -25,7 +25,7 @@ function carpeta_modelo_de_item(array $item): string {
     $folder = trim((string)($item['carpeta_modelo'] ?? ''));
     if ($folder !== '') return strtolower($folder);
     $img = trim((string)($item['imagen'] ?? ''));
-    if (preg_match('#(?:^|/)Tapiz/([^/]+)/#i', $img, $m)) {
+    if (preg_match('#(?:^|/)(?:Tapiz|Tapete|Tapetes)/([^/]+)/#i', $img, $m)) {
         return strtolower(rawurldecode($m[1]));
     }
     return '';
@@ -99,6 +99,50 @@ function normaliza_item(array $m): array {
     ];
 }
 
+
+function carga_modelos_tapete(): array {
+    $items = [];
+    $bases = [__DIR__ . '/Tapete', __DIR__ . '/Tapetes'];
+    $idx = 1;
+
+    foreach ($bases as $baseDir) {
+        if (!is_dir($baseDir)) continue;
+        $folders = array_filter(scandir($baseDir) ?: [], static fn($n) => $n !== '.' && $n !== '..' && is_dir($baseDir . '/' . $n));
+        sort($folders, SORT_NATURAL | SORT_FLAG_CASE);
+
+        $baseName = basename($baseDir);
+        foreach ($folders as $folder) {
+            $pngs = glob($baseDir . '/' . $folder . '/*.png');
+            if (!$pngs) continue;
+            sort($pngs, SORT_NATURAL | SORT_FLAG_CASE);
+            $src = $pngs[0];
+            $items[] = normaliza_item([
+                'id' => $idx,
+                'nombre' => ucwords(str_replace(['_', '-'], ' ', $folder)),
+                'imagen' => $baseName . '/' . rawurlencode($folder) . '/' . rawurlencode(basename($src)),
+                'categoria' => '',
+                'identificador' => strtoupper($folder),
+                'carpeta_modelo' => $folder,
+            ]);
+            $idx++;
+        }
+    }
+
+    $catMap = carga_mapa_categorias_csv(__DIR__ . '/config/categorias.csv');
+    if (!empty($catMap)) {
+        foreach ($items as &$item) {
+            $folder = carpeta_modelo_de_item($item);
+            if ($folder !== '' && array_key_exists($folder, $catMap)) {
+                $item['categoria'] = $catMap[$folder];
+            }
+        }
+        unset($item);
+    }
+
+    usort($items, static fn($a, $b) => strcasecmp((string)$a['nombre'], (string)$b['nombre']));
+    return $items;
+}
+
 function carga_modelos(): array {
     $items = [];
     $configFile = __DIR__ . '/config/database.php';
@@ -170,7 +214,8 @@ function carga_modelos(): array {
 
 $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
 $pickerMode = (($_GET['picker'] ?? 'dual') === 'single') ? 'single' : 'dual';
-$models = carga_modelos();
+$modelSource = strtolower(trim((string)($_GET['source'] ?? '')));
+$models = ($modelSource === 'tapete') ? carga_modelos_tapete() : carga_modelos();
 $conexionesCsv = carga_conexiones_cenefa_esquina(__DIR__ . '/config/conexiones_cenefa_esquina.csv');
 $modelById = [];
 foreach ($models as $item) $modelById[(string)$item['id']] = $item;

@@ -1070,18 +1070,21 @@
       host.appendChild(c);
       const cx = c.getContext('2d');
 
-      let sourceData = null;
-      let currentData = null;
+      function getEditor() {
+        return type === 'cenefa' ? cenefaEditor : esquinaEditor;
+      }
 
       function renderSquare() {
-        if (!currentData) return;
-        cx.putImageData(currentData, 0, 0);
-        if (type === 'cenefa' && cenefaEditor) cenefaEditor.current = cloneImageData(currentData);
-        if (type === 'esquina' && esquinaEditor) esquinaEditor.current = cloneImageData(currentData);
+        const editorState = getEditor();
+        if (!editorState || !editorState.current) return;
+        cx.putImageData(editorState.current, 0, 0);
       }
 
       function floodFillSquare(x, y) {
-        if (!selected || !sourceData || !currentData) return;
+        const editorState = getEditor();
+        if (!selected || !editorState || !editorState.source || !editorState.current) return;
+        const sourceData = editorState.source;
+        const currentData = editorState.current;
         const w = sourceData.width;
         const h = sourceData.height;
         const sx = Math.max(0, Math.min(w - 1, Math.floor(x)));
@@ -1144,6 +1147,7 @@
           }
         }
         if (!painted) return;
+        editorState.current = currentData;
         commitMutation(previousSnapshot);
         renderSquare();
 
@@ -1160,8 +1164,8 @@
       loadImageSafe(imageSrc).then((img) => {
         if (!img) return;
         drawImageCover(cx, img, 300, 300);
-        sourceData = cx.getImageData(0, 0, 300, 300);
-        currentData = new ImageData(new Uint8ClampedArray(sourceData.data), sourceData.width, sourceData.height);
+        const sourceData = cx.getImageData(0, 0, 300, 300);
+        const currentData = new ImageData(new Uint8ClampedArray(sourceData.data), sourceData.width, sourceData.height);
         if (type === 'cenefa') cenefaEditor = { canvas: c, ctx: cx, source: cloneImageData(sourceData), current: cloneImageData(currentData) };
         if (type === 'esquina') esquinaEditor = { canvas: c, ctx: cx, source: cloneImageData(sourceData), current: cloneImageData(currentData) };
         renderSquare();

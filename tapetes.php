@@ -170,7 +170,7 @@ $tapetes = carga_tapetes_csv(__DIR__ . '/config/tapetes.csv', $models);
     <section>
       <h2>Tapetes</h2>
       <p>Defina sus tapetes en <code>config/tapetes.csv</code> con el formato: <strong>Nombre_Tapete,Centro,Cenefa,Esquina</strong>.</p>
-      <a class="action cta-pill" data-keep-lang href="personalizar.php">Personalizar tapete</a>
+      <a class="action cta-pill" data-keep-lang href="personalizar.php?picker=dual&amp;source=tapete">Personalizar tapete</a>
     </section>
 
     <section class="panel tapetes-list">
@@ -191,6 +191,7 @@ $tapetes = carga_tapetes_csv(__DIR__ . '/config/tapetes.csv', $models);
                 $esquinaId = (string)($tapete['esquina']['id'] ?? '');
                 $params = [
                   'picker' => 'dual',
+                  'source' => 'tapete',
                   'lang' => $lang,
                   'name' => (string)$tapete['nombre'],
                   'cat' => 'centro',
