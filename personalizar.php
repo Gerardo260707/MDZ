@@ -207,7 +207,9 @@ if ($selectedCenefa && !$selectedEsquina) {
     }
 }
 
-$editable = $selectedCenter ?: $selectedCenefa;
+$editable = ($pickerMode === 'dual')
+    ? $selectedCenter
+    : ($selectedCenter ?: $selectedCenefa ?: $selectedEsquina);
 if (!$editable && isset($_GET['img']) && (string)$_GET['img'] !== '') {
     $editable = [
         'id' => (int)($_GET['id'] ?? 0),

@@ -332,7 +332,7 @@
     const cenefaSrc = (big.dataset.cenefaImage || '').trim();
     const esquinaSrc = (big.dataset.esquinaImage || '').trim();
     const editTarget = (big.dataset.editTarget || '').toLowerCase();
-    if (!src) {
+    if (!src && !cenefaSrc && !esquinaSrc) {
       editor.innerHTML = `<p class="empty-msg">${lang === 'en' ? 'Select a model from the search bar above to start customizing.' : 'Selecciona un modelo en la barra de búsqueda para comenzar a personalizar.'}</p>`;
       big.innerHTML = `<p class="empty-msg">${lang === 'en' ? 'Pattern preview will appear here once a model is selected.' : 'La vista previa aparecerá aquí cuando elijas un modelo.'}</p>`;
       palette.innerHTML = '';
@@ -427,6 +427,51 @@
     let esquinaImg = null;
     let cenefaEditedCanvas = null;
     let esquinaEditedCanvas = null;
+    let cenefaEditor = null;
+    let esquinaEditor = null;
+
+    function snapshotState() {
+      return {
+        main: currentImageData ? cloneImageData(currentImageData) : null,
+        cenefa: cenefaEditor && cenefaEditor.current ? cloneImageData(cenefaEditor.current) : null,
+        esquina: esquinaEditor && esquinaEditor.current ? cloneImageData(esquinaEditor.current) : null,
+      };
+    }
+
+    function applySnapshot(snapshot) {
+      if (!snapshot) return;
+      if (snapshot.main) {
+        currentImageData = cloneImageData(snapshot.main);
+        renderEdit();
+      }
+      if (cenefaEditor && snapshot.cenefa) {
+        cenefaEditor.current = cloneImageData(snapshot.cenefa);
+        cenefaEditor.ctx.putImageData(cenefaEditor.current, 0, 0);
+        const c = document.createElement('canvas');
+        c.width = cenefaEditor.canvas.width;
+        c.height = cenefaEditor.canvas.height;
+        c.getContext('2d').putImageData(cenefaEditor.current, 0, 0);
+        cenefaEditedCanvas = c;
+      }
+      if (esquinaEditor && snapshot.esquina) {
+        esquinaEditor.current = cloneImageData(snapshot.esquina);
+        esquinaEditor.ctx.putImageData(esquinaEditor.current, 0, 0);
+        const c = document.createElement('canvas');
+        c.width = esquinaEditor.canvas.width;
+        c.height = esquinaEditor.canvas.height;
+        c.getContext('2d').putImageData(esquinaEditor.current, 0, 0);
+        esquinaEditedCanvas = c;
+      }
+      drawPattern();
+      updateHistoryButtons();
+    }
+
+    function pushHistory() {
+      undoStack.push(snapshotState());
+      if (undoStack.length > 40) undoStack.shift();
+      redoStack.length = 0;
+      updateHistoryButtons();
+    }
 
     function drawTile(ctx, source, row, col, tileW, tileH, angle) {
       if (!source) return;
@@ -455,7 +500,7 @@
       const h = patternCanvas.height;
       pctx.clearRect(0, 0, w, h);
 
-      if (centerSrc && cenefaSrc) {
+      if (cenefaSrc || esquinaSrc) {
         const cols = 12;
         const rows = 8;
         const tw = Math.floor(w / cols);
@@ -696,11 +741,7 @@
       const rect = editCanvas.getBoundingClientRect();
       const x = (ev.clientX - rect.left) * (editCanvas.width / rect.width);
       const y = (ev.clientY - rect.top) * (editCanvas.height / rect.height);
-      if (currentImageData) {
-        undoStack.push(cloneImageData(currentImageData));
-        if (undoStack.length > 40) undoStack.shift();
-        redoStack.length = 0;
-      }
+      if (currentImageData) pushHistory();
       floodFillAt(x, y, selected);
       updateHistoryButtons();
     });
@@ -726,6 +767,16 @@
       resetBtn.addEventListener('click', () => {
         if (!sourceImageData) return;
         currentImageData = cloneImageData(sourceImageData);
+        if (cenefaEditor && cenefaEditor.source) {
+          cenefaEditor.current = cloneImageData(cenefaEditor.source);
+          cenefaEditor.ctx.putImageData(cenefaEditor.current, 0, 0);
+          cenefaEditedCanvas = null;
+        }
+        if (esquinaEditor && esquinaEditor.source) {
+          esquinaEditor.current = cloneImageData(esquinaEditor.source);
+          esquinaEditor.ctx.putImageData(esquinaEditor.current, 0, 0);
+          esquinaEditedCanvas = null;
+        }
         undoStack.length = 0;
         redoStack.length = 0;
         renderEdit();
@@ -737,24 +788,18 @@
     const undoBtn = q('undoColor');
     if (undoBtn) {
       undoBtn.addEventListener('click', () => {
-        if (!undoStack.length || !currentImageData) return;
-        redoStack.push(cloneImageData(currentImageData));
-        currentImageData = undoStack.pop();
-        renderEdit();
-        drawPattern();
-        updateHistoryButtons();
+        if (!undoStack.length) return;
+        redoStack.push(snapshotState());
+        applySnapshot(undoStack.pop());
       });
     }
 
     const redoBtn = q('redoColor');
     if (redoBtn) {
       redoBtn.addEventListener('click', () => {
-        if (!redoStack.length || !currentImageData) return;
-        undoStack.push(cloneImageData(currentImageData));
-        currentImageData = redoStack.pop();
-        renderEdit();
-        drawPattern();
-        updateHistoryButtons();
+        if (!redoStack.length) return;
+        undoStack.push(snapshotState());
+        applySnapshot(redoStack.pop());
       });
     }
 
@@ -867,10 +912,13 @@
       function renderSquare() {
         if (!currentData) return;
         cx.putImageData(currentData, 0, 0);
+        if (type === 'cenefa' && cenefaEditor) cenefaEditor.current = cloneImageData(currentData);
+        if (type === 'esquina' && esquinaEditor) esquinaEditor.current = cloneImageData(currentData);
       }
 
       function floodFillSquare(x, y) {
         if (!selected || !sourceData || !currentData) return;
+        pushHistory();
         const w = sourceData.width;
         const h = sourceData.height;
         const sx = Math.max(0, Math.min(w - 1, Math.floor(x)));
@@ -933,8 +981,8 @@
         syncCanvas.height = 300;
         const sctx2 = syncCanvas.getContext('2d');
         sctx2.putImageData(currentData, 0, 0);
-        if (type === 'cenefa') cenefaEditedCanvas = syncCanvas;
-        if (type === 'esquina') esquinaEditedCanvas = syncCanvas;
+        if (type === 'cenefa') { cenefaEditedCanvas = syncCanvas; }
+        if (type === 'esquina') { esquinaEditedCanvas = syncCanvas; }
         drawPattern();
       }
 
@@ -943,6 +991,8 @@
         drawImageCover(cx, img, 300, 300);
         sourceData = cx.getImageData(0, 0, 300, 300);
         currentData = new ImageData(new Uint8ClampedArray(sourceData.data), sourceData.width, sourceData.height);
+        if (type === 'cenefa') cenefaEditor = { canvas: c, ctx: cx, source: cloneImageData(sourceData), current: cloneImageData(currentData) };
+        if (type === 'esquina') esquinaEditor = { canvas: c, ctx: cx, source: cloneImageData(sourceData), current: cloneImageData(currentData) };
         renderSquare();
         c.addEventListener('click', (ev) => {
           const rect = c.getBoundingClientRect();
@@ -977,7 +1027,16 @@
         drawPattern();
         updateHistoryButtons();
       };
-      img.src = src;
+      if (src) img.src = src;
+      else {
+        sctx.fillStyle = '#fff';
+        sctx.fillRect(0, 0, 600, 600);
+        sourceImageData = sctx.getImageData(0, 0, 600, 600);
+        currentImageData = new ImageData(new Uint8ClampedArray(sourceImageData.data), sourceImageData.width, sourceImageData.height);
+        renderEdit();
+        drawPattern();
+        updateHistoryButtons();
+      }
       renderStaticSquare('extraCenefaPreview', cenefaSrc, 'cenefa');
       renderStaticSquare('extraCornerPreview', esquinaSrc, 'esquina');
     });
@@ -1030,12 +1089,66 @@
       }
     }
 
-    const open = (src, modelName) => {
+    function drawBorderPattern(cenefaImg, esquinaImg) {
+      if (!pctx) return;
+      const w = patternCanvas.width;
+      const h = patternCanvas.height;
+      pctx.clearRect(0, 0, w, h);
+      pctx.fillStyle = '#fff';
+      pctx.fillRect(0, 0, w, h);
+
+      const cols = 8;
+      const rows = 6;
+      const tw = w / cols;
+      const th = h / rows;
+
+      function d(source, r, c, angle) {
+        if (!source) return;
+        pctx.save();
+        pctx.translate(c * tw + tw / 2, r * th + th / 2);
+        pctx.rotate(angle || 0);
+        pctx.drawImage(source, -tw / 2, -th / 2, tw, th);
+        pctx.restore();
+      }
+
+      for (let c = 1; c < cols - 1; c++) {
+        d(cenefaImg, 0, c, 0);
+        d(cenefaImg, rows - 1, c, Math.PI);
+      }
+      for (let r = 1; r < rows - 1; r++) {
+        d(cenefaImg, r, 0, -Math.PI / 2);
+        d(cenefaImg, r, cols - 1, Math.PI / 2);
+      }
+
+      d(esquinaImg || cenefaImg, 0, 0, 0);
+      d(esquinaImg || cenefaImg, 0, cols - 1, Math.PI / 2);
+      d(esquinaImg || cenefaImg, rows - 1, cols - 1, Math.PI);
+      d(esquinaImg || cenefaImg, rows - 1, 0, -Math.PI / 2);
+    }
+
+    function loadImageSafeOverlay(src) {
+      return new Promise((resolve) => {
+        if (!src) return resolve(null);
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+    }
+
+    const open = async (src, modelName, category, cenefaSrc, esquinaSrc) => {
       clearTimeout(closeTimer);
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => drawRotatedPattern(img);
-      img.src = src;
+      if (category === 'cenefa' || category === 'esquina') {
+        const [cenefaImg, esquinaImg] = await Promise.all([
+          loadImageSafeOverlay(cenefaSrc || (category === 'cenefa' ? src : '')),
+          loadImageSafeOverlay(esquinaSrc || (category === 'esquina' ? src : '')),
+        ]);
+        drawBorderPattern(cenefaImg, esquinaImg);
+      } else {
+        const img = await loadImageSafeOverlay(src);
+        if (img) drawRotatedPattern(img);
+      }
 
       nameEl.textContent = `MODELO: ${(modelName || 'Modelo').toUpperCase()}`;
       overlay.classList.remove('closing');
@@ -1055,7 +1168,13 @@
     };
 
     document.querySelectorAll('.mosaic-preview-trigger').forEach((img) => {
-      img.addEventListener('click', () => open(img.getAttribute('src') || '', img.dataset.modelName || img.alt || 'Modelo'));
+      img.addEventListener('click', () => open(
+        img.getAttribute('src') || '',
+        img.dataset.modelName || img.alt || 'Modelo',
+        (img.dataset.category || '').toLowerCase(),
+        img.dataset.cenefaSrc || '',
+        img.dataset.esquinaSrc || '',
+      ));
     });
 
     overlay.addEventListener('click', (e) => {

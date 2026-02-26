@@ -76,6 +76,26 @@ function carpeta_modelo_de_item(array $item): string {
     return '';
 }
 
+function carga_conexiones_cenefa_esquina(string $csvPath): array {
+    if (!file_exists($csvPath)) return [];
+    $h = fopen($csvPath, 'r');
+    if ($h === false) return [];
+    $header = fgetcsv($h);
+    if (!is_array($header)) {
+        fclose($h);
+        return [];
+    }
+    $map = [];
+    while (($row = fgetcsv($h)) !== false) {
+        $cenefa = strtolower(trim((string)($row[0] ?? '')));
+        $esquina = strtolower(trim((string)($row[1] ?? '')));
+        if ($cenefa === '' || $esquina === '' || str_starts_with($cenefa, '#')) continue;
+        $map[$cenefa] = $esquina;
+    }
+    fclose($h);
+    return $map;
+}
+
 function categoria_prefix(?string $categoria): string {
     $cat = strtolower(trim((string)$categoria));
     return match ($cat) {
@@ -221,6 +241,15 @@ usort($items, static function ($a, $b) {
 }
 
 $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
+$conexiones = carga_conexiones_cenefa_esquina(__DIR__ . '/config/conexiones_cenefa_esquina.csv');
+
+$byFolder = [];
+foreach ($items as $it) {
+    $folder = carpeta_modelo_de_item($it);
+    if ($folder !== '') {
+        $byFolder[$folder][strtolower((string)($it['categoria'] ?? ''))] = $it;
+    }
+}
 ?>
 <!doctype html>
 <html lang="<?= $lang ?>">
@@ -262,8 +291,31 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
         <div class="mosaic-grid mosaic-grid-small">
           <?php if (!empty($items)): ?>
             <?php foreach ($items as $m): ?>
+              <?php
+                $folder = carpeta_modelo_de_item($m);
+                $cat = strtolower((string)($m['categoria'] ?? ''));
+                $cenefaSrc = '';
+                $esquinaSrc = '';
+                if ($cat === 'cenefa') {
+                  $cenefaSrc = (string)($m['imagen'] ?? '');
+                  $mappedCornerFolder = $conexiones[$folder] ?? '';
+                  if ($mappedCornerFolder !== '' && isset($byFolder[$mappedCornerFolder]['esquina'])) {
+                    $esquinaSrc = (string)($byFolder[$mappedCornerFolder]['esquina']['imagen'] ?? '');
+                  } elseif (isset($byFolder[$folder]['esquina'])) {
+                    $esquinaSrc = (string)($byFolder[$folder]['esquina']['imagen'] ?? '');
+                  }
+                } elseif ($cat === 'esquina') {
+                  $esquinaSrc = (string)($m['imagen'] ?? '');
+                  $mappedCenefaFolder = array_search($folder, $conexiones, true);
+                  if ($mappedCenefaFolder !== false && isset($byFolder[$mappedCenefaFolder]['cenefa'])) {
+                    $cenefaSrc = (string)($byFolder[$mappedCenefaFolder]['cenefa']['imagen'] ?? '');
+                  } elseif (isset($byFolder[$folder]['cenefa'])) {
+                    $cenefaSrc = (string)($byFolder[$folder]['cenefa']['imagen'] ?? '');
+                  }
+                }
+              ?>
               <article class="mosaic-card">
-                <img class="mosaic-preview-trigger" src="<?= htmlspecialchars($m['imagen'] ?: 'assets/placeholder-tile.svg', ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-model-name="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" />
+                <img class="mosaic-preview-trigger" src="<?= htmlspecialchars($m['imagen'] ?: 'assets/placeholder-tile.svg', ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-model-name="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-category="<?= htmlspecialchars($cat, ENT_QUOTES) ?>" data-cenefa-src="<?= htmlspecialchars($cenefaSrc, ENT_QUOTES) ?>" data-esquina-src="<?= htmlspecialchars($esquinaSrc, ENT_QUOTES) ?>" />
                 <?php $catLabel = $m['categoria'] !== '' ? strtoupper((string)$m['categoria']) : 'SIN CATEGORÍA'; ?>
                 <p class="code"><?= htmlspecialchars($catLabel, ENT_QUOTES) ?> · <?= htmlspecialchars($m['identificador'], ENT_QUOTES) ?></p>
                 <p class="name"><?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?></p>
