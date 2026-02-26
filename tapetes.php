@@ -25,7 +25,7 @@ function carpeta_modelo_de_item(array $item): string {
     $folder = trim((string)($item['carpeta_modelo'] ?? ''));
     if ($folder !== '') return strtolower($folder);
     $img = trim((string)($item['imagen'] ?? ''));
-    if (preg_match('#(?:^|/)Tapiz/([^/]+)/#i', $img, $m)) {
+    if (preg_match('#(?:^|/)(?:Tapete|Tapetes)/([^/]+)/#i', $img, $m)) {
         return strtolower(rawurldecode($m[1]));
     }
     return '';
@@ -44,76 +44,41 @@ function normaliza_item(array $m): array {
 
 function carga_modelos(): array {
     $items = [];
-    $configFile = __DIR__ . '/config/database.php';
-    if (file_exists($configFile)) {
-        $db = require $configFile;
-        try {
-            $pdo = new PDO(
-                "mysql:host={$db['host']};port={$db['port']};dbname={$db['dbname']};charset=utf8mb4",
-                $db['user'],
-                $db['pass'],
-                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-            );
-            $stmt = $pdo->query("SELECT id, nombre, imagen, categoria, identificador, carpeta_modelo FROM mosaicos");
-            $items = array_map('normaliza_item', $stmt->fetchAll(PDO::FETCH_ASSOC));
-        } catch (Throwable $e) {
-            $items = [];
-        }
-    }
+    $bases = [__DIR__ . '/Tapete', __DIR__ . '/Tapetes'];
+    $idx = 1;
 
-    if (empty($items)) {
-        $jsonPath = __DIR__ . '/config/modelos.json';
-        if (file_exists($jsonPath)) {
-            $decoded = json_decode((string)file_get_contents($jsonPath), true);
-            if (is_array($decoded)) $items = array_map('normaliza_item', $decoded);
-        }
-    }
+    foreach ($bases as $baseDir) {
+        if (!is_dir($baseDir)) continue;
+        $folders = array_filter(scandir($baseDir) ?: [], static fn($n) => $n !== '.' && $n !== '..' && is_dir($baseDir . '/' . $n));
+        sort($folders, SORT_NATURAL | SORT_FLAG_CASE);
 
-    if (empty($items)) {
-        $tapizDir = __DIR__ . '/Tapiz';
-        if (is_dir($tapizDir)) {
-            $folders = array_filter(scandir($tapizDir) ?: [], static fn($n) => $n !== '.' && $n !== '..' && is_dir($tapizDir . '/' . $n));
-            sort($folders, SORT_NATURAL | SORT_FLAG_CASE);
-            $idx = 1;
-            foreach ($folders as $folder) {
-                $pngs = glob($tapizDir . '/' . $folder . '/*.png');
-                if (!$pngs) continue;
-                sort($pngs, SORT_NATURAL | SORT_FLAG_CASE);
-                $src = $pngs[0];
-                $items[] = normaliza_item([
-                    'id' => $idx,
-                    'nombre' => ucwords(str_replace(['_', '-'], ' ', $folder)),
-                    'imagen' => 'Tapiz/' . rawurlencode($folder) . '/' . rawurlencode(basename($src)),
-                    'categoria' => '',
-                    'identificador' => '',
-                    'carpeta_modelo' => $folder,
-                ]);
-                $idx++;
-            }
+        $baseName = basename($baseDir);
+        foreach ($folders as $folder) {
+            $pngs = glob($baseDir . '/' . $folder . '/*.png');
+            if (!$pngs) continue;
+            sort($pngs, SORT_NATURAL | SORT_FLAG_CASE);
+            $src = $pngs[0];
+            $items[] = normaliza_item([
+                'id' => $idx,
+                'nombre' => ucwords(str_replace(['_', '-'], ' ', $folder)),
+                'imagen' => $baseName . '/' . rawurlencode($folder) . '/' . rawurlencode(basename($src)),
+                'categoria' => '',
+                'identificador' => strtoupper($folder),
+                'carpeta_modelo' => $folder,
+            ]);
+            $idx++;
         }
-    }
-
-    $catMap = carga_mapa_categorias_csv(__DIR__ . '/config/categorias.csv');
-    if (!empty($catMap)) {
-        foreach ($items as &$item) {
-            $folder = carpeta_modelo_de_item($item);
-            if ($folder !== '' && array_key_exists($folder, $catMap)) {
-                $item['categoria'] = $catMap[$folder];
-            }
-        }
-        unset($item);
     }
 
     usort($items, static fn($a, $b) => strcasecmp((string)$a['nombre'], (string)$b['nombre']));
     return $items;
 }
 
-function find_model(array $models, string $query, string $expectedCategory): ?array {
+function find_model(array $models, string $query): ?array {
     $needle = strtolower(trim($query));
     if ($needle === '') return null;
 
     foreach ($models as $m) {
-        if ($expectedCategory !== '' && ($m['categoria'] ?? '') !== $expectedCategory) continue;
         $candidates = [
             strtolower((string)($m['identificador'] ?? '')),
             strtolower((string)($m['nombre'] ?? '')),
@@ -153,9 +118,9 @@ function carga_tapetes_csv(string $csvPath, array $models): array {
         $esquinaQ = trim((string)($row[3] ?? ''));
         if ($name === '' || str_starts_with($name, '#')) continue;
 
-        $centro = find_model($models, $centroQ, 'centro');
-        $cenefa = find_model($models, $cenefaQ, 'cenefa');
-        $esquina = find_model($models, $esquinaQ, 'esquina');
+        $centro = find_model($models, $centroQ);
+        $cenefa = find_model($models, $cenefaQ);
+        $esquina = find_model($models, $esquinaQ);
 
         $rows[] = [
             'nombre' => $name,
@@ -229,11 +194,17 @@ $tapetes = carga_tapetes_csv(__DIR__ . '/config/tapetes.csv', $models);
                   'lang' => $lang,
                   'name' => (string)$tapete['nombre'],
                   'cat' => 'centro',
+                  'center_img' => (string)($tapete['centro']['imagen'] ?? ''),
+                  'cenefa_img' => (string)($tapete['cenefa']['imagen'] ?? ''),
+                  'esquina_img' => (string)($tapete['esquina']['imagen'] ?? ''),
+                  'center_name' => (string)($tapete['centro']['nombre'] ?? ''),
+                  'cenefa_name' => (string)($tapete['cenefa']['nombre'] ?? ''),
+                  'esquina_name' => (string)($tapete['esquina']['nombre'] ?? ''),
                 ];
                 if ($centerId !== '') $params['center_id'] = $centerId;
                 if ($cenefaId !== '') $params['cenefa_id'] = $cenefaId;
                 if ($esquinaId !== '') $params['esquina_id'] = $esquinaId;
-                $customizeUrl = 'personalizar.php?' . http_build_query($params);
+                $customizeUrl = 'personalizar.php?' . http_build_query(array_filter($params, static fn($v) => $v !== ''));
               ?>
               <div class="tapete-meta-head">
                 <h3><?= htmlspecialchars($tapete['nombre'], ENT_QUOTES) ?></h3>

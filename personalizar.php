@@ -187,6 +187,40 @@ $selectedCenter = ($centerId !== '' && isset($modelById[$centerId])) ? $modelByI
 $selectedCenefa = ($cenefaId !== '' && isset($modelById[$cenefaId])) ? $modelById[$cenefaId] : null;
 $selectedEsquina = ($esquinaId !== '' && isset($modelById[$esquinaId])) ? $modelById[$esquinaId] : null;
 
+$centerImgParam = trim((string)($_GET['center_img'] ?? ''));
+$cenefaImgParam = trim((string)($_GET['cenefa_img'] ?? ''));
+$esquinaImgParam = trim((string)($_GET['esquina_img'] ?? ''));
+if (!$selectedCenter && $centerImgParam !== '') {
+    $selectedCenter = [
+        'id' => 0,
+        'nombre' => (string)($_GET['center_name'] ?? ($lang === 'en' ? 'Center' : 'Centro')),
+        'imagen' => $centerImgParam,
+        'categoria' => 'centro',
+        'identificador' => '',
+        'carpeta_modelo' => '',
+    ];
+}
+if (!$selectedCenefa && $cenefaImgParam !== '') {
+    $selectedCenefa = [
+        'id' => 0,
+        'nombre' => (string)($_GET['cenefa_name'] ?? ($lang === 'en' ? 'Border' : 'Cenefa')),
+        'imagen' => $cenefaImgParam,
+        'categoria' => 'cenefa',
+        'identificador' => '',
+        'carpeta_modelo' => '',
+    ];
+}
+if (!$selectedEsquina && $esquinaImgParam !== '') {
+    $selectedEsquina = [
+        'id' => 0,
+        'nombre' => (string)($_GET['esquina_name'] ?? ($lang === 'en' ? 'Corner' : 'Esquina')),
+        'imagen' => $esquinaImgParam,
+        'categoria' => 'esquina',
+        'identificador' => '',
+        'carpeta_modelo' => '',
+    ];
+}
+
 if ($selectedCenefa && !$selectedEsquina) {
     $cenefaFolder = carpeta_modelo_de_item($selectedCenefa);
     $mappedCornerFolder = $conexionesCsv[$cenefaFolder] ?? '';

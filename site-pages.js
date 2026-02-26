@@ -512,23 +512,35 @@
         currentImageData = cloneImageData(snapshot.main);
         renderEdit();
       }
-      if (cenefaEditor && snapshot.cenefa) {
-        cenefaEditor.current = cloneImageData(snapshot.cenefa);
-        cenefaEditor.ctx.putImageData(cenefaEditor.current, 0, 0);
-        const c = document.createElement('canvas');
-        c.width = cenefaEditor.canvas.width;
-        c.height = cenefaEditor.canvas.height;
-        c.getContext('2d').putImageData(cenefaEditor.current, 0, 0);
-        cenefaEditedCanvas = c;
+      if (cenefaEditor) {
+        if (snapshot.cenefa) {
+          cenefaEditor.current = cloneImageData(snapshot.cenefa);
+          cenefaEditor.ctx.putImageData(cenefaEditor.current, 0, 0);
+          const c = document.createElement('canvas');
+          c.width = cenefaEditor.canvas.width;
+          c.height = cenefaEditor.canvas.height;
+          c.getContext('2d').putImageData(cenefaEditor.current, 0, 0);
+          cenefaEditedCanvas = c;
+        } else if (cenefaEditor.source) {
+          cenefaEditor.current = cloneImageData(cenefaEditor.source);
+          cenefaEditor.ctx.putImageData(cenefaEditor.current, 0, 0);
+          cenefaEditedCanvas = null;
+        }
       }
-      if (esquinaEditor && snapshot.esquina) {
-        esquinaEditor.current = cloneImageData(snapshot.esquina);
-        esquinaEditor.ctx.putImageData(esquinaEditor.current, 0, 0);
-        const c = document.createElement('canvas');
-        c.width = esquinaEditor.canvas.width;
-        c.height = esquinaEditor.canvas.height;
-        c.getContext('2d').putImageData(esquinaEditor.current, 0, 0);
-        esquinaEditedCanvas = c;
+      if (esquinaEditor) {
+        if (snapshot.esquina) {
+          esquinaEditor.current = cloneImageData(snapshot.esquina);
+          esquinaEditor.ctx.putImageData(esquinaEditor.current, 0, 0);
+          const c = document.createElement('canvas');
+          c.width = esquinaEditor.canvas.width;
+          c.height = esquinaEditor.canvas.height;
+          c.getContext('2d').putImageData(esquinaEditor.current, 0, 0);
+          esquinaEditedCanvas = c;
+        } else if (esquinaEditor.source) {
+          esquinaEditor.current = cloneImageData(esquinaEditor.source);
+          esquinaEditor.ctx.putImageData(esquinaEditor.current, 0, 0);
+          esquinaEditedCanvas = null;
+        }
       }
       drawPattern();
       updateHistoryButtons();
@@ -594,7 +606,7 @@
         if (centerSource) {
           for (let r = 1; r <= 6; r++) {
             for (let c = 1; c <= 10; c++) {
-              drawTile(pctx, centerSource, r, c, tw, th, centerMap[r % 2][c % 2]);
+              drawTile(pctx, centerSource, r, c, tw, th, centerMap[(r - 1) % 2][(c - 1) % 2]);
             }
           }
         }
@@ -1251,7 +1263,7 @@
       if (centerImg) {
         for (let r = 1; r <= 6; r++) {
           for (let c = 1; c <= 10; c++) {
-            drawTile(pctx, centerImg, r, c, tw, th, centerMap[r % 2][c % 2]);
+            drawTile(pctx, centerImg, r, c, tw, th, centerMap[(r - 1) % 2][(c - 1) % 2]);
           }
         }
       }
