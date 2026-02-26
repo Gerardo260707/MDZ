@@ -31,6 +31,15 @@ function carpeta_modelo_de_item(array $item): string {
     return '';
 }
 
+
+
+function build_image_rel_with_version(string $baseName, string $folder, string $fileName, string $absPath): string {
+    $rel = $baseName . '/' . rawurlencode($folder) . '/' . rawurlencode($fileName);
+    $mtime = @filemtime($absPath);
+    if ($mtime !== false) $rel .= '?v=' . $mtime;
+    return $rel;
+}
+
 function normaliza_item(array $m): array {
     return [
         'id' => (int)($m['id'] ?? 0),
@@ -61,7 +70,7 @@ function carga_modelos(): array {
             $items[] = normaliza_item([
                 'id' => $idx,
                 'nombre' => ucwords(str_replace(['_', '-'], ' ', $folder)),
-                'imagen' => $baseName . '/' . rawurlencode($folder) . '/' . rawurlencode(basename($src)),
+                'imagen' => build_image_rel_with_version($baseName, $folder, basename($src), $src),
                 'categoria' => '',
                 'identificador' => strtoupper($folder),
                 'carpeta_modelo' => $folder,
