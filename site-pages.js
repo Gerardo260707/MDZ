@@ -260,6 +260,9 @@
     const centerResults = q('centerSearchResults');
     const cenefaResults = q('cenefaSearchResults');
     const selectedModelNameEl = q('selectedModelName');
+    const searchRow = document.querySelector('.model-search-row');
+    const searchMode = ((searchRow && searchRow.dataset.searchMode) || 'modelo').toLowerCase();
+    const tapetePresets = Array.isArray(window.CUSTOMIZER_TAPETES) ? window.CUSTOMIZER_TAPETES : [];
     const manualConnections = (window.CUSTOMIZER_CONNECTIONS && typeof window.CUSTOMIZER_CONNECTIONS === 'object') ? window.CUSTOMIZER_CONNECTIONS : {};
 
     function norm(text) {
@@ -344,9 +347,73 @@
       });
     }
 
+
+
+    function goToTapetePreset(preset) {
+      if (!preset || typeof preset !== 'object') return;
+      const url = new URL(window.location.href);
+      url.searchParams.set('picker', 'dual');
+      url.searchParams.set('source', 'tapete');
+      url.searchParams.set('cat', 'centro');
+      url.searchParams.set('lang', lang);
+      url.searchParams.set('name', preset.nombre || 'Tapete');
+
+      const center = preset.centro || null;
+      const cenefa = preset.cenefa || null;
+      const esquina = preset.esquina || null;
+
+      if (center && center.id) url.searchParams.set('center_id', String(center.id)); else url.searchParams.delete('center_id');
+      if (cenefa && cenefa.id) url.searchParams.set('cenefa_id', String(cenefa.id)); else url.searchParams.delete('cenefa_id');
+      if (esquina && esquina.id) url.searchParams.set('esquina_id', String(esquina.id)); else url.searchParams.delete('esquina_id');
+
+      if (center && center.imagen) url.searchParams.set('center_img', center.imagen); else url.searchParams.delete('center_img');
+      if (cenefa && cenefa.imagen) url.searchParams.set('cenefa_img', cenefa.imagen); else url.searchParams.delete('cenefa_img');
+      if (esquina && esquina.imagen) url.searchParams.set('esquina_img', esquina.imagen); else url.searchParams.delete('esquina_img');
+
+      if (center && center.nombre) url.searchParams.set('center_name', center.nombre); else url.searchParams.delete('center_name');
+      if (cenefa && cenefa.nombre) url.searchParams.set('cenefa_name', cenefa.nombre); else url.searchParams.delete('cenefa_name');
+      if (esquina && esquina.nombre) url.searchParams.set('esquina_name', esquina.nombre); else url.searchParams.delete('esquina_name');
+
+      window.location.assign(url.pathname + url.search + url.hash);
+    }
+
+    function renderTapeteSelector() {
+      if (!centerInput || !centerResults) return;
+      centerInput.placeholder = lang === 'en' ? 'Select rug' : 'Seleccionar tapete';
+      const query = norm(centerInput.value);
+      const filtered = tapetePresets.filter((t) => {
+        if (!query) return true;
+        return norm(t && t.nombre ? t.nombre : '').includes(query);
+      }).slice(0, 8);
+      if (!filtered.length) {
+        centerResults.innerHTML = `<div class="model-search-empty">${lang === 'en' ? 'No rugs found.' : 'No se encontraron tapetes.'}</div>`;
+        return;
+      }
+      centerResults.innerHTML = '';
+      filtered.forEach((preset) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'model-search-item';
+        item.textContent = preset.nombre || 'Tapete';
+        item.addEventListener('click', () => goToTapetePreset(preset));
+        centerResults.appendChild(item);
+      });
+    }
+
     const selectedCenter = models.find((m) => String(m.id) === String(selection.centerId || '')) || null;
     const selectedCenefa = models.find((m) => String(m.id) === String(selection.cenefaId || '')) || null;
     const selectedEsquina = models.find((m) => String(m.id) === String(selection.esquinaId || '')) || null;
+
+
+    if (searchMode === 'tapete') {
+      centerInput && centerInput.addEventListener('input', renderTapeteSelector);
+      centerInput && centerInput.addEventListener('focus', () => renderTapeteSelector());
+      if (centerInput && !centerInput.value) {
+        const currentName = new URLSearchParams(window.location.search).get('name') || '';
+        if (currentName) centerInput.value = currentName;
+      }
+      renderTapeteSelector();
+    } else {
 
     const forcedSingleCategory = pickerMode === 'single'
       ? ((big.dataset.entryCategory || big.dataset.category || '').toLowerCase().trim() || 'centro')
@@ -360,7 +427,11 @@
             ? (lang === 'en' ? 'Select corner' : 'Seleccionar esquina')
             : (lang === 'en' ? 'Select center' : 'Seleccionar centro'));
       }
-      if (selectedCenter) centerInput.value = selectedCenter.nombre || '';
+      if (pickerMode === 'single') {
+        if (forcedSingleCategory === 'cenefa' && selectedCenefa) centerInput.value = selectedCenefa.nombre || '';
+        else if (forcedSingleCategory === 'esquina' && selectedEsquina) centerInput.value = selectedEsquina.nombre || '';
+        else if (selectedCenter) centerInput.value = selectedCenter.nombre || '';
+      } else if (selectedCenter) centerInput.value = selectedCenter.nombre || '';
       centerInput.addEventListener('input', () => renderSelector({
         inputEl: centerInput,
         resultEl: centerResults,
@@ -368,11 +439,11 @@
         selectedId: selectedCenter ? selectedCenter.id : null,
         onPick: (pickedModel) => {
           if (pickerMode === 'single' && forcedSingleCategory === 'cenefa') {
-            goToSelection(selectedCenter, pickedModel, findEsquinaForCenefa(pickedModel));
+            goToSelection(null, pickedModel, findEsquinaForCenefa(pickedModel));
             return;
           }
           if (pickerMode === 'single' && forcedSingleCategory === 'esquina') {
-            goToSelection(selectedCenter, selectedCenefa, pickedModel);
+            goToSelection(null, selectedCenefa, pickedModel);
             return;
           }
           goToSelection(pickedModel, selectedCenefa, selectedEsquina);
@@ -393,6 +464,7 @@
       }));
       cenefaInput.addEventListener('focus', () => cenefaInput.dispatchEvent(new Event('input')));
       cenefaInput.dispatchEvent(new Event('input'));
+    }
     }
 
     const src = (big.dataset.image || '').trim();

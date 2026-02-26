@@ -143,6 +143,56 @@ function carga_modelos_tapete(): array {
     return $items;
 }
 
+
+
+function find_model(array $models, string $query): ?array {
+    $needle = strtolower(trim($query));
+    if ($needle === '') return null;
+    foreach ($models as $m) {
+        $candidates = [
+            strtolower((string)($m['identificador'] ?? '')),
+            strtolower((string)($m['nombre'] ?? '')),
+            strtolower((string)($m['carpeta_modelo'] ?? '')),
+            (string)($m['id'] ?? ''),
+        ];
+        if (in_array($needle, $candidates, true)) return $m;
+    }
+    return null;
+}
+
+function carga_tapetes_csv(string $csvPath, array $models): array {
+    if (!file_exists($csvPath)) return [];
+    $h = fopen($csvPath, 'r');
+    if ($h === false) return [];
+    $header = fgetcsv($h);
+    if (!is_array($header)) {
+        fclose($h);
+        return [];
+    }
+
+    $rows = [];
+    while (($row = fgetcsv($h)) !== false) {
+        $name = trim((string)($row[0] ?? ''));
+        $centroQ = trim((string)($row[1] ?? ''));
+        $cenefaQ = trim((string)($row[2] ?? ''));
+        $esquinaQ = trim((string)($row[3] ?? ''));
+        if ($name === '' || str_starts_with($name, '#')) continue;
+
+        $centro = find_model($models, $centroQ);
+        $cenefa = find_model($models, $cenefaQ);
+        $esquina = find_model($models, $esquinaQ);
+
+        $rows[] = [
+            'nombre' => $name,
+            'centro' => $centro,
+            'cenefa' => $cenefa,
+            'esquina' => $esquina,
+        ];
+    }
+    fclose($h);
+    return $rows;
+}
+
 function carga_modelos(): array {
     $items = [];
     $configFile = __DIR__ . '/config/database.php';
@@ -216,6 +266,7 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
 $pickerMode = (($_GET['picker'] ?? 'dual') === 'single') ? 'single' : 'dual';
 $modelSource = strtolower(trim((string)($_GET['source'] ?? '')));
 $models = ($modelSource === 'tapete') ? carga_modelos_tapete() : carga_modelos();
+$tapetePresets = ($modelSource === 'tapete') ? carga_tapetes_csv(__DIR__ . '/config/tapetes.csv', $models) : [];
 $conexionesCsv = carga_conexiones_cenefa_esquina(__DIR__ . '/config/conexiones_cenefa_esquina.csv');
 $modelById = [];
 foreach ($models as $item) $modelById[(string)$item['id']] = $item;
@@ -336,6 +387,7 @@ $selectedCategory = $editable['categoria'] ?? '';
 $editTarget = ($pickerMode === 'dual') ? 'centro' : ($selectedCategory !== '' ? $selectedCategory : 'centro');
 $entryCategory = strtolower(trim((string)($_GET['cat'] ?? ($editable['categoria'] ?? ''))));
 $showCenterEditor = true;
+$searchMode = ($modelSource === 'tapete') ? 'tapete' : 'modelo';
 if ($pickerMode === 'dual') {
     $showCenefaExtra = (bool)$selectedCenefa;
     $showEsquinaExtra = (bool)$selectedEsquina;
@@ -376,12 +428,12 @@ if ($pickerMode === 'dual') {
     <section>
       <h2 data-i18n="custom_title">Personalizar Diseño</h2>
       <p><strong id="selectedModelName"><?= htmlspecialchars($selectedName, ENT_QUOTES) ?></strong></p>
-      <div class="model-search-row" data-picker-mode="<?= $pickerMode ?>">
+      <div class="model-search-row" data-picker-mode="<?= $pickerMode ?>" data-search-mode="<?= htmlspecialchars($searchMode, ENT_QUOTES) ?>">
         <div class="model-search" id="centerSearchWrap">
-          <input id="centerSearchInput" type="search" autocomplete="off" data-i18n-placeholder="custom_select_center" placeholder="Seleccionar centro" />
+          <input id="centerSearchInput" type="search" autocomplete="off" <?= $searchMode === 'tapete' ? '' : 'data-i18n-placeholder="custom_select_center"' ?> placeholder="<?= $searchMode === 'tapete' ? 'Seleccionar tapete' : 'Seleccionar centro' ?>" />
           <div class="model-search-results" id="centerSearchResults"></div>
         </div>
-        <?php if ($pickerMode === 'dual'): ?>
+        <?php if ($pickerMode === 'dual' && $searchMode !== 'tapete'): ?>
         <div class="model-search" id="cenefaSearchWrap">
           <input id="cenefaSearchInput" type="search" autocomplete="off" data-i18n-placeholder="custom_select_cenefa" placeholder="Seleccionar cenefa" />
           <div class="model-search-results" id="cenefaSearchResults"></div>
@@ -442,6 +494,7 @@ if ($pickerMode === 'dual') {
       'esquinaId' => $selectedEsquina['id'] ?? null,
       'pickerMode' => $pickerMode,
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    window.CUSTOMIZER_TAPETES = <?= json_encode($tapetePresets, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
     window.CUSTOMIZER_CONNECTIONS = <?= json_encode($conexionesCsv, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
   </script>
   <script src="app.js"></script>
