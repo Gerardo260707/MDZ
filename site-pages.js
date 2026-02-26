@@ -25,7 +25,7 @@
     const lang = getLang();
     const FEATURE_CARDS = [
       { file: 'galeria.jpg', label: tByLang(lang, 'Mosaicos', 'Mosaics'), href: 'mosaicos.html', button: tByLang(lang, 'Ver modelos » clic aquí', 'View models » click here') },
-      { file: 'instalacion.jpg', label: tByLang(lang, 'Tapetes', 'Rugs'), href: 'tapetes.html', button: tByLang(lang, 'Personalizar', 'Customize') },
+      { file: 'instalacion.jpg', label: tByLang(lang, 'Tapetes', 'Rugs'), href: 'tapetes.php', button: tByLang(lang, 'Personalizar', 'Customize') },
       { file: 'contacto.jpg', label: tByLang(lang, 'Colores', 'Colors'), href: 'galeria.html', button: tByLang(lang, 'Ver modelos » clic aquí', 'View models » click here') }
     ];
 
@@ -1139,6 +1139,82 @@
     });
   }
 
+
+  function initTapetesPage() {
+    const canvases = document.querySelectorAll('.tapete-preview-canvas');
+    if (!canvases.length) return;
+
+    function loadImageSafeTapete(src) {
+      return new Promise((resolve) => {
+        if (!src) return resolve(null);
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+    }
+
+    function drawTile(ctx, source, row, col, tileW, tileH, angle) {
+      if (!source) return;
+      const x = col * tileW;
+      const y = row * tileH;
+      ctx.save();
+      ctx.translate(x + tileW / 2, y + tileH / 2);
+      ctx.rotate(angle || 0);
+      ctx.drawImage(source, -tileW / 2, -tileH / 2, tileW, tileH);
+      ctx.restore();
+    }
+
+    canvases.forEach(async (canvas) => {
+      const pctx = canvas.getContext('2d');
+      const centerSrc = (canvas.dataset.centerImage || '').trim();
+      const cenefaSrc = (canvas.dataset.cenefaImage || '').trim();
+      const esquinaSrc = (canvas.dataset.esquinaImage || '').trim();
+
+      const [centerImg, cenefaImg, esquinaImg] = await Promise.all([
+        loadImageSafeTapete(centerSrc),
+        loadImageSafeTapete(cenefaSrc),
+        loadImageSafeTapete(esquinaSrc),
+      ]);
+
+      const cols = 12;
+      const rows = 8;
+      const tw = Math.floor(canvas.width / cols);
+      const th = Math.floor(canvas.height / rows);
+      pctx.fillStyle = '#fff';
+      pctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const centerMap = [[0, Math.PI / 2], [3 * Math.PI / 2, Math.PI]];
+      if (centerImg) {
+        for (let r = 1; r < rows - 1; r++) {
+          for (let c = 1; c < cols - 1; c++) {
+            drawTile(pctx, centerImg, r, c, tw, th, centerMap[r % 2][c % 2]);
+          }
+        }
+      }
+
+      if (cenefaImg) {
+        for (let c = 1; c < cols - 1; c++) {
+          drawTile(pctx, cenefaImg, 0, c, tw, th, 0);
+          drawTile(pctx, cenefaImg, rows - 1, c, tw, th, Math.PI);
+        }
+        for (let r = 1; r < rows - 1; r++) {
+          drawTile(pctx, cenefaImg, r, 0, tw, th, -Math.PI / 2);
+          drawTile(pctx, cenefaImg, r, cols - 1, tw, th, Math.PI / 2);
+        }
+      }
+
+      const cornerSource = esquinaImg || cenefaImg;
+      if (cornerSource) {
+        drawTile(pctx, cornerSource, 0, 0, tw, th, 0);
+        drawTile(pctx, cornerSource, 0, cols - 1, tw, th, Math.PI / 2);
+        drawTile(pctx, cornerSource, rows - 1, cols - 1, tw, th, Math.PI);
+        drawTile(pctx, cornerSource, rows - 1, 0, tw, th, -Math.PI / 2);
+      }
+    });
+  }
+
   function initDecoratedOverlay() {
     const overlay = q('modelOverlay');
     const patternCanvas = q('modelOverlayPattern');
@@ -1302,6 +1378,7 @@
     initCategories();
     initCustomizer();
     initDecoratedOverlay();
+    initTapetesPage();
     initDarkFooter();
   });
 })();

@@ -133,3 +133,11 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .dark-footer h4{margin:0 0 10px;font-size:30px;color:#fff}
 .dark-footer p,.dark-footer a{font-size:13px;line-height:1.5;color:#ddd;text-decoration:none}
 .dark-footer a{color:#c2ff3f}
+
+
+.tapetes-list{display:grid;gap:20px;padding:24px 28px}
+.tapete-card{border:1px solid #d9d9d9;background:#fff;padding:14px}
+.tapete-preview-canvas{width:100%;height:auto;display:block;border:1px solid #c9c9c9;background:#f5f5f5}
+.tapete-meta{padding-top:10px}
+.tapete-meta h3{margin:0 0 6px;font-size:26px}
+.tapete-meta p{font-size:14px}
