@@ -228,9 +228,17 @@ if ($selectedEsquina && !$selectedCenefa) {
     }
 }
 
-$editable = ($pickerMode === 'dual')
-    ? $selectedCenter
-    : ($selectedCenter ?: $selectedCenefa ?: $selectedEsquina);
+$entryCategoryRaw = strtolower(trim((string)($_GET['cat'] ?? '')));
+if ($pickerMode === 'dual') {
+    $editable = $selectedCenter;
+} else {
+    $editable = match ($entryCategoryRaw) {
+        'cenefa' => $selectedCenefa,
+        'esquina' => $selectedEsquina,
+        'centro' => $selectedCenter,
+        default => ($selectedCenter ?: $selectedCenefa ?: $selectedEsquina),
+    };
+}
 if (!$editable && isset($_GET['img']) && (string)$_GET['img'] !== '') {
     $editable = [
         'id' => (int)($_GET['id'] ?? 0),

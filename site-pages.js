@@ -237,13 +237,19 @@
         url.searchParams.delete('esquina_id');
       }
 
-      const editable = centerModel;
-      const fallbackEditable = editable || cenefaModel || esquinaModel;
-      if (fallbackEditable) {
-        url.searchParams.set('id', String(fallbackEditable.id));
-        url.searchParams.set('name', fallbackEditable.nombre || 'Modelo');
-        url.searchParams.set('img', fallbackEditable.imagen || 'assets/placeholder-tile.svg');
-        url.searchParams.set('cat', (fallbackEditable.categoria || '').toLowerCase());
+      const editable = pickerMode === 'dual'
+        ? centerModel
+        : (centerModel || cenefaModel || esquinaModel);
+      if (editable) {
+        url.searchParams.set('id', String(editable.id));
+        url.searchParams.set('name', editable.nombre || 'Modelo');
+        url.searchParams.set('img', editable.imagen || 'assets/placeholder-tile.svg');
+        url.searchParams.set('cat', (editable.categoria || '').toLowerCase());
+      } else {
+        url.searchParams.delete('id');
+        url.searchParams.delete('name');
+        url.searchParams.delete('img');
+        url.searchParams.delete('cat');
       }
       url.searchParams.set('lang', lang);
       window.location.assign(url.pathname + url.search + url.hash);
