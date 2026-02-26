@@ -24,17 +24,17 @@
 
     const lang = getLang();
     const FEATURE_CARDS = [
-      { file: 'galeria.jpg', label: tByLang(lang, 'Mosaicos', 'Mosaics'), href: 'mosaicos.html' },
-      { file: 'instalacion.jpg', label: tByLang(lang, 'Personalizar', 'Customize'), href: 'personalizar.php' },
-      { file: 'contacto.jpg', label: tByLang(lang, 'Colores', 'Colors'), href: 'galeria.html' }
+      { file: 'galeria.jpg', label: tByLang(lang, 'Mosaicos', 'Mosaics'), href: 'mosaicos.html', button: tByLang(lang, 'Ver modelos » clic aquí', 'View models » click here') },
+      { file: 'instalacion.jpg', label: tByLang(lang, 'Tapetes', 'Rugs'), href: 'tapetes.html', button: tByLang(lang, 'Personalizar', 'Customize') },
+      { file: 'contacto.jpg', label: tByLang(lang, 'Colores', 'Colors'), href: 'galeria.html', button: tByLang(lang, 'Ver modelos » clic aquí', 'View models » click here') }
     ];
 
     FEATURE_CARDS.forEach((card) => {
-      const a = document.createElement('a');
-      a.className = 'tile-card';
-      a.href = `${card.href}${card.href.includes('?') ? '&' : '?'}lang=${lang}`;
-      a.innerHTML = `<img src="assets/cuadros/${card.file}" alt="${card.label}" onerror="this.src='assets/placeholder-tile.svg'" /><span>${card.label}</span>`;
-      cardsContainer.appendChild(a);
+      const article = document.createElement('article');
+      article.className = 'tile-card';
+      const href = `${card.href}${card.href.includes('?') ? '&' : '?'}lang=${lang}`;
+      article.innerHTML = `<img src="assets/cuadros/${card.file}" alt="${card.label}" onerror="this.src='assets/placeholder-tile.svg'" /><span>${card.label}</span><a class="action cta-pill home-tile-btn" href="${href}">${card.button || card.label}</a>`;
+      cardsContainer.appendChild(article);
     });
 
     let activeIndex = 0;

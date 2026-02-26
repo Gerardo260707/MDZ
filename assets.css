@@ -29,9 +29,14 @@ p { margin:0; font-size:15px; line-height:1.5; color:#333; }
 .panel { border-top:1px solid #e2e2e2; }
 .grid { display:grid; gap:16px; }
 .cards { display:flex; justify-content: space-around; margin-top: 34px; gap: 18px; }
-.tile-card { text-decoration:none; color:inherit; text-align:center; }
-.tile-card img { width:110px; height:110px; object-fit:cover; border:1px solid #bbb; display:block; margin:0 auto 8px; }
+.tile-card { color:inherit; text-align:center; }
+.tile-card img { width:110px; height:110px; object-fit:cover; border:1px solid #bbb; display:block; margin:0 auto 4px; }
 .tile-card span { font-size: 13px; color:#444; }
+
+.tile-card{display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px 6px}
+.home-tile-btn{padding:6px 10px !important;font-size:11px !important;box-shadow:0 6px 14px rgba(241,104,0,.24)}
+.tapetes-cta-wrap{padding:20px 28px}
+
 .hero { border:1px solid #d4d4d4; margin:4px; height:330px; overflow:hidden; position:relative; }
 .slides { position:relative; width:100%; height:100%; }
 .slide { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:0; transition: opacity .35s ease; background: var(--slide-bg,#ddd); }
