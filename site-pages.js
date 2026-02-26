@@ -298,7 +298,17 @@
         resultEl: centerResults,
         category: forcedSingleCategory,
         selectedId: selectedCenter ? selectedCenter.id : null,
-        onPick: (centerModel) => goToSelection(centerModel, selectedCenefa, selectedEsquina),
+        onPick: (pickedModel) => {
+          if (pickerMode === 'single' && forcedSingleCategory === 'cenefa') {
+            goToSelection(selectedCenter, pickedModel, findEsquinaForCenefa(pickedModel));
+            return;
+          }
+          if (pickerMode === 'single' && forcedSingleCategory === 'esquina') {
+            goToSelection(selectedCenter, selectedCenefa, pickedModel);
+            return;
+          }
+          goToSelection(pickedModel, selectedCenefa, selectedEsquina);
+        },
       }));
       centerInput.addEventListener('focus', () => centerInput.dispatchEvent(new Event('input')));
       centerInput.dispatchEvent(new Event('input'));
@@ -415,6 +425,8 @@
     let centerImg = null;
     let cenefaImg = null;
     let esquinaImg = null;
+    let cenefaEditedCanvas = null;
+    let esquinaEditedCanvas = null;
 
     function drawTile(ctx, source, row, col, tileW, tileH, angle) {
       if (!source) return;
@@ -449,15 +461,20 @@
         const tw = Math.floor(w / cols);
         const th = Math.floor(h / rows);
 
-        const centerSource = tile;
-        const cenefaSource = cenefaImg;
-        const cornerSource = esquinaImg || cenefaSource;
+        const centerSource = centerSrc ? tile : null;
+        const cenefaSource = cenefaEditedCanvas || cenefaImg;
+        const cornerSource = esquinaEditedCanvas || esquinaImg || cenefaSource;
 
         const centerMap = [[0, Math.PI / 2], [3 * Math.PI / 2, Math.PI]];
 
-        for (let r = 1; r < rows - 1; r++) {
-          for (let c = 1; c < cols - 1; c++) {
-            drawTile(pctx, centerSource, r, c, tw, th, centerMap[r % 2][c % 2]);
+        pctx.fillStyle = '#fff';
+        pctx.fillRect(0, 0, w, h);
+
+        if (centerSource) {
+          for (let r = 1; r < rows - 1; r++) {
+            for (let c = 1; c < cols - 1; c++) {
+              drawTile(pctx, centerSource, r, c, tw, th, centerMap[r % 2][c % 2]);
+            }
           }
         }
 
@@ -482,6 +499,32 @@
       const rows = 8;
       const tw = Math.floor(w / cols);
       const th = Math.floor(h / rows);
+
+      if (category === 'cenefa') {
+        pctx.fillStyle = '#fff';
+        pctx.fillRect(0, 0, w, h);
+        const borderSource = tile;
+        for (let c = 0; c < cols; c++) {
+          drawTile(pctx, borderSource, 0, c, tw, th, 0);
+          drawTile(pctx, borderSource, rows - 1, c, tw, th, Math.PI);
+        }
+        for (let r = 1; r < rows - 1; r++) {
+          drawTile(pctx, borderSource, r, 0, tw, th, -Math.PI / 2);
+          drawTile(pctx, borderSource, r, cols - 1, tw, th, Math.PI / 2);
+        }
+        return;
+      }
+
+      if (category === 'esquina') {
+        pctx.fillStyle = '#fff';
+        pctx.fillRect(0, 0, w, h);
+        drawTile(pctx, tile, 0, 0, tw, th, 0);
+        drawTile(pctx, tile, 0, cols - 1, tw, th, Math.PI / 2);
+        drawTile(pctx, tile, rows - 1, cols - 1, tw, th, Math.PI);
+        drawTile(pctx, tile, rows - 1, 0, tw, th, -Math.PI / 2);
+        return;
+      }
+
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           const x = c * tw;
@@ -803,7 +846,7 @@
     }
 
 
-    function renderStaticSquare(containerId, imageSrc) {
+    function renderStaticSquare(containerId, imageSrc, type) {
       const host = q(containerId);
       if (!host) return;
       host.innerHTML = '';
@@ -817,9 +860,96 @@
       c.height = 300;
       host.appendChild(c);
       const cx = c.getContext('2d');
+
+      let sourceData = null;
+      let currentData = null;
+
+      function renderSquare() {
+        if (!currentData) return;
+        cx.putImageData(currentData, 0, 0);
+      }
+
+      function floodFillSquare(x, y) {
+        if (!selected || !sourceData || !currentData) return;
+        const w = sourceData.width;
+        const h = sourceData.height;
+        const sx = Math.max(0, Math.min(w - 1, Math.floor(x)));
+        const sy = Math.max(0, Math.min(h - 1, Math.floor(y)));
+        const src = sourceData.data;
+        const dst = currentData.data;
+        const i0 = (sy * w + sx) * 4;
+        const tr = src[i0], tg = src[i0 + 1], tb = src[i0 + 2], ta = src[i0 + 3];
+        if (ta < 10) return;
+        const next = hexToRgb(selected.hex);
+        const tolerance = 48;
+        const toleranceSq = tolerance * tolerance;
+
+        const visited = new Uint8Array(w * h);
+        const qx = new Int32Array(w * h);
+        const qy = new Int32Array(w * h);
+        let head = 0;
+        let tail = 0;
+        const seed = sy * w + sx;
+        visited[seed] = 1;
+        qx[tail] = sx;
+        qy[tail] = sy;
+        tail += 1;
+
+        while (head < tail) {
+          const cxp = qx[head];
+          const cyp = qy[head];
+          head += 1;
+          const p = cyp * w + cxp;
+          const i = p * 4;
+          const da = src[i + 3];
+          if (da < 10) continue;
+          const dr = src[i] - tr;
+          const dg = src[i + 1] - tg;
+          const db = src[i + 2] - tb;
+          if ((dr * dr + dg * dg + db * db) > toleranceSq) continue;
+
+          dst[i] = next.r;
+          dst[i + 1] = next.g;
+          dst[i + 2] = next.b;
+          dst[i + 3] = da;
+
+          const neighbors = [[1,0],[-1,0],[0,1],[0,-1]];
+          for (const [dx, dy] of neighbors) {
+            const nx = cxp + dx;
+            const ny = cyp + dy;
+            if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+            const np = ny * w + nx;
+            if (visited[np]) continue;
+            visited[np] = 1;
+            qx[tail] = nx;
+            qy[tail] = ny;
+            tail += 1;
+          }
+        }
+        renderSquare();
+
+        const syncCanvas = document.createElement('canvas');
+        syncCanvas.width = 300;
+        syncCanvas.height = 300;
+        const sctx2 = syncCanvas.getContext('2d');
+        sctx2.putImageData(currentData, 0, 0);
+        if (type === 'cenefa') cenefaEditedCanvas = syncCanvas;
+        if (type === 'esquina') esquinaEditedCanvas = syncCanvas;
+        drawPattern();
+      }
+
       loadImageSafe(imageSrc).then((img) => {
         if (!img) return;
         drawImageCover(cx, img, 300, 300);
+        sourceData = cx.getImageData(0, 0, 300, 300);
+        currentData = new ImageData(new Uint8ClampedArray(sourceData.data), sourceData.width, sourceData.height);
+        renderSquare();
+        c.addEventListener('click', (ev) => {
+          const rect = c.getBoundingClientRect();
+          const x = ((ev.clientX - rect.left) / rect.width) * c.width;
+          const y = ((ev.clientY - rect.top) / rect.height) * c.height;
+          floodFillSquare(x, y);
+        });
       });
     }
 
@@ -848,8 +978,8 @@
         updateHistoryButtons();
       };
       img.src = src;
-      renderStaticSquare('extraCenefaPreview', cenefaSrc);
-      renderStaticSquare('extraCornerPreview', esquinaSrc);
+      renderStaticSquare('extraCenefaPreview', cenefaSrc, 'cenefa');
+      renderStaticSquare('extraCornerPreview', esquinaSrc, 'esquina');
     });
   }
 

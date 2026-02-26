@@ -183,8 +183,8 @@ if ($centerId === '' && $legacyId !== '' && isset($modelById[$legacyId]) && $mod
 if ($cenefaId === '' && $legacyId !== '' && isset($modelById[$legacyId]) && $modelById[$legacyId]['categoria'] === 'cenefa') $cenefaId = $legacyId;
 
 $selectedCenter = ($centerId !== '' && isset($modelById[$centerId])) ? $modelById[$centerId] : null;
-$selectedCenefa = ($pickerMode === 'dual' && $cenefaId !== '' && isset($modelById[$cenefaId])) ? $modelById[$cenefaId] : null;
-$selectedEsquina = ($pickerMode === 'dual' && $esquinaId !== '' && isset($modelById[$esquinaId])) ? $modelById[$esquinaId] : null;
+$selectedCenefa = ($cenefaId !== '' && isset($modelById[$cenefaId])) ? $modelById[$cenefaId] : null;
+$selectedEsquina = ($esquinaId !== '' && isset($modelById[$esquinaId])) ? $modelById[$esquinaId] : null;
 
 if ($selectedCenefa && !$selectedEsquina) {
     $cenefaFolder = carpeta_modelo_de_item($selectedCenefa);
