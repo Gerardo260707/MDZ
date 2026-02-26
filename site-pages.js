@@ -479,6 +479,14 @@
       updateHistoryButtons();
     }
 
+    function commitMutation(previousSnapshot) {
+      if (!previousSnapshot) return;
+      undoStack.push(previousSnapshot);
+      if (undoStack.length > 40) undoStack.shift();
+      redoStack.length = 0;
+      updateHistoryButtons();
+    }
+
     function drawTile(ctx, source, row, col, tileW, tileH, angle) {
       if (!source) return;
       const x = col * tileW;
@@ -612,7 +620,8 @@
 
       const next = hexToRgb(colorObj.hex);
       if (dst[i0] === next.r && dst[i0 + 1] === next.g && dst[i0 + 2] === next.b) return;
-      pushHistory();
+      const previousSnapshot = snapshotState();
+      let painted = 0;
       const fillOptions = window.CUSTOMIZER_FILL || {};
       const baseTolerance = Number(fillOptions.tolerance);
       const baseEdgeTolerance = Number(fillOptions.edgeTolerance);
@@ -693,10 +702,13 @@
         if (Math.abs(luma - seedLuma) > lumaTolerance) continue;
         if (!isHomogeneousSeedNeighborhood(cx, cy)) continue;
 
-        dst[i] = next.r;
-        dst[i + 1] = next.g;
-        dst[i + 2] = next.b;
-        dst[i + 3] = da;
+        if (dst[i] !== next.r || dst[i + 1] !== next.g || dst[i + 2] !== next.b) {
+          dst[i] = next.r;
+          dst[i + 1] = next.g;
+          dst[i + 2] = next.b;
+          dst[i + 3] = da;
+          painted += 1;
+        }
 
         function push(nx, ny) {
           const np = ny * w + nx;
@@ -739,9 +751,10 @@
         }
       }
 
+      if (!painted) return;
+      commitMutation(previousSnapshot);
       renderEdit();
       drawPattern();
-      updateHistoryButtons();
       updateHistoryButtons();
     }
 
@@ -1006,7 +1019,8 @@
         if (ta < 10) return;
         const next = hexToRgb(selected.hex);
         if (dst[i0] === next.r && dst[i0 + 1] === next.g && dst[i0 + 2] === next.b) return;
-        pushHistory();
+        const previousSnapshot = snapshotState();
+        let painted = 0;
         const tolerance = 48;
         const toleranceSq = tolerance * tolerance;
 
@@ -1034,10 +1048,13 @@
           const db = src[i + 2] - tb;
           if ((dr * dr + dg * dg + db * db) > toleranceSq) continue;
 
-          dst[i] = next.r;
-          dst[i + 1] = next.g;
-          dst[i + 2] = next.b;
-          dst[i + 3] = da;
+          if (dst[i] !== next.r || dst[i + 1] !== next.g || dst[i + 2] !== next.b) {
+            dst[i] = next.r;
+            dst[i + 1] = next.g;
+            dst[i + 2] = next.b;
+            dst[i + 3] = da;
+            painted += 1;
+          }
 
           const neighbors = [[1,0],[-1,0],[0,1],[0,-1]];
           for (const [dx, dy] of neighbors) {
@@ -1052,6 +1069,8 @@
             tail += 1;
           }
         }
+        if (!painted) return;
+        commitMutation(previousSnapshot);
         renderSquare();
 
         const syncCanvas = document.createElement('canvas');
