@@ -207,7 +207,7 @@ if ($selectedCenefa && !$selectedEsquina) {
     }
 }
 
-$editable = $selectedCenefa ?: $selectedCenter;
+$editable = $selectedCenter ?: $selectedCenefa;
 if (!$editable && isset($_GET['img']) && (string)$_GET['img'] !== '') {
     $editable = [
         'id' => (int)($_GET['id'] ?? 0),
@@ -222,7 +222,7 @@ if (!$editable && isset($_GET['img']) && (string)$_GET['img'] !== '') {
 $selectedName = $editable['nombre'] ?? ($lang === 'en' ? 'Choose center and border to begin' : 'Elige centro y cenefa para comenzar');
 $selectedImage = $editable['imagen'] ?? '';
 $selectedCategory = $editable['categoria'] ?? '';
-$editTarget = $selectedCenefa ? 'cenefa' : 'centro';
+$editTarget = ($pickerMode === 'dual') ? 'centro' : ($selectedCategory !== '' ? $selectedCategory : 'centro');
 $entryCategory = strtolower(trim((string)($_GET['cat'] ?? ($editable['categoria'] ?? ''))));
 ?>
 <!doctype html>
@@ -279,7 +279,7 @@ $entryCategory = strtolower(trim((string)($_GET['cat'] ?? ($editable['categoria'
           <div class="vector-editor" id="vectorEditor"></div>
           <?php if ($selectedCenefa): ?>
           <div class="extra-editors">
-            <div class="vector-editor extra-editor" id="extraCenterPreview" data-extra-src="<?= htmlspecialchars($selectedCenter['imagen'] ?? '', ENT_QUOTES) ?>" aria-label="Centro"></div>
+            <div class="vector-editor extra-editor" id="extraCenefaPreview" data-extra-src="<?= htmlspecialchars($selectedCenefa['imagen'] ?? '', ENT_QUOTES) ?>" aria-label="Cenefa"></div>
             <div class="vector-editor extra-editor" id="extraCornerPreview" data-extra-src="<?= htmlspecialchars($selectedEsquina['imagen'] ?? '', ENT_QUOTES) ?>" aria-label="Esquina"></div>
           </div>
           <?php endif; ?>

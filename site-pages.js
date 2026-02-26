@@ -237,12 +237,13 @@
         url.searchParams.delete('esquina_id');
       }
 
-      const editable = (pickerMode === 'dual' && cenefaModel) ? cenefaModel : centerModel;
-      if (editable) {
-        url.searchParams.set('id', String(editable.id));
-        url.searchParams.set('name', editable.nombre || 'Modelo');
-        url.searchParams.set('img', editable.imagen || 'assets/placeholder-tile.svg');
-        url.searchParams.set('cat', (editable.categoria || '').toLowerCase());
+      const editable = centerModel;
+      const fallbackEditable = editable || cenefaModel || esquinaModel;
+      if (fallbackEditable) {
+        url.searchParams.set('id', String(fallbackEditable.id));
+        url.searchParams.set('name', fallbackEditable.nombre || 'Modelo');
+        url.searchParams.set('img', fallbackEditable.imagen || 'assets/placeholder-tile.svg');
+        url.searchParams.set('cat', (fallbackEditable.categoria || '').toLowerCase());
       }
       url.searchParams.set('lang', lang);
       window.location.assign(url.pathname + url.search + url.hash);
@@ -283,7 +284,7 @@
       ? ((big.dataset.entryCategory || big.dataset.category || '').toLowerCase().trim() || 'centro')
       : 'centro';
 
-    if (centerInput) {
+      if (centerInput) {
       if (pickerMode === 'single') {
         centerInput.placeholder = (forcedSingleCategory === 'cenefa')
           ? (lang === 'en' ? 'Select border' : 'Seleccionar cenefa')
@@ -415,6 +416,17 @@
     let cenefaImg = null;
     let esquinaImg = null;
 
+    function drawTile(ctx, source, row, col, tileW, tileH, angle) {
+      if (!source) return;
+      const x = col * tileW;
+      const y = row * tileH;
+      ctx.save();
+      ctx.translate(x + tileW / 2, y + tileH / 2);
+      ctx.rotate(angle || 0);
+      ctx.drawImage(source, -tileW / 2, -tileH / 2, tileW, tileH);
+      ctx.restore();
+    }
+
     function drawPattern() {
       if (!currentImageData) return;
       const tile = document.createElement('canvas');
@@ -432,42 +444,37 @@
       pctx.clearRect(0, 0, w, h);
 
       if (centerSrc && cenefaSrc) {
-        const border = Math.round(Math.min(w, h) * 0.16);
-        const innerX = border;
-        const innerY = border;
-        const innerW = w - border * 2;
-        const innerH = h - border * 2;
+        const cols = 12;
+        const rows = 8;
+        const tw = Math.floor(w / cols);
+        const th = Math.floor(h / rows);
 
-        const centerSource = (editTarget === 'centro') ? tile : centerImg;
-        if (centerSource) pctx.drawImage(centerSource, innerX, innerY, innerW, innerH);
-        else {
-          pctx.fillStyle = '#f3f3f3';
-          pctx.fillRect(innerX, innerY, innerW, innerH);
-        }
-
-        const cenefaSource = (editTarget === 'cenefa') ? tile : cenefaImg;
-        if (cenefaSource) {
-          pctx.drawImage(cenefaSource, innerX, 0, innerW, border);
-          pctx.drawImage(cenefaSource, innerX, h - border, innerW, border);
-          pctx.save();
-          pctx.translate(0, innerY + innerH);
-          pctx.rotate(-Math.PI / 2);
-          pctx.drawImage(cenefaSource, 0, 0, innerH, border);
-          pctx.restore();
-          pctx.save();
-          pctx.translate(w, innerY);
-          pctx.rotate(Math.PI / 2);
-          pctx.drawImage(cenefaSource, 0, 0, innerH, border);
-          pctx.restore();
-        }
-
+        const centerSource = tile;
+        const cenefaSource = cenefaImg;
         const cornerSource = esquinaImg || cenefaSource;
-        if (cornerSource) {
-          pctx.drawImage(cornerSource, 0, 0, border, border);
-          pctx.drawImage(cornerSource, w - border, 0, border, border);
-          pctx.drawImage(cornerSource, 0, h - border, border, border);
-          pctx.drawImage(cornerSource, w - border, h - border, border, border);
+
+        const centerMap = [[0, Math.PI / 2], [3 * Math.PI / 2, Math.PI]];
+
+        for (let r = 1; r < rows - 1; r++) {
+          for (let c = 1; c < cols - 1; c++) {
+            drawTile(pctx, centerSource, r, c, tw, th, centerMap[r % 2][c % 2]);
+          }
         }
+
+        for (let c = 1; c < cols - 1; c++) {
+          drawTile(pctx, cenefaSource, 0, c, tw, th, 0);
+          drawTile(pctx, cenefaSource, rows - 1, c, tw, th, Math.PI);
+        }
+        for (let r = 1; r < rows - 1; r++) {
+          drawTile(pctx, cenefaSource, r, 0, tw, th, -Math.PI / 2);
+          drawTile(pctx, cenefaSource, r, cols - 1, tw, th, Math.PI / 2);
+        }
+
+        drawTile(pctx, cornerSource, 0, 0, tw, th, 0);
+        drawTile(pctx, cornerSource, 0, cols - 1, tw, th, Math.PI / 2);
+        drawTile(pctx, cornerSource, rows - 1, cols - 1, tw, th, Math.PI);
+        drawTile(pctx, cornerSource, rows - 1, 0, tw, th, -Math.PI / 2);
+
         return;
       }
 
@@ -841,7 +848,7 @@
         updateHistoryButtons();
       };
       img.src = src;
-      renderStaticSquare('extraCenterPreview', centerSrc);
+      renderStaticSquare('extraCenefaPreview', cenefaSrc);
       renderStaticSquare('extraCornerPreview', esquinaSrc);
     });
   }
@@ -882,7 +889,8 @@
 
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
-          const angle = ((x + y) % 4) * (Math.PI / 2);
+          const map = [[0, Math.PI / 2], [3 * Math.PI / 2, Math.PI]];
+          const angle = map[y % 2][x % 2];
           pctx.save();
           pctx.translate(x * tileW + tileW / 2, y * tileH + tileH / 2);
           pctx.rotate(angle);
