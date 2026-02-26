@@ -611,6 +611,8 @@
       if (ta < 10) return;
 
       const next = hexToRgb(colorObj.hex);
+      if (dst[i0] === next.r && dst[i0 + 1] === next.g && dst[i0 + 2] === next.b) return;
+      pushHistory();
       const fillOptions = window.CUSTOMIZER_FILL || {};
       const baseTolerance = Number(fillOptions.tolerance);
       const baseEdgeTolerance = Number(fillOptions.edgeTolerance);
@@ -747,7 +749,6 @@
       const rect = editCanvas.getBoundingClientRect();
       const x = (ev.clientX - rect.left) * (editCanvas.width / rect.width);
       const y = (ev.clientY - rect.top) * (editCanvas.height / rect.height);
-      if (currentImageData) pushHistory();
       floodFillAt(x, y, selected);
       updateHistoryButtons();
     });
@@ -869,13 +870,57 @@
           rctx.fillText(`${item.id} · ${item.name} (${item.hex})`, x + 40, y + 4);
         });
 
+        function modelNameBySrc(imageSrc, fallbackLabel) {
+          if (!imageSrc) return fallbackLabel;
+          const found = models.find((m) => (m.imagen || '') === imageSrc);
+          return found && found.nombre ? found.nombre : fallbackLabel;
+        }
+
+        async function thumbCanvasFromSrc(imageSrc, fallbackCanvas) {
+          if (fallbackCanvas) return fallbackCanvas;
+          const img = await loadImageSafe(imageSrc);
+          if (!img) return null;
+          const c = document.createElement('canvas');
+          c.width = 300;
+          c.height = 300;
+          const cx = c.getContext('2d');
+          drawImageCover(cx, img, c.width, c.height);
+          return c;
+        }
+
         const modelThumbs = [];
-        if (editCanvas) modelThumbs.push({ label: (editTarget || category || 'modelo').toUpperCase(), canvas: editCanvas });
         const cCanvas = q('extraCenefaPreview canvas');
         const eCanvas = q('extraCornerPreview canvas');
-        if (cCanvas) modelThumbs.push({ label: 'CENEFA', canvas: cCanvas });
-        if (eCanvas) modelThumbs.push({ label: 'ESQUINA', canvas: eCanvas });
-        if (modelThumbs.length) {
+
+        const mainLabel = selectedModelNameEl && selectedModelNameEl.textContent
+          ? selectedModelNameEl.textContent.trim()
+          : modelName;
+        if (src) {
+          const mainCanvas = await thumbCanvasFromSrc(src, editCanvas || null);
+          if (mainCanvas) modelThumbs.push({ key: src, label: mainLabel || (editTarget || category || 'Modelo').toUpperCase(), canvas: mainCanvas });
+        }
+        if (centerSrc && centerSrc !== src) {
+          const centerCanvas = await thumbCanvasFromSrc(centerSrc, null);
+          if (centerCanvas) modelThumbs.push({ key: centerSrc, label: modelNameBySrc(centerSrc, 'Centro'), canvas: centerCanvas });
+        }
+        if (cenefaSrc && cenefaSrc !== src) {
+          const cenefaCanvas = await thumbCanvasFromSrc(cenefaSrc, cCanvas || null);
+          if (cenefaCanvas) modelThumbs.push({ key: cenefaSrc, label: modelNameBySrc(cenefaSrc, 'Cenefa'), canvas: cenefaCanvas });
+        }
+        if (esquinaSrc && esquinaSrc !== src) {
+          const esquinaCanvas = await thumbCanvasFromSrc(esquinaSrc, eCanvas || null);
+          if (esquinaCanvas) modelThumbs.push({ key: esquinaSrc, label: modelNameBySrc(esquinaSrc, 'Esquina'), canvas: esquinaCanvas });
+        }
+
+        const seen = new Set();
+        const dedupThumbs = modelThumbs.filter((entry) => {
+          const k = entry.key || entry.label;
+          if (seen.has(k)) return false;
+          seen.add(k);
+          return true;
+        });
+
+        if (dedupThumbs.length) {
           const thumbStartX = tpl.colors.startX + (tpl.colors.colGap * tpl.colors.columns) + 20;
           const thumbStartY = tpl.colors.startY - 50;
           const thumbW = 150;
@@ -885,7 +930,7 @@
           rctx.font = '700 24px Arial';
           rctx.fillText(lang === 'en' ? 'Customized models' : 'Modelos personalizados', thumbStartX, thumbStartY - 18);
           rctx.font = '18px Arial';
-          modelThumbs.forEach((entry, idx) => {
+          dedupThumbs.forEach((entry, idx) => {
             const y = thumbStartY + idx * (thumbH + gapY);
             rctx.strokeStyle = '#bbb';
             rctx.strokeRect(thumbStartX, y, thumbW, thumbH);
@@ -950,7 +995,6 @@
 
       function floodFillSquare(x, y) {
         if (!selected || !sourceData || !currentData) return;
-        pushHistory();
         const w = sourceData.width;
         const h = sourceData.height;
         const sx = Math.max(0, Math.min(w - 1, Math.floor(x)));
@@ -961,6 +1005,8 @@
         const tr = src[i0], tg = src[i0 + 1], tb = src[i0 + 2], ta = src[i0 + 3];
         if (ta < 10) return;
         const next = hexToRgb(selected.hex);
+        if (dst[i0] === next.r && dst[i0 + 1] === next.g && dst[i0 + 2] === next.b) return;
+        pushHistory();
         const tolerance = 48;
         const toleranceSq = tolerance * tolerance;
 
