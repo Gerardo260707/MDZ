@@ -207,6 +207,27 @@ if ($selectedCenefa && !$selectedEsquina) {
     }
 }
 
+if ($selectedEsquina && !$selectedCenefa) {
+    $esquinaFolder = carpeta_modelo_de_item($selectedEsquina);
+    $mappedCenefaFolder = array_search($esquinaFolder, $conexionesCsv, true);
+    if ($mappedCenefaFolder !== false) {
+        foreach ($models as $m) {
+            if (($m['categoria'] ?? '') !== 'cenefa') continue;
+            if (carpeta_modelo_de_item($m) === $mappedCenefaFolder) {
+                $selectedCenefa = $m;
+                break;
+            }
+        }
+    }
+}
+
+if ($selectedEsquina && !$selectedCenefa) {
+    $k = pair_key($selectedEsquina);
+    foreach ($models as $m) {
+        if (($m['categoria'] ?? '') === 'cenefa' && pair_key($m) === $k) { $selectedCenefa = $m; break; }
+    }
+}
+
 $editable = ($pickerMode === 'dual')
     ? $selectedCenter
     : ($selectedCenter ?: $selectedCenefa ?: $selectedEsquina);
@@ -226,6 +247,9 @@ $selectedImage = $editable['imagen'] ?? '';
 $selectedCategory = $editable['categoria'] ?? '';
 $editTarget = ($pickerMode === 'dual') ? 'centro' : ($selectedCategory !== '' ? $selectedCategory : 'centro');
 $entryCategory = strtolower(trim((string)($_GET['cat'] ?? ($editable['categoria'] ?? ''))));
+$showCenterEditor = !($pickerMode === 'single' && !$selectedCenter && ($selectedCenefa || $selectedEsquina));
+$showCenefaExtra = $selectedCenefa && ($pickerMode === 'dual' || ($pickerMode === 'single' && ($selectedCategory === 'esquina')));
+$showEsquinaExtra = $selectedEsquina && ($pickerMode === 'dual' || ($pickerMode === 'single' && ($selectedCategory === 'cenefa')));
 ?>
 <!doctype html>
 <html lang="<?= $lang ?>">
@@ -278,11 +302,17 @@ $entryCategory = strtolower(trim((string)($_GET['cat'] ?? ($editable['categoria'
         <div>
           <p data-i18n="custom_step1">1. Selecciona un color.</p>
           <p class="note" data-i18n="custom_step_area">2. Da clic en una sección del mosaico (PNG) para aplicar el color solo en esa zona.</p>
+          <?php if ($showCenterEditor): ?>
           <div class="vector-editor" id="vectorEditor"></div>
-          <?php if ($selectedCenefa): ?>
+          <?php endif; ?>
+          <?php if ($showCenefaExtra || $showEsquinaExtra): ?>
           <div class="extra-editors">
+            <?php if ($showCenefaExtra): ?>
             <div class="vector-editor extra-editor" id="extraCenefaPreview" data-extra-src="<?= htmlspecialchars($selectedCenefa['imagen'] ?? '', ENT_QUOTES) ?>" aria-label="Cenefa"></div>
+            <?php endif; ?>
+            <?php if ($showEsquinaExtra): ?>
             <div class="vector-editor extra-editor" id="extraCornerPreview" data-extra-src="<?= htmlspecialchars($selectedEsquina['imagen'] ?? '', ENT_QUOTES) ?>" aria-label="Esquina"></div>
+            <?php endif; ?>
           </div>
           <?php endif; ?>
         </div>

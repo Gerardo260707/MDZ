@@ -186,7 +186,7 @@
     const palette = q('palette');
     const editor = q('vectorEditor');
     const big = q('bigPreview');
-    if (!palette || !editor || !big) return;
+    if (!palette || !big) return;
 
     const lang = getLang();
     const models = Array.isArray(window.CUSTOMIZER_MODELS) ? window.CUSTOMIZER_MODELS : [];
@@ -333,7 +333,7 @@
     const esquinaSrc = (big.dataset.esquinaImage || '').trim();
     const editTarget = (big.dataset.editTarget || '').toLowerCase();
     if (!src && !cenefaSrc && !esquinaSrc) {
-      editor.innerHTML = `<p class="empty-msg">${lang === 'en' ? 'Select a model from the search bar above to start customizing.' : 'Selecciona un modelo en la barra de búsqueda para comenzar a personalizar.'}</p>`;
+      if (editor) editor.innerHTML = `<p class="empty-msg">${lang === 'en' ? 'Select a model from the search bar above to start customizing.' : 'Selecciona un modelo en la barra de búsqueda para comenzar a personalizar.'}</p>`;
       big.innerHTML = `<p class="empty-msg">${lang === 'en' ? 'Pattern preview will appear here once a model is selected.' : 'La vista previa aparecerá aquí cuando elijas un modelo.'}</p>`;
       palette.innerHTML = '';
       const downloadBtn = q('download');
@@ -386,12 +386,12 @@
       return Array.from(used);
     }
 
-    editor.innerHTML = '<canvas id="editCanvas" class="vector-canvas" width="600" height="600"></canvas>';
+    if (editor) editor.innerHTML = '<canvas id="editCanvas" class="vector-canvas" width="600" height="600"></canvas>';
     big.innerHTML = '<canvas id="patternCanvas" class="pattern-canvas" width="1200" height="800"></canvas>';
 
     const editCanvas = q('editCanvas');
     const patternCanvas = q('patternCanvas');
-    const ectx = editCanvas.getContext('2d', { willReadFrequently: true });
+    const ectx = editCanvas ? editCanvas.getContext('2d', { willReadFrequently: true }) : null;
     const pctx = patternCanvas.getContext('2d');
 
     const srcCanvas = document.createElement('canvas');
@@ -418,7 +418,7 @@
     }
 
     function renderEdit() {
-      if (!currentImageData) return;
+      if (!currentImageData || !ectx) return;
       ectx.putImageData(currentImageData, 0, 0);
     }
 
@@ -862,6 +862,32 @@
           rctx.fillStyle = '#222';
           rctx.fillText(`${item.id} · ${item.name} (${item.hex})`, x + 40, y + 4);
         });
+
+        const modelThumbs = [];
+        if (editCanvas) modelThumbs.push({ label: (editTarget || category || 'modelo').toUpperCase(), canvas: editCanvas });
+        const cCanvas = q('extraCenefaPreview canvas');
+        const eCanvas = q('extraCornerPreview canvas');
+        if (cCanvas) modelThumbs.push({ label: 'CENEFA', canvas: cCanvas });
+        if (eCanvas) modelThumbs.push({ label: 'ESQUINA', canvas: eCanvas });
+        if (modelThumbs.length) {
+          const thumbStartX = tpl.colors.startX + (tpl.colors.colGap * tpl.colors.columns) + 20;
+          const thumbStartY = tpl.colors.startY - 50;
+          const thumbW = 150;
+          const thumbH = 150;
+          const gapY = 36;
+          rctx.fillStyle = '#111';
+          rctx.font = '700 24px Arial';
+          rctx.fillText(lang === 'en' ? 'Customized models' : 'Modelos personalizados', thumbStartX, thumbStartY - 18);
+          rctx.font = '18px Arial';
+          modelThumbs.forEach((entry, idx) => {
+            const y = thumbStartY + idx * (thumbH + gapY);
+            rctx.strokeStyle = '#bbb';
+            rctx.strokeRect(thumbStartX, y, thumbW, thumbH);
+            rctx.drawImage(entry.canvas, thumbStartX, y, thumbW, thumbH);
+            rctx.fillStyle = '#222';
+            rctx.fillText(entry.label, thumbStartX + thumbW + 18, y + 84);
+          });
+        }
 
         const jpg = reportCanvas.toDataURL('image/jpeg', 0.92);
         const blob = buildPdfFromJpeg(jpg, tpl.page.widthPt, tpl.page.heightPt, reportCanvas.width, reportCanvas.height);
