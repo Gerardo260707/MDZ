@@ -181,6 +181,7 @@ $esquinaId = (string)($_GET['esquina_id'] ?? '');
 $legacyId = (string)($_GET['id'] ?? '');
 if ($centerId === '' && $legacyId !== '' && isset($modelById[$legacyId]) && $modelById[$legacyId]['categoria'] === 'centro') $centerId = $legacyId;
 if ($cenefaId === '' && $legacyId !== '' && isset($modelById[$legacyId]) && $modelById[$legacyId]['categoria'] === 'cenefa') $cenefaId = $legacyId;
+if ($esquinaId === '' && $legacyId !== '' && isset($modelById[$legacyId]) && $modelById[$legacyId]['categoria'] === 'esquina') $esquinaId = $legacyId;
 
 $selectedCenter = ($centerId !== '' && isset($modelById[$centerId])) ? $modelById[$centerId] : null;
 $selectedCenefa = ($cenefaId !== '' && isset($modelById[$cenefaId])) ? $modelById[$cenefaId] : null;
@@ -255,9 +256,14 @@ $selectedImage = $editable['imagen'] ?? '';
 $selectedCategory = $editable['categoria'] ?? '';
 $editTarget = ($pickerMode === 'dual') ? 'centro' : ($selectedCategory !== '' ? $selectedCategory : 'centro');
 $entryCategory = strtolower(trim((string)($_GET['cat'] ?? ($editable['categoria'] ?? ''))));
-$showCenterEditor = !($pickerMode === 'single' && !$selectedCenter && ($selectedCenefa || $selectedEsquina));
-$showCenefaExtra = $selectedCenefa && ($pickerMode === 'dual' || ($pickerMode === 'single' && ($selectedCategory === 'esquina')));
-$showEsquinaExtra = $selectedEsquina && ($pickerMode === 'dual' || ($pickerMode === 'single' && ($selectedCategory === 'cenefa')));
+$showCenterEditor = true;
+if ($pickerMode === 'dual') {
+    $showCenefaExtra = (bool)$selectedCenefa;
+    $showEsquinaExtra = (bool)$selectedEsquina;
+} else {
+    $showCenefaExtra = ($selectedCategory === 'esquina') && (bool)$selectedCenefa;
+    $showEsquinaExtra = ($selectedCategory === 'cenefa') && (bool)$selectedEsquina;
+}
 ?>
 <!doctype html>
 <html lang="<?= $lang ?>">
