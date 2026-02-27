@@ -1,7 +1,6 @@
 # Imágenes del carrusel
-Sube aquí tus imágenes del carrusel principal (recomendado horizontal, por ejemplo 1600x500).
+Solo agrega imágenes en esta carpeta y aparecerán automáticamente en el carrusel de inicio.
 
-Ejemplos de nombre:
-- `promo-1.jpg`
-- `promo-2.jpg`
-- `promo-3.jpg`
+- Formatos soportados: `.jpg`, `.jpeg`, `.png`, `.webp`, `.avif`
+- Orden: alfabético por nombre de archivo.
+- Caché: si reemplazas un archivo con el mismo nombre, también se actualizará (se usa versión por fecha de modificación).

@@ -79,8 +79,8 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .preview-big{width:100%;aspect-ratio:12/8;border:1px solid #888;background:#f2f2f2;overflow:hidden}
 .pattern-canvas{width:100%;height:100%;display:block}
 .palette{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
-.sw{height:32px;border:1px solid #999;cursor:pointer;position:relative;color:#fff;font-size:10px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.75)}
-.sw span{position:absolute;left:4px;bottom:2px;letter-spacing:.2px}
+.sw{height:34px;border:1px solid #999;cursor:pointer;position:relative;color:#fff;font-size:10px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.75);overflow:hidden}
+.sw span{position:absolute;left:2px;right:2px;bottom:2px;letter-spacing:.1px;font-size:9px;line-height:1;text-align:center;white-space:nowrap}.sw span.long{font-size:8px}
 .sw.active{outline:2px solid #111}
 .side-box{border:1px solid #ddd;background:#f8f8f8;padding:12px}
 @media (max-width:980px){.decorated-layout{grid-template-columns:1fr}.quote-box h3{font-size:30px}.quote-top h4{font-size:32px}.cards{justify-content:flex-start}}
@@ -135,7 +135,7 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .dark-footer a{color:#c2ff3f}
 
 
-.tapetes-list{display:grid;gap:20px;padding:24px 28px}
+.tapetes-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:18px 20px}
 .tapete-card{border:1px solid #d9d9d9;background:#fff;padding:14px}
 .tapete-preview-canvas{width:100%;height:auto;display:block;border:1px solid #c9c9c9;background:#f5f5f5}
 .tapete-meta{padding-top:10px}
@@ -143,4 +143,13 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .tapete-meta p{font-size:14px}
 
 .tapete-meta-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.tapete-meta-head .cta-pill{padding:6px 12px !important;font-size:12px !important}
+.tapete-meta-head .cta-pill{padding:10px 18px !important;font-size:14px !important}
+
+.colors-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:14px}
+.color-card{border:1px solid #ddd;border-radius:8px;padding:10px;background:#fff;display:grid;gap:6px;text-align:center}
+.color-card .swatch{height:60px;border:1px solid #bbb;border-radius:6px}
+.color-card strong{font-size:14px}
+.color-card span{font-size:12px;color:#666}
+.especiales-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding:20px 28px}
+.special-card img{width:100%;aspect-ratio:1/1;object-fit:cover}
+@media (max-width:980px){.tapetes-list{grid-template-columns:1fr}.especiales-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}

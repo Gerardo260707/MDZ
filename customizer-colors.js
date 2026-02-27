@@ -58,7 +58,7 @@ window.CUSTOMIZER_COLORS = [
   { id: 'V72', hex: '#8E8357', name: 'V72' },
   { id: 'V73', hex: '#419370', name: 'V73' },
   { id: 'V74 Escudo', hex: '#678967', name: 'V74 Escudo' },
-  { id: 'V74Norte', hex: '#82A382', name: 'V74Norte' },
+  { id: 'V74 Norte', hex: '#82A382', name: 'V74 Norte' },
   { id: 'V75', hex: '#677A5C', name: 'V75' },
   { id: 'V77', hex: '#6E9A8D', name: 'V77' },
   { id: 'V80', hex: '#E1E0CC', name: 'V80' },

@@ -20,21 +20,24 @@
       { title: 'ENVÍOS A TODO MÉXICO', subtitle: 'COMPRA DESDE CUALQUIER ESTADO', background: 'repeating-linear-gradient(135deg,#295e85 0 26px,#f0deb9 26px 52px,#943636 52px 78px,#f8f7f2 78px 104px,#488780 104px 130px,#d27f5f 130px 156px)' },
       { title: 'NUEVOS DISEÑOS', subtitle: 'COLECCIONES PERSONALIZADAS', background: 'repeating-linear-gradient(25deg,#33608f 0 25px,#ebdbb8 25px 50px,#7d1f1f 50px 75px,#f4f2e9 75px 100px,#3c8f88 100px 125px,#ca8867 125px 150px)' }
     ];
-    const CAROUSEL_SLIDES = Array.isArray(window.HOME_CAROUSEL) && window.HOME_CAROUSEL.length ? window.HOME_CAROUSEL : fallbackSlides;
+    const dynamicSlides = Array.isArray(window.HOME_CAROUSEL_ASSETS) ? window.HOME_CAROUSEL_ASSETS : [];
+    const manualSlides = Array.isArray(window.HOME_CAROUSEL) ? window.HOME_CAROUSEL : [];
+    const CAROUSEL_SLIDES = dynamicSlides.length ? dynamicSlides : (manualSlides.length ? manualSlides : fallbackSlides);
 
     const lang = getLang();
     const FEATURE_CARDS = [
-      { file: 'galeria.jpg', label: tByLang(lang, 'Mosaicos', 'Mosaics'), href: 'mosaicos.html', button: tByLang(lang, 'Ver modelos » clic aquí', 'View models » click here') },
-      { file: 'instalacion.jpg', label: tByLang(lang, 'Tapetes', 'Rugs'), href: 'tapetes.php', button: tByLang(lang, 'Personalizar', 'Customize') },
-      { file: 'contacto.jpg', label: tByLang(lang, 'Colores', 'Colors'), href: 'galeria.html', button: tByLang(lang, 'Ver modelos » clic aquí', 'View models » click here') }
+      { file: '', label: tByLang(lang, 'Mosaicos', 'Mosaics'), href: 'mosaicos.html', button: tByLang(lang, 'Ver modelos » clic aquí', 'View models » click here') },
+      { file: '', label: tByLang(lang, 'Tapetes', 'Rugs'), href: 'tapetes.php', button: tByLang(lang, 'Personalizar', 'Customize') },
+      { file: '', label: tByLang(lang, 'Colores', 'Colors'), href: 'colores.php', button: tByLang(lang, 'Ver colores', 'View colors') }
     ];
 
-    FEATURE_CARDS.forEach((card) => {
+    FEATURE_CARDS.forEach((card, idx) => {
       const a = document.createElement('a');
       a.className = 'tile-card';
       const href = `${card.href}${card.href.includes('?') ? '&' : '?'}lang=${lang}`;
       a.href = href;
-      a.innerHTML = `<img src="assets/cuadros/${card.file}" alt="${card.label}" onerror="this.src='assets/placeholder-tile.svg'" /><span>${card.label}</span>`;
+      const imgSrc = (Array.isArray(window.HOME_FEATURE_IMAGES) && window.HOME_FEATURE_IMAGES[idx]) ? window.HOME_FEATURE_IMAGES[idx] : (card.file ? `assets/cuadros/${card.file}` : 'assets/placeholder-tile.svg');
+      a.innerHTML = `<img src="${imgSrc}" alt="${card.label}" onerror="this.src='assets/placeholder-tile.svg'" /><span>${card.label}</span>`;
       cardsContainer.appendChild(a);
     });
 
@@ -66,14 +69,29 @@
     setInterval(() => showSlide((activeIndex + 1) % CAROUSEL_SLIDES.length), 4500);
   }
 
+  
+
+  function initColorsPage() {
+    const grid = q('colorsGrid');
+    if (!grid) return;
+    const colors = getCustomizerPalette();
+    grid.innerHTML = '';
+    colors.forEach((c) => {
+      const card = document.createElement('div');
+      card.className = 'color-card';
+      card.innerHTML = `<div class="swatch" style="background:${c.hex}"></div><strong>${c.id}</strong><span>${c.hex}</span>`;
+      grid.appendChild(card);
+    });
+  }
+
   function initCategories() {
     const el = q('catGrid');
     if (!el) return;
     const lang = getLang();
     const categories = [
-      { key: 'cat_colors', img: 'assets/placeholder-tile.svg', href: 'galeria.html' },
+      { key: 'cat_colors', img: 'assets/placeholder-tile.svg', href: 'colores.php' },
       { key: 'cat_decorated', img: 'assets/placeholder-tile.svg', href: 'mosaicos.php' },
-      { key: 'cat_specials', img: 'assets/placeholder-tile.svg', href: 'galeria.html' },
+      { key: 'cat_specials', img: 'assets/placeholder-tile.svg', href: 'especiales.php' },
       { key: 'cat_customize', img: 'assets/placeholder-tile.svg', href: 'personalizar.php' }
     ];
     const dict = {
@@ -919,7 +937,8 @@
       b.style.background = c.hex;
       b.title = `${c.id} · ${c.name}`;
       b.setAttribute('aria-label', `${c.id} ${c.name}`);
-      b.innerHTML = `<span>${c.id}</span>`;
+      const idClass = c.id.length > 6 ? 'long' : '';
+      b.innerHTML = `<span class="${idClass}">${c.id}</span>`;
       b.addEventListener('click', () => {
         selected = c;
         document.querySelectorAll('.sw').forEach((n) => n.classList.remove('active'));
@@ -1518,14 +1537,15 @@
     const mapUrl = `sitemap.html?lang=${lang}`;
 
     const html = lang === 'en'
-      ? `<footer id="siteDarkFooter" class="dark-footer"><div class="dark-cols"><div><h4>Mosaicos Dzununcán</h4><p>Mexican cement tile manufacturer with custom projects.</p><p><a href="${legalUrl}#privacy">Privacy Policy</a><br><a href="${legalUrl}#terms">Terms and Conditions</a><br><a href="${mapUrl}">Site map</a></p></div><div><h4>Phones</h4><p>Local: +52 (999) 217-9326</p><p>Factory: +52 (999) 249-5158</p><p>Email: ventas@mosaicosdzununcan.com</p></div><div><h4>Address</h4><p>Sales & Showroom:<br/>Calle 37, No. 318 entre 24 y 26, Mérida, Yucatán.</p><p>Factory:<br/>Carretera Mérida - Dzununcan Km 2.5</p></div><div><h4>Social</h4><p><a target="_blank" rel="noopener" href="https://www.facebook.com/">Facebook</a><br><a target="_blank" rel="noopener" href="https://www.instagram.com/">Instagram</a><br><a target="_blank" rel="noopener" href="https://wa.me/529994069083">WhatsApp</a></p></div></div></footer>`
-      : `<footer id="siteDarkFooter" class="dark-footer"><div class="dark-cols"><div><h4>Mosaicos Dzununcán</h4><p>Fabricantes de mosaicos de pasta mexicanos con proyectos personalizados.</p><p><a href="${legalUrl}#privacy">Políticas de privacidad</a><br><a href="${legalUrl}#terms">Términos y condiciones</a><br><a href="${mapUrl}">Mapa del sitio</a></p></div><div><h4>Teléfonos</h4><p>Local: +52 (999) 217-9326</p><p>Fábrica: +52 (999) 249-5158</p><p>Email: ventas@mosaicosdzununcan.com</p></div><div><h4>Dirección</h4><p>Venta y sala de exhibición:<br/>Calle 37, No. 318 entre 24 y 26, Mérida, Yucatán.</p><p>Fábrica:<br/>Carretera Mérida - Dzununcan Km 2.5</p></div><div><h4>Redes</h4><p><a target="_blank" rel="noopener" href="https://www.facebook.com/">Facebook</a><br><a target="_blank" rel="noopener" href="https://www.instagram.com/">Instagram</a><br><a target="_blank" rel="noopener" href="https://wa.me/529994069083">WhatsApp</a></p></div></div></footer>`;
+      ? `<footer id="siteDarkFooter" class="dark-footer"><div class="dark-cols"><div><h4>Mosaicos Dzununcán</h4><p>Mexican cement tile manufacturer with custom projects.</p><p><a href="${legalUrl}#privacy">Privacy Policy</a><br><a href="${legalUrl}#terms">Terms and Conditions</a><br><a href="${mapUrl}">Site map</a></p></div><div><h4>Phones</h4><p>Local: +52 (999) 217-9326</p><p>Factory: +52 (999) 249-5158</p><p>Email: ventas@mosaicosdzununcan.com</p></div><div><h4>Address</h4><p>Sales & Showroom:<br/>Calle 37, No. 318 entre 24 y 26, Mérida, Yucatán.</p><p>Factory:<br/>Carretera Mérida - Dzununcan Km 2.5</p></div><div><h4>Social</h4><p><a target="_blank" rel="noopener" href="https://www.facebook.com/mosaicosdecimononicos#">Facebook</a><br><a target="_blank" rel="noopener" href="https://www.instagram.com/mosaicosdzununcan/">Instagram</a><br><a target="_blank" rel="noopener" href="https://wa.me/529992495158">WhatsApp</a></p></div></div></footer>`
+      : `<footer id="siteDarkFooter" class="dark-footer"><div class="dark-cols"><div><h4>Mosaicos Dzununcán</h4><p>Fabricantes de mosaicos de pasta mexicanos con proyectos personalizados.</p><p><a href="${legalUrl}#privacy">Políticas de privacidad</a><br><a href="${legalUrl}#terms">Términos y condiciones</a><br><a href="${mapUrl}">Mapa del sitio</a></p></div><div><h4>Teléfonos</h4><p>Local: +52 (999) 217-9326</p><p>Fábrica: +52 (999) 249-5158</p><p>Email: ventas@mosaicosdzununcan.com</p></div><div><h4>Dirección</h4><p>Venta y sala de exhibición:<br/>Calle 37, No. 318 entre 24 y 26, Mérida, Yucatán.</p><p>Fábrica:<br/>Carretera Mérida - Dzununcan Km 2.5</p></div><div><h4>Redes</h4><p><a target="_blank" rel="noopener" href="https://www.facebook.com/mosaicosdecimononicos#">Facebook</a><br><a target="_blank" rel="noopener" href="https://www.instagram.com/mosaicosdzununcan/">Instagram</a><br><a target="_blank" rel="noopener" href="https://wa.me/529992495158">WhatsApp</a></p></div></div></footer>`;
     main.insertAdjacentHTML('beforeend', html);
   }
 
   document.addEventListener('DOMContentLoaded', () => {
     initHome();
     initCategories();
+    initColorsPage();
     initCustomizer();
     initDecoratedOverlay();
     initTapetesPage();

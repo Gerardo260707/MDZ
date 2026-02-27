@@ -177,14 +177,14 @@ $tapetes = carga_tapetes_csv(__DIR__ . '/config/tapetes.csv', $models);
     <div class="mosaic-strip"></div>
 
     <section>
-      <h2>Tapetes</h2>
-      <p>Defina sus tapetes en <code>config/tapetes.csv</code> con el formato: <strong>Nombre_Tapete,Centro,Cenefa,Esquina</strong>.</p>
-      <a class="action cta-pill" data-keep-lang href="personalizar.php?picker=dual&amp;source=tapete">Personalizar tapete</a>
+      <h2><?= $lang === 'en' ? 'Rugs' : 'Tapetes' ?></h2>
+      <p><?= $lang === 'en' ? 'Define rugs in <code>config/tapetes.csv</code> using: <strong>Nombre_Tapete,Centro,Cenefa,Esquina</strong>.' : 'Defina sus tapetes en <code>config/tapetes.csv</code> con el formato: <strong>Nombre_Tapete,Centro,Cenefa,Esquina</strong>.' ?></p>
+      <a class="action cta-pill" data-keep-lang href="personalizar.php?picker=dual&amp;source=tapete"><?= $lang === 'en' ? 'Customize rug' : 'Personalizar tapete' ?></a>
     </section>
 
     <section class="panel tapetes-list">
       <?php if (empty($tapetes)): ?>
-        <p class="empty-msg">Aún no hay tapetes configurados. Agrega filas en <code>config/tapetes.csv</code>.</p>
+        <p class="empty-msg"><?= $lang === 'en' ? 'No rugs configured yet. Add rows in <code>config/tapetes.csv</code>.' : 'Aún no hay tapetes configurados. Agrega filas en <code>config/tapetes.csv</code>.' ?></p>
       <?php else: ?>
         <?php foreach ($tapetes as $tapete): ?>
           <article class="tapete-card">
@@ -218,12 +218,12 @@ $tapetes = carga_tapetes_csv(__DIR__ . '/config/tapetes.csv', $models);
               ?>
               <div class="tapete-meta-head">
                 <h3><?= htmlspecialchars($tapete['nombre'], ENT_QUOTES) ?></h3>
-                <a class="action cta-pill" href="<?= htmlspecialchars($customizeUrl, ENT_QUOTES) ?>">Personalizar tapete</a>
+                <a class="action cta-pill" href="<?= htmlspecialchars($customizeUrl, ENT_QUOTES) ?>"><?= $lang === 'en' ? 'Customize rug' : 'Personalizar tapete' ?></a>
               </div>
               <p>
-                Centro: <strong><?= htmlspecialchars($tapete['centro']['nombre'] ?? '—', ENT_QUOTES) ?></strong> ·
-                Cenefa: <strong><?= htmlspecialchars($tapete['cenefa']['nombre'] ?? '—', ENT_QUOTES) ?></strong> ·
-                Esquina: <strong><?= htmlspecialchars($tapete['esquina']['nombre'] ?? '—', ENT_QUOTES) ?></strong>
+                <?= $lang === 'en' ? 'Center' : 'Centro' ?>: <strong><?= htmlspecialchars($tapete['centro']['nombre'] ?? '—', ENT_QUOTES) ?></strong> ·
+                <?= $lang === 'en' ? 'Border' : 'Cenefa' ?>: <strong><?= htmlspecialchars($tapete['cenefa']['nombre'] ?? '—', ENT_QUOTES) ?></strong> ·
+                <?= $lang === 'en' ? 'Corner' : 'Esquina' ?>: <strong><?= htmlspecialchars($tapete['esquina']['nombre'] ?? '—', ENT_QUOTES) ?></strong>
               </p>
             </div>
           </article>
