@@ -40,6 +40,8 @@ p { margin:0; font-size:15px; line-height:1.5; color:#333; }
 .hero { border:1px solid #d4d4d4; margin:4px; width:calc(100% - 8px); aspect-ratio:16/5; min-height:180px; max-height:420px; overflow:hidden; position:relative; }
 .slides { position:relative; width:100%; height:100%; }
 .slide { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:0; transition: opacity .35s ease; background: var(--slide-bg,#ddd); }
+.slide-media{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;background:#f2f2f2}
+.slide .promo{position:relative;z-index:1}
 .slide.active { opacity:1; }
 .promo { transform:rotate(-8deg); background:#ffd200; border:6px solid #db0c0c; padding:18px 24px; text-align:center; box-shadow:0 6px 18px rgba(0,0,0,.35); max-width: 90%; }
 .promo strong { display:block; font-size: clamp(26px,4.6vw,56px); line-height: .95; }
@@ -99,6 +101,18 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .quote-top{padding-bottom:12px;border-bottom:1px solid #e3e3e3;margin-bottom:14px}
 .quote-top h4{font-size:40px;line-height:1.04;margin:0 0 8px}
 .quote-top p{margin:0 0 8px;font-size:14px;color:#333}
+
+.quote-top-inline{border:1px solid #ddd;background:linear-gradient(180deg,#ffffff 0%,#f8f8f8 100%);padding:18px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.08);margin-top:16px}
+.top-action-buttons{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.cta-pill.secondary{background:linear-gradient(90deg,#2f698f 0%,#1e4a68 100%) !important}
+.inline-quote-container{margin-top:14px;display:none}
+.inline-quote-container.open{display:block}
+.mobile-wa-wrap{margin-top:14px;display:none}
+.wa-mobile-btn{width:100%}
+.wa-composer{margin-top:10px;display:none;gap:8px}
+.wa-composer.open{display:grid}
+.wa-composer textarea{width:100%;border:1px solid #cfcfcf;border-radius:5px;padding:10px;font-size:14px;font-family:Arial,Helvetica,sans-serif;background:#fff}
+.mosaic-options-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
 .cta-pill{display:inline-block;padding:10px 14px !important;border-radius:999px !important;background:linear-gradient(90deg,#f39845 0%,#f16800 100%) !important;color:#fff !important;font-weight:700;letter-spacing:.2px;text-decoration:none !important;box-shadow:0 8px 18px rgba(241,104,0,.28);transition:transform .16s ease,box-shadow .16s ease;border:0}
 .cta-pill:hover{transform:translateY(-1px) scale(1.03);box-shadow:0 12px 24px rgba(241,104,0,.32)}
 
@@ -178,6 +192,9 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 }
 @media (max-width:600px){
   h1{font-size:34px}
+  .top-action-buttons .cta-pill{width:100%;text-align:center}
+  .mosaic-options-grid{grid-template-columns:1fr}
+  .mobile-wa-wrap{display:block}
   h2{font-size:28px}
   .hero{aspect-ratio:16/9;min-height:130px}
   .mosaic-grid-small{grid-template-columns:repeat(2,minmax(0,1fr))}

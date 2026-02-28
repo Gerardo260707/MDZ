@@ -26,7 +26,7 @@
 
     const lang = getLang();
     const FEATURE_CARDS = [
-      { file: '', label: tByLang(lang, 'Mosaicos', 'Mosaics'), href: 'mosaicos.html', button: tByLang(lang, 'Ver modelos » clic aquí', 'View models » click here') },
+      { file: '', label: tByLang(lang, 'Mosaicos', 'Mosaics'), href: 'mosaicos.html#mosaic-options', button: tByLang(lang, 'Ver modelos » clic aquí', 'View models » click here') },
       { file: '', label: tByLang(lang, 'Tapetes', 'Rugs'), href: 'tapetes.php', button: tByLang(lang, 'Personalizar', 'Customize') },
       { file: '', label: tByLang(lang, 'Colores', 'Colors'), href: 'colores.php', button: tByLang(lang, 'Ver colores', 'View colors') }
     ];
@@ -34,8 +34,9 @@
     FEATURE_CARDS.forEach((card, idx) => {
       const a = document.createElement('a');
       a.className = 'tile-card';
-      const href = `${card.href}${card.href.includes('?') ? '&' : '?'}lang=${lang}`;
-      a.href = href;
+      const cardUrl = new URL(card.href, window.location.href);
+      cardUrl.searchParams.set('lang', lang);
+      a.href = cardUrl.pathname + cardUrl.search + cardUrl.hash;
       const imgSrc = (Array.isArray(window.HOME_FEATURE_IMAGES) && window.HOME_FEATURE_IMAGES[idx]) ? window.HOME_FEATURE_IMAGES[idx] : (card.file ? `assets/cuadros/${card.file}` : 'assets/placeholder-tile.svg');
       a.innerHTML = `<img src="${imgSrc}" alt="${card.label}" onerror="this.src='assets/placeholder-tile.svg'" /><span>${card.label}</span>`;
       cardsContainer.appendChild(a);
@@ -46,11 +47,11 @@
       const article = document.createElement('article');
       article.className = `slide ${index === 0 ? 'active' : ''}`;
       if (slide.image) {
-        article.style.background = `center/cover no-repeat url('${slide.image}')`;
+        article.innerHTML = `<img class="slide-media" src="${slide.image}" alt="${slide.title || 'Promoción'}" loading="lazy" /><div class="promo"><strong>${slide.title || ''}</strong><span>${slide.subtitle || ''}</span></div>`;
       } else {
         article.style.setProperty('--slide-bg', slide.background);
+        article.innerHTML = `<div class="promo"><strong>${slide.title || ''}</strong><span>${slide.subtitle || ''}</span></div>`;
       }
-      article.innerHTML = `<div class="promo"><strong>${slide.title || ''}</strong><span>${slide.subtitle || ''}</span></div>`;
       slidesContainer.appendChild(article);
 
       const dot = document.createElement('button');
@@ -1591,6 +1592,42 @@
     main.insertAdjacentHTML('beforeend', html);
   }
 
+  function initMosaicosActions() {
+    const quoteToggleBtn = q('quoteToggleBtn');
+    const quoteContainer = q('quoteContainer');
+    const waToggleBtn = q('waToggleBtn');
+    const waComposer = q('waComposer');
+    const waMessageInput = q('waMessageInput');
+    const waSendBtn = q('waSendBtn');
+    const lang = getLang();
+
+    if (quoteToggleBtn && quoteContainer) {
+      quoteToggleBtn.addEventListener('click', () => {
+        const isOpen = quoteContainer.classList.toggle('open');
+        quoteContainer.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+        quoteToggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      });
+    }
+
+    if (waToggleBtn && waComposer) {
+      waToggleBtn.addEventListener('click', () => {
+        const isOpen = waComposer.classList.toggle('open');
+        waComposer.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+        waToggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      });
+    }
+
+    if (waSendBtn && waMessageInput) {
+      waSendBtn.addEventListener('click', () => {
+        const defaultMsg = lang === 'en'
+          ? 'Hi, I would like information and a quote for your mosaic options.'
+          : 'Hola, me gustaría información y una cotización sobre sus opciones de mosaicos.';
+        const message = (waMessageInput.value || '').trim() || defaultMsg;
+        window.location.assign(`https://wa.me/529992495158?text=${encodeURIComponent(message)}`);
+      });
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     initHome();
     initCategories();
@@ -1598,6 +1635,7 @@
     initCustomizer();
     initDecoratedOverlay();
     initTapetesPage();
+    initMosaicosActions();
     initDarkFooter();
   });
 })();

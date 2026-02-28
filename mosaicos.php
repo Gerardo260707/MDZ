@@ -287,12 +287,59 @@ foreach ($items as $it) {
     </header>
     <div class="mosaic-strip"></div>
 
-    <section>
+    <section id="mosaic-options">
       <h2 data-i18n="decorated_title">Mosaicos Decorados</h2>
       <p data-i18n="decorated_desc">Seleccione un modelo para ver su ficha. Puede personalizar colores en el simulador.</p>
+
+      <div class="quote-top quote-top-inline">
+        <h4 data-i18n="custom_panel_title">Personalizar Diseño</h4>
+        <p data-i18n="custom_panel_desc">Cambie los colores del mosaico de su elección.</p>
+        <div class="top-action-buttons">
+          <a class="action quote-top-btn cta-pill" data-keep-lang href="personalizar.php" data-i18n="custom_panel_cta">Pruebe el simulador de colores ahora</a>
+          <button type="button" id="quoteToggleBtn" class="action cta-pill secondary" aria-expanded="false">Solicitar cotización</button>
+        </div>
+        <div id="quoteContainer" class="inline-quote-container" aria-hidden="true">
+          <h3 data-i18n="quote_title">Solicite una Cotización</h3>
+          <p data-i18n="quote_desc">Llene el siguiente formulario, comente los productos que desea y a la brevedad uno de nuestros agentes de venta se comunicará con usted.</p>
+          <form class="quote-form" action="mailto:ventas@mosaicosdzununcan.com" method="post" enctype="text/plain">
+            <input type="text" name="nombre" data-i18n-placeholder="quote_name" placeholder="Nombre" required />
+            <input type="email" name="email" data-i18n-placeholder="quote_email" placeholder="Email" required />
+            <input type="tel" name="telefono" data-i18n-placeholder="quote_phone" placeholder="Teléfono" />
+            <textarea name="comentarios" rows="6" data-i18n-placeholder="quote_comments" placeholder="Comentarios" required></textarea>
+            <button type="submit" class="action quote-submit" data-i18n="quote_send">Enviar</button>
+          </form>
+        </div>
+
+        <div class="mobile-wa-wrap">
+          <button type="button" id="waToggleBtn" class="action cta-pill wa-mobile-btn" aria-expanded="false">Contactar por WhatsApp</button>
+          <div id="waComposer" class="wa-composer" aria-hidden="true">
+            <label for="waMessageInput">Mensaje para tienda:</label>
+            <textarea id="waMessageInput" rows="4">Hola, me gustaría información y una cotización sobre sus opciones de mosaicos.</textarea>
+            <button type="button" id="waSendBtn" class="action cta-pill">Enviar por WhatsApp</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="category-grid mosaic-options-grid">
+        <article class="category-card">
+          <img src="assets/placeholder-tile.svg" alt="Decorados" />
+          <h3>Decorados</h3>
+          <a class="cta-pill" href="mosaicos.php?lang=<?= $lang ?>#catalogo-decorados">Ver decorados</a>
+        </article>
+        <article class="category-card">
+          <img src="assets/placeholder-tile.svg" alt="Personalizar" />
+          <h3>Personalizar</h3>
+          <a class="cta-pill" href="personalizar.php?lang=<?= $lang ?>">Ir al simulador</a>
+        </article>
+        <article class="category-card">
+          <img src="assets/placeholder-tile.svg" alt="Especiales" />
+          <h3>Especiales</h3>
+          <a class="cta-pill" href="especiales.php?lang=<?= $lang ?>">Ver especiales</a>
+        </article>
+      </div>
     </section>
 
-    <section class="panel decorated-layout">
+    <section id="catalogo-decorados" class="panel decorated-layout">
       <div class="mosaic-grid-wrap">
         <div class="mosaic-grid mosaic-grid-small">
           <?php if (!empty($items)): ?>
@@ -348,22 +395,6 @@ foreach ($items as $it) {
           <?php endif; ?>
         </div>
       </div>
-      <aside class="quote-box">
-        <div class="quote-top">
-          <h4 data-i18n="custom_panel_title">Personalizar Diseño</h4>
-          <p data-i18n="custom_panel_desc">Cambie los colores del mosaico de su elección.</p>
-          <a class="action quote-top-btn cta-pill" data-keep-lang href="personalizar.php" data-i18n="custom_panel_cta">Pruebe el simulador de colores ahora</a>
-        </div>
-        <h3 data-i18n="quote_title">Solicite una Cotización</h3>
-        <p data-i18n="quote_desc">Llene el siguiente formulario, comente los productos que desea y a la brevedad uno de nuestros agentes de venta se comunicará con usted.</p>
-        <form class="quote-form" action="mailto:ventas@mosaicosdzununcan.com" method="post" enctype="text/plain">
-          <input type="text" name="nombre" data-i18n-placeholder="quote_name" placeholder="Nombre" required />
-          <input type="email" name="email" data-i18n-placeholder="quote_email" placeholder="Email" required />
-          <input type="tel" name="telefono" data-i18n-placeholder="quote_phone" placeholder="Teléfono" />
-          <textarea name="comentarios" rows="8" data-i18n-placeholder="quote_comments" placeholder="Comentarios" required></textarea>
-          <button type="submit" class="action quote-submit" data-i18n="quote_send">Enviar</button>
-        </form>
-      </aside>
     </section>
   </main>
   <div id="modelOverlay" class="model-overlay" aria-hidden="true">
