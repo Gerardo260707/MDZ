@@ -80,15 +80,31 @@ function carpeta_modelo_de_item(array $item): string {
 function imagen_con_version(string $src): string {
     $clean = trim($src);
     if ($clean === '' || preg_match('#^https?://#i', $clean)) return $clean;
-    $parts = parse_url($clean);
-    $path = (string)($parts['path'] ?? $clean);
-    if ($path === '') return $clean;
-    $local = __DIR__ . '/' . ltrim($path, '/');
-    if (!is_file($local)) return $clean;
+
+    $normalized = str_replace('&amp;', '&', $clean);
+    $parts = parse_url($normalized);
+    $rawPath = (string)($parts['path'] ?? $normalized);
+    if ($rawPath === '') return $clean;
+
+    $decodedPath = rawurldecode($rawPath);
+    $local = __DIR__ . '/' . ltrim($decodedPath, '/');
+    if (!is_file($local)) {
+        $local = __DIR__ . '/' . ltrim($rawPath, '/');
+        if (!is_file($local)) return $clean;
+    }
+
     $mtime = @filemtime($local);
     if ($mtime === false) return $clean;
-    $sep = str_contains($clean, '?') ? '&' : '?';
-    return $clean . $sep . 'v=' . $mtime;
+
+    $query = [];
+    if (!empty($parts['query'])) parse_str((string)$parts['query'], $query);
+    $query['v'] = (string)$mtime;
+    $queryString = http_build_query($query);
+
+    $result = $decodedPath;
+    if ($queryString !== '') $result .= '?' . $queryString;
+    if (!empty($parts['fragment'])) $result .= '#' . $parts['fragment'];
+    return $result;
 }
 
 function carga_conexiones_cenefa_esquina(string $csvPath): array {
