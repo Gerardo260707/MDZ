@@ -770,7 +770,7 @@
       if (!source) return;
       const x = col * tileW;
       const y = row * tileH;
-      const bleed = 2;
+      const bleed = 1.35;
       ctx.save();
       ctx.imageSmoothingEnabled = false;
       ctx.translate(x + tileW / 2, y + tileH / 2);
@@ -1505,7 +1505,7 @@
       if (!source) return;
       const x = col * tileW;
       const y = row * tileH;
-      const bleed = 2;
+      const bleed = 1.35;
       ctx.save();
       ctx.imageSmoothingEnabled = false;
       ctx.translate(x + tileW / 2, y + tileH / 2);
@@ -1611,6 +1611,17 @@
     const pctx = patternCanvas.getContext('2d');
     let closeTimer = null;
 
+    function ensureCanvasSize() {
+      const rect = patternCanvas.getBoundingClientRect();
+      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      const targetW = Math.max(800, Math.round((rect.width || 1200) * dpr));
+      const targetH = Math.max(560, Math.round((rect.height || 900) * dpr));
+      if (patternCanvas.width !== targetW || patternCanvas.height !== targetH) {
+        patternCanvas.width = targetW;
+        patternCanvas.height = targetH;
+      }
+    }
+
     function drawRotatedPattern(img) {
       if (!img || !pctx) return;
       const w = patternCanvas.width;
@@ -1664,7 +1675,7 @@
 
       function d(src, r, c, angle) {
         if (!src) return;
-        const bleed = 0.9;
+        const bleed = 1.4;
         pctx.save();
         pctx.imageSmoothingEnabled = false;
         pctx.translate(c * tw + tw / 2, r * th + th / 2);
@@ -1698,13 +1709,12 @@
         const cx = c.getContext('2d');
         const sw = source.naturalWidth || source.width || 512;
         const sh = source.naturalHeight || source.height || 512;
-        const scale = Math.min(512 / sw, 512 / sh);
+        const scale = Math.max(512 / sw, 512 / sh);
         const dw = sw * scale;
         const dh = sh * scale;
         const dx = (512 - dw) / 2;
         const dy = (512 - dh) / 2;
-        cx.fillStyle = "#fff";
-        cx.fillRect(0, 0, 512, 512);
+        cx.clearRect(0, 0, 512, 512);
         cx.drawImage(source, dx, dy, dw, dh);
         return c;
       };
@@ -1724,13 +1734,15 @@
         img.crossOrigin = 'anonymous';
         img.onload = () => resolve(img);
         img.onerror = () => resolve(null);
-        const sep = src.includes('?') ? '&' : '?';
-        img.src = `${src}${sep}ov=${Date.now()}`;
+        const cleaned = src.replace(/([?&])ov=[^&#]*(&?)/, (m, p1, p2) => (p1 === '?' && p2 ? '?' : (p2 ? p1 : ''))).replace(/[?&]$/, '');
+        const sep = cleaned.includes('?') ? '&' : '?';
+        img.src = `${cleaned}${sep}ov=${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       });
     }
 
     const open = async (src, modelName, category, cenefaSrc, esquinaSrc, cenefaOuterSrc, esquinaOuterSrc) => {
       clearTimeout(closeTimer);
+      ensureCanvasSize();
       if (['cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior'].includes(category)) {
         const [cenefaImg, esquinaImg, cenefaOuterImg, esquinaOuterImg] = await Promise.all([
           loadImageSafeOverlay(cenefaSrc || (category === 'cenefa' ? src : '')),

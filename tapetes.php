@@ -86,6 +86,7 @@ function carga_modelos(): array {
 function find_model(array $models, string $query): ?array {
     $needle = strtolower(trim($query));
     if ($needle === '') return null;
+    $needleNorm = preg_replace('/[^a-z0-9]/', '', $needle);
 
     foreach ($models as $m) {
         $candidates = [
@@ -94,7 +95,11 @@ function find_model(array $models, string $query): ?array {
             strtolower((string)($m['carpeta_modelo'] ?? '')),
             (string)($m['id'] ?? ''),
         ];
-        if (in_array($needle, $candidates, true)) return $m;
+        foreach ($candidates as $candidate) {
+            if ($candidate === $needle) return $m;
+            $candidateNorm = preg_replace('/[^a-z0-9]/', '', (string)$candidate);
+            if ($candidateNorm !== '' && $candidateNorm === $needleNorm) return $m;
+        }
     }
     return null;
 }

@@ -368,7 +368,7 @@ if (!$selectedCenefaOuter && $cenefaOuterImgParam !== '') {
         'id' => 0,
         'nombre' => (string)($_GET['cenefa_outer_name'] ?? ($lang === 'en' ? 'Outer Border' : 'Cenefa exterior')),
         'imagen' => $cenefaOuterImgParam,
-        'categoria' => 'cenefa',
+        'categoria' => 'cenefa_exterior',
         'identificador' => '',
         'carpeta_modelo' => '',
     ];
@@ -378,7 +378,7 @@ if (!$selectedEsquinaOuter && $esquinaOuterImgParam !== '') {
         'id' => 0,
         'nombre' => (string)($_GET['esquina_outer_name'] ?? ($lang === 'en' ? 'Outer Corner' : 'Esquina exterior')),
         'imagen' => $esquinaOuterImgParam,
-        'categoria' => 'esquina',
+        'categoria' => 'esquina_exterior',
         'identificador' => '',
         'carpeta_modelo' => '',
     ];
@@ -409,7 +409,7 @@ if ($selectedEsquina && !$selectedCenefa) {
     $mappedCenefaFolder = array_search($esquinaFolder, $conexionesPrimary, true);
     if ($mappedCenefaFolder !== false) {
         foreach ($models as $m) {
-            if (($m['categoria'] ?? '') !== 'cenefa' && ($m['categoria'] ?? '') !== 'cenefa_exterior') continue;
+            if (($m['categoria'] ?? '') !== 'cenefa') continue;
             if (carpeta_modelo_de_item($m) === $mappedCenefaFolder) {
                 $selectedCenefa = $m;
                 break;
@@ -466,7 +466,7 @@ if ($selectedCenefa && !$selectedCenefaOuter) {
     $outerCenefaFolder = strtolower(trim((string)($outerDef['cenefa'] ?? '')));
     if ($outerCenefaFolder !== '') {
         foreach ($models as $m) {
-            if (($m['categoria'] ?? '') !== 'cenefa_exterior' && ($m['categoria'] ?? '') !== 'cenefa') continue;
+            if (($m['categoria'] ?? '') !== 'cenefa_exterior') continue;
             if (carpeta_modelo_de_item($m) === $outerCenefaFolder) { $selectedCenefaOuter = $m; break; }
         }
     }
@@ -477,7 +477,7 @@ if ($selectedCenefa && $selectedCenefaOuter && !$selectedEsquinaOuter) {
     $outerCornerFolder = strtolower(trim((string)($outerDef['esquina'] ?? '')));
     if ($outerCornerFolder !== '') {
         foreach ($models as $m) {
-            if (($m['categoria'] ?? '') !== 'esquina_exterior' && ($m['categoria'] ?? '') !== 'esquina') continue;
+            if (($m['categoria'] ?? '') !== 'esquina_exterior') continue;
             if (carpeta_modelo_de_item($m) === $outerCornerFolder) { $selectedEsquinaOuter = $m; break; }
         }
     }
