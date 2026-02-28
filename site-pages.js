@@ -593,7 +593,7 @@
       centerInput.dispatchEvent(new Event('input'));
     }
 
-    if (pickerMode === 'dual' && cenefaInput && !searchDisabled) {
+    if ((pickerMode === 'dual' || (pickerMode === 'single' && forcedSingleCategory === 'cenefa')) && cenefaInput && !searchDisabled) {
       const connectedCenefaIds = new Set();
       Object.keys(manualConnections || {}).forEach((folder) => {
         const match = models.find((m) => (m.categoria || '').toLowerCase() === 'cenefa' && (m.carpeta_modelo || '').toString().toLowerCase() === folder);

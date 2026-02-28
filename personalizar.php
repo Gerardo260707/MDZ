@@ -533,10 +533,9 @@ $searchMode = ($modelSource === 'tapete') ? 'tapete' : 'modelo';
 $isBorderSelection = in_array($selectedCategory, ['cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior'], true);
 $hasDoubleRing = (bool)$selectedCenefaOuter || (bool)$selectedEsquinaOuter;
 $isSingleBorderEntry = ($pickerMode === 'single' && $isBorderSelection);
-$isSingleCenterEntry = ($pickerMode === 'single' && $selectedCategory === 'centro');
 $showCenterEditor = !$isSingleBorderEntry;
 $showCenterSearch = ($searchMode === 'tapete') || !$isSingleBorderEntry;
-$showCenefaSearch = ($pickerMode === 'dual' && $searchMode !== 'tapete');
+$showCenefaSearch = ($searchMode !== 'tapete') && ($pickerMode === 'dual' || ($pickerMode === 'single' && $selectedCategory === 'cenefa'));
 $showSearch = $showCenterSearch || $showCenefaSearch;
 $disableSearch = false;
 if ($pickerMode === 'dual' || $isBorderSelection) {
