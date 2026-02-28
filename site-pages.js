@@ -24,19 +24,30 @@
 
 
   function buildImageCandidates(rawSrc) {
-    const base = normalizeAssetSrc(rawSrc);
-    if (!base) return [];
+    const raw = String(rawSrc || '').trim();
+    const base = normalizeAssetSrc(raw);
+    if (!raw && !base) return [];
     const out = [];
     const push = (v) => { if (v && !out.includes(v)) out.push(v); };
+
+    // Priorizar la ruta original por si ya viene válida desde servidor.
+    push(raw.replace(/&amp;/g, '&'));
     push(base);
 
-    const parts = base.split('?');
-    const pathPart = parts[0] || '';
-    const queryPart = parts.length > 1 ? ('?' + parts.slice(1).join('?')) : '';
-    if (pathPart) {
+    const variants = [base];
+    if (raw) variants.push(raw.replace(/&amp;/g, '&').replace(/\+/g, '%20'));
+
+    variants.forEach((candidate) => {
+      if (!candidate) return;
+      const parts = candidate.split('?');
+      const pathPart = parts[0] || '';
+      const queryPart = parts.length > 1 ? ('?' + parts.slice(1).join('?')) : '';
+      if (!pathPart) return;
+      push(pathPart + queryPart);
       push(encodeURI(pathPart) + queryPart);
       push(pathPart.replace(/ /g, '%20') + queryPart);
-    }
+    });
+
     return out;
   }
 
@@ -1601,8 +1612,8 @@
       const esquinaOuterImg = asTileSource(esquinaOuterRaw);
 
       const hasOuter = Boolean(cenefaOuterImg || esquinaOuterImg);
-      const cols = hasOuter ? 10 : 8;
-      const rows = hasOuter ? 8 : 6;
+      const cols = hasOuter ? 14 : 12;
+      const rows = hasOuter ? 10 : 8;
       const tw = canvas.width / cols;
       const th = canvas.height / rows;
       pctx.fillStyle = '#fff';
