@@ -1726,6 +1726,7 @@
         c.width = 512;
         c.height = 512;
         const cx = c.getContext('2d');
+        cx.imageSmoothingEnabled = true;
         const sw = source.naturalWidth || source.width || 512;
         const sh = source.naturalHeight || source.height || 512;
         const scale = Math.max(512 / sw, 512 / sh);
@@ -1742,7 +1743,7 @@
       const nCO = normalize(cenefaOuterImg);
       const nEO = normalize(esquinaOuterImg);
 
-      drawRing(0, nCO, nEO);
+      if (hasOuter) drawRing(0, nCO, nEO);
       drawRing(hasOuter ? 1 : 0, nC, nE);
     }
 

@@ -383,6 +383,24 @@ if (!$selectedEsquinaOuter && $esquinaOuterImgParam !== '') {
         'carpeta_modelo' => '',
     ];
 }
+
+if ($selectedCenefa && trim((string)($selectedCenefa['imagen'] ?? '')) === '' && $cenefaImgParam !== '') {
+    $selectedCenefa['imagen'] = $cenefaImgParam;
+    if (trim((string)($selectedCenefa['nombre'] ?? '')) === '') $selectedCenefa['nombre'] = (string)($_GET['cenefa_name'] ?? ($lang === 'en' ? 'Border' : 'Cenefa'));
+}
+if ($selectedEsquina && trim((string)($selectedEsquina['imagen'] ?? '')) === '' && $esquinaImgParam !== '') {
+    $selectedEsquina['imagen'] = $esquinaImgParam;
+    if (trim((string)($selectedEsquina['nombre'] ?? '')) === '') $selectedEsquina['nombre'] = (string)($_GET['esquina_name'] ?? ($lang === 'en' ? 'Corner' : 'Esquina'));
+}
+if ($selectedCenefaOuter && trim((string)($selectedCenefaOuter['imagen'] ?? '')) === '' && $cenefaOuterImgParam !== '') {
+    $selectedCenefaOuter['imagen'] = $cenefaOuterImgParam;
+    if (trim((string)($selectedCenefaOuter['nombre'] ?? '')) === '') $selectedCenefaOuter['nombre'] = (string)($_GET['cenefa_outer_name'] ?? ($lang === 'en' ? 'Outer Border' : 'Cenefa exterior'));
+}
+if ($selectedEsquinaOuter && trim((string)($selectedEsquinaOuter['imagen'] ?? '')) === '' && $esquinaOuterImgParam !== '') {
+    $selectedEsquinaOuter['imagen'] = $esquinaOuterImgParam;
+    if (trim((string)($selectedEsquinaOuter['nombre'] ?? '')) === '') $selectedEsquinaOuter['nombre'] = (string)($_GET['esquina_outer_name'] ?? ($lang === 'en' ? 'Outer Corner' : 'Esquina exterior'));
+}
+
 if ($selectedCenefa && !$selectedEsquina) {
     $cenefaFolder = carpeta_modelo_de_item($selectedCenefa);
     $mappedCornerFolder = $conexionesPrimary[$cenefaFolder] ?? '';
