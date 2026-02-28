@@ -305,6 +305,8 @@ foreach ($models as $item) $modelById[(string)$item['id']] = $item;
 $centerId = (string)($_GET['center_id'] ?? '');
 $cenefaId = (string)($_GET['cenefa_id'] ?? '');
 $esquinaId = (string)($_GET['esquina_id'] ?? '');
+$cenefaOuterId = (string)($_GET['cenefa_outer_id'] ?? '');
+$esquinaOuterId = (string)($_GET['esquina_outer_id'] ?? '');
 $legacyId = (string)($_GET['id'] ?? '');
 if ($centerId === '' && $legacyId !== '' && isset($modelById[$legacyId]) && $modelById[$legacyId]['categoria'] === 'centro') $centerId = $legacyId;
 if ($cenefaId === '' && $legacyId !== '' && isset($modelById[$legacyId]) && $modelById[$legacyId]['categoria'] === 'cenefa') $cenefaId = $legacyId;
@@ -313,8 +315,8 @@ if ($esquinaId === '' && $legacyId !== '' && isset($modelById[$legacyId]) && $mo
 $selectedCenter = ($centerId !== '' && isset($modelById[$centerId])) ? $modelById[$centerId] : null;
 $selectedCenefa = ($cenefaId !== '' && isset($modelById[$cenefaId])) ? $modelById[$cenefaId] : null;
 $selectedEsquina = ($esquinaId !== '' && isset($modelById[$esquinaId])) ? $modelById[$esquinaId] : null;
-$selectedCenefaOuter = null;
-$selectedEsquinaOuter = null;
+$selectedCenefaOuter = ($cenefaOuterId !== '' && isset($modelById[$cenefaOuterId])) ? $modelById[$cenefaOuterId] : null;
+$selectedEsquinaOuter = ($esquinaOuterId !== '' && isset($modelById[$esquinaOuterId])) ? $modelById[$esquinaOuterId] : null;
 
 $centerImgParam = trim((string)($_GET['center_img'] ?? ''));
 $cenefaImgParam = trim((string)($_GET['cenefa_img'] ?? ''));
@@ -485,9 +487,13 @@ $searchMode = ($modelSource === 'tapete') ? 'tapete' : 'modelo';
 if ($pickerMode === 'dual') {
     $showCenefaExtra = (bool)$selectedCenefa;
     $showEsquinaExtra = (bool)$selectedEsquina;
+    $showCenefaOuterExtra = (bool)$selectedCenefaOuter;
+    $showEsquinaOuterExtra = (bool)$selectedEsquinaOuter;
 } else {
     $showCenefaExtra = ($selectedCategory === 'esquina') && (bool)$selectedCenefa;
     $showEsquinaExtra = ($selectedCategory === 'cenefa') && (bool)$selectedEsquina;
+    $showCenefaOuterExtra = ($selectedCategory === 'esquina_exterior') && (bool)$selectedCenefaOuter;
+    $showEsquinaOuterExtra = ($selectedCategory === 'cenefa_exterior') && (bool)$selectedEsquinaOuter;
 }
 ?>
 <!doctype html>
@@ -544,13 +550,19 @@ if ($pickerMode === 'dual') {
           <?php if ($showCenterEditor): ?>
           <div class="vector-editor" id="vectorEditor"></div>
           <?php endif; ?>
-          <?php if ($showCenefaExtra || $showEsquinaExtra): ?>
+          <?php if ($showCenefaExtra || $showEsquinaExtra || $showCenefaOuterExtra || $showEsquinaOuterExtra): ?>
           <div class="extra-editors">
             <?php if ($showCenefaExtra): ?>
             <div class="vector-editor extra-editor" id="extraCenefaPreview" data-extra-src="<?= htmlspecialchars($selectedCenefa['imagen'] ?? '', ENT_QUOTES) ?>" aria-label="Cenefa"></div>
             <?php endif; ?>
             <?php if ($showEsquinaExtra): ?>
             <div class="vector-editor extra-editor" id="extraCornerPreview" data-extra-src="<?= htmlspecialchars($selectedEsquina['imagen'] ?? '', ENT_QUOTES) ?>" aria-label="Esquina"></div>
+            <?php endif; ?>
+            <?php if ($showCenefaOuterExtra): ?>
+            <div class="vector-editor extra-editor" id="extraCenefaOuterPreview" data-extra-src="<?= htmlspecialchars($selectedCenefaOuter['imagen'] ?? '', ENT_QUOTES) ?>" aria-label="Cenefa exterior"></div>
+            <?php endif; ?>
+            <?php if ($showEsquinaOuterExtra): ?>
+            <div class="vector-editor extra-editor" id="extraCornerOuterPreview" data-extra-src="<?= htmlspecialchars($selectedEsquinaOuter['imagen'] ?? '', ENT_QUOTES) ?>" aria-label="Esquina exterior"></div>
             <?php endif; ?>
           </div>
           <?php endif; ?>
@@ -588,6 +600,8 @@ if ($pickerMode === 'dual') {
       'centerId' => $selectedCenter['id'] ?? null,
       'cenefaId' => $selectedCenefa['id'] ?? null,
       'esquinaId' => $selectedEsquina['id'] ?? null,
+      'cenefaOuterId' => $selectedCenefaOuter['id'] ?? null,
+      'esquinaOuterId' => $selectedEsquinaOuter['id'] ?? null,
       'pickerMode' => $pickerMode,
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
     window.CUSTOMIZER_TAPETES = <?= json_encode($tapetePresets, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;

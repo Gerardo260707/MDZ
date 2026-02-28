@@ -77,16 +77,17 @@ function carpeta_modelo_de_item(array $item): string {
 }
 
 function carga_conexiones_cenefa_esquina(string $csvPath): array {
-    if (!file_exists($csvPath)) return ['primary' => [], 'outer' => []];
+    if (!file_exists($csvPath)) return ['primary' => [], 'outer' => [], 'rows' => []];
     $h = fopen($csvPath, 'r');
-    if ($h === false) return ['primary' => [], 'outer' => []];
+    if ($h === false) return ['primary' => [], 'outer' => [], 'rows' => []];
     $header = fgetcsv($h);
     if (!is_array($header)) {
         fclose($h);
-        return ['primary' => [], 'outer' => []];
+        return ['primary' => [], 'outer' => [], 'rows' => []];
     }
     $primary = [];
     $outer = [];
+    $rows = [];
     while (($row = fgetcsv($h)) !== false) {
         $cenefa = strtolower(trim((string)($row[0] ?? '')));
         $esquina = strtolower(trim((string)($row[1] ?? '')));
@@ -95,9 +96,10 @@ function carga_conexiones_cenefa_esquina(string $csvPath): array {
         if ($cenefa === '' || str_starts_with($cenefa, '#')) continue;
         if ($esquina !== '') $primary[$cenefa] = $esquina;
         if ($cenefaOuter !== '') $outer[$cenefa] = ['cenefa' => $cenefaOuter, 'esquina' => $esquinaOuter];
+        $rows[$cenefa] = ['esquina' => $esquina, 'cenefa_exterior' => $cenefaOuter, 'esquina_exterior' => $esquinaOuter];
     }
     fclose($h);
-    return ['primary' => $primary, 'outer' => $outer];
+    return ['primary' => $primary, 'outer' => $outer, 'rows' => $rows];
 }
 
 function categoria_prefix(?string $categoria): string {
@@ -250,6 +252,15 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
 $conexiones = carga_conexiones_cenefa_esquina(__DIR__ . '/config/conexiones_cenefa_esquina.csv');
 $conexionesPrimary = (array)($conexiones['primary'] ?? []);
 $conexionesOuter = (array)($conexiones['outer'] ?? []);
+$conexionesRows = (array)($conexiones['rows'] ?? []);
+$reverseOuterCenefa = [];
+$reverseOuterEsquina = [];
+foreach ($conexionesRows as $innerCenefa => $rowConn) {
+    $oc = strtolower(trim((string)($rowConn['cenefa_exterior'] ?? '')));
+    $oe = strtolower(trim((string)($rowConn['esquina_exterior'] ?? '')));
+    if ($oc !== '') $reverseOuterCenefa[$oc] = (string)$innerCenefa;
+    if ($oe !== '') $reverseOuterEsquina[$oe] = (string)$innerCenefa;
+}
 
 $byFolder = [];
 foreach ($items as $it) {
@@ -326,36 +337,46 @@ foreach ($items as $it) {
                 $esquinaSrc = '';
                 $cenefaOuterSrc = '';
                 $esquinaOuterSrc = '';
+
+                $innerCenefaFolder = '';
                 if ($cat === 'cenefa') {
-                  $cenefaSrc = (string)($m['imagen'] ?? '');
-                  $mappedCornerFolder = $conexionesPrimary[$folder] ?? '';
-                  if ($mappedCornerFolder !== '' && isset($byFolder[$mappedCornerFolder]['esquina'])) {
-                    $esquinaSrc = (string)($byFolder[$mappedCornerFolder]['esquina']['imagen'] ?? '');
-                  } elseif (isset($byFolder[$folder]['esquina'])) {
-                    $esquinaSrc = (string)($byFolder[$folder]['esquina']['imagen'] ?? '');
-                  }
+                  $innerCenefaFolder = $folder;
                 } elseif ($cat === 'esquina') {
-                  $esquinaSrc = (string)($m['imagen'] ?? '');
                   $mappedCenefaFolder = array_search($folder, $conexionesPrimary, true);
-                  if ($mappedCenefaFolder !== false && isset($byFolder[$mappedCenefaFolder]['cenefa'])) {
-                    $cenefaSrc = (string)($byFolder[$mappedCenefaFolder]['cenefa']['imagen'] ?? '');
-                  } elseif (isset($byFolder[$folder]['cenefa'])) {
-                    $cenefaSrc = (string)($byFolder[$folder]['cenefa']['imagen'] ?? '');
+                  $innerCenefaFolder = $mappedCenefaFolder !== false ? (string)$mappedCenefaFolder : '';
+                } elseif ($cat === 'cenefa_exterior') {
+                  $innerCenefaFolder = (string)($reverseOuterCenefa[$folder] ?? '');
+                } elseif ($cat === 'esquina_exterior') {
+                  $innerCenefaFolder = (string)($reverseOuterEsquina[$folder] ?? '');
+                }
+
+                if ($innerCenefaFolder !== '') {
+                  if (isset($byFolder[$innerCenefaFolder]['cenefa'])) {
+                    $cenefaSrc = (string)($byFolder[$innerCenefaFolder]['cenefa']['imagen'] ?? '');
                   }
-                }
-                $cenefaBaseFolder = '';
-                if ($cat === 'cenefa') $cenefaBaseFolder = $folder;
-                if ($cat === 'esquina') {
-                  $mappedCenefaFolder = array_search($folder, $conexionesPrimary, true);
-                  $cenefaBaseFolder = $mappedCenefaFolder !== false ? (string)$mappedCenefaFolder : '';
-                }
-                if ($cenefaBaseFolder !== '' && isset($conexionesOuter[$cenefaBaseFolder])) {
-                  $out = $conexionesOuter[$cenefaBaseFolder];
+
+                  $innerCornerFolder = (string)($conexionesPrimary[$innerCenefaFolder] ?? '');
+                  if ($innerCornerFolder !== '' && isset($byFolder[$innerCornerFolder]['esquina'])) {
+                    $esquinaSrc = (string)($byFolder[$innerCornerFolder]['esquina']['imagen'] ?? '');
+                  }
+
+                  $out = $conexionesOuter[$innerCenefaFolder] ?? [];
                   $outC = strtolower((string)($out['cenefa'] ?? ''));
                   $outE = strtolower((string)($out['esquina'] ?? ''));
-                  if ($outC !== '' && isset($byFolder[$outC]['cenefa'])) $cenefaOuterSrc = (string)($byFolder[$outC]['cenefa']['imagen'] ?? '');
-                  if ($outE !== '' && isset($byFolder[$outE]['esquina'])) $esquinaOuterSrc = (string)($byFolder[$outE]['esquina']['imagen'] ?? '');
+                  if ($outC !== '') {
+                    if (isset($byFolder[$outC]['cenefa_exterior'])) $cenefaOuterSrc = (string)($byFolder[$outC]['cenefa_exterior']['imagen'] ?? '');
+                    elseif (isset($byFolder[$outC]['cenefa'])) $cenefaOuterSrc = (string)($byFolder[$outC]['cenefa']['imagen'] ?? '');
+                  }
+                  if ($outE !== '') {
+                    if (isset($byFolder[$outE]['esquina_exterior'])) $esquinaOuterSrc = (string)($byFolder[$outE]['esquina_exterior']['imagen'] ?? '');
+                    elseif (isset($byFolder[$outE]['esquina'])) $esquinaOuterSrc = (string)($byFolder[$outE]['esquina']['imagen'] ?? '');
+                  }
                 }
+
+                if ($cat === 'cenefa') $cenefaSrc = (string)($m['imagen'] ?? $cenefaSrc);
+                if ($cat === 'esquina') $esquinaSrc = (string)($m['imagen'] ?? $esquinaSrc);
+                if ($cat === 'cenefa_exterior') $cenefaOuterSrc = (string)($m['imagen'] ?? $cenefaOuterSrc);
+                if ($cat === 'esquina_exterior') $esquinaOuterSrc = (string)($m['imagen'] ?? $esquinaOuterSrc);
               ?>
               <article class="mosaic-card">
                 <img class="mosaic-preview-trigger" src="<?= htmlspecialchars($m['imagen'] ?: 'assets/placeholder-tile.svg', ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-model-name="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-category="<?= htmlspecialchars($cat, ENT_QUOTES) ?>" data-cenefa-src="<?= htmlspecialchars($cenefaSrc, ENT_QUOTES) ?>" data-esquina-src="<?= htmlspecialchars($esquinaSrc, ENT_QUOTES) ?>" data-cenefa-outer-src="<?= htmlspecialchars($cenefaOuterSrc, ENT_QUOTES) ?>" data-esquina-outer-src="<?= htmlspecialchars($esquinaOuterSrc, ENT_QUOTES) ?>" />

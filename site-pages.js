@@ -299,14 +299,36 @@
       const folderRaw = (cenefaModel.carpeta_modelo || '').toString().toLowerCase();
       const mappedFolder = manualConnections[folderRaw] || null;
       if (mappedFolder) {
-        const mapped = models.find((m) => (m.categoria || '').toLowerCase() === 'esquina' && (m.carpeta_modelo || '').toString().toLowerCase() === mappedFolder);
+        const mapped = models.find((m) => {
+          const cat = (m.categoria || '').toLowerCase();
+          return (cat === 'esquina' || cat === 'esquina_exterior') && (m.carpeta_modelo || '').toString().toLowerCase() === mappedFolder;
+        });
         if (mapped) return mapped;
       }
+      if (Object.keys(manualConnections).length > 0) return null;
       const key = familyKey(cenefaModel);
       return models.find((m) => (m.categoria || '').toLowerCase() === 'esquina' && familyKey(m) === key) || null;
     }
 
-    function goToSelection(centerModel, cenefaModel, esquinaModel) {
+    function findOuterForCenefa(cenefaModel) {
+      if (!cenefaModel) return { cenefaOuter: null, esquinaOuter: null };
+      const folderRaw = (cenefaModel.carpeta_modelo || '').toString().toLowerCase();
+      const outer = manualOuterConnections[folderRaw] || null;
+      if (!outer) return { cenefaOuter: null, esquinaOuter: null };
+      const outerC = (outer.cenefa || '').toString().toLowerCase();
+      const outerE = (outer.esquina || '').toString().toLowerCase();
+      const cenefaOuter = models.find((m) => {
+        const cat = (m.categoria || '').toLowerCase();
+        return (cat === 'cenefa_exterior' || cat === 'cenefa') && (m.carpeta_modelo || '').toString().toLowerCase() === outerC;
+      }) || null;
+      const esquinaOuter = models.find((m) => {
+        const cat = (m.categoria || '').toLowerCase();
+        return (cat === 'esquina_exterior' || cat === 'esquina') && (m.carpeta_modelo || '').toString().toLowerCase() === outerE;
+      }) || null;
+      return { cenefaOuter, esquinaOuter };
+    }
+
+    function goToSelection(centerModel, cenefaModel, esquinaModel, cenefaOuterModel = null, esquinaOuterModel = null) {
       const url = new URL(window.location.href);
       url.searchParams.set('picker', pickerMode);
       if (centerModel) url.searchParams.set('center_id', String(centerModel.id));
@@ -321,6 +343,20 @@
         url.searchParams.delete('cenefa_id');
         url.searchParams.delete('esquina_id');
       }
+
+      if (cenefaOuterModel && cenefaOuterModel.id) url.searchParams.set('cenefa_outer_id', String(cenefaOuterModel.id));
+      else url.searchParams.delete('cenefa_outer_id');
+      if (esquinaOuterModel && esquinaOuterModel.id) url.searchParams.set('esquina_outer_id', String(esquinaOuterModel.id));
+      else url.searchParams.delete('esquina_outer_id');
+
+      if (cenefaOuterModel && cenefaOuterModel.imagen) url.searchParams.set('cenefa_outer_img', cenefaOuterModel.imagen);
+      else url.searchParams.delete('cenefa_outer_img');
+      if (esquinaOuterModel && esquinaOuterModel.imagen) url.searchParams.set('esquina_outer_img', esquinaOuterModel.imagen);
+      else url.searchParams.delete('esquina_outer_img');
+      if (cenefaOuterModel && cenefaOuterModel.nombre) url.searchParams.set('cenefa_outer_name', cenefaOuterModel.nombre);
+      else url.searchParams.delete('cenefa_outer_name');
+      if (esquinaOuterModel && esquinaOuterModel.nombre) url.searchParams.set('esquina_outer_name', esquinaOuterModel.nombre);
+      else url.searchParams.delete('esquina_outer_name');
 
       const editable = pickerMode === 'dual'
         ? centerModel
@@ -340,11 +376,12 @@
       window.location.assign(url.pathname + url.search + url.hash);
     }
 
-    function renderSelector({ inputEl, resultEl, category, selectedId, onPick }) {
+    function renderSelector({ inputEl, resultEl, category, selectedId, onPick, allowedIds = null }) {
       if (!inputEl || !resultEl) return;
       const query = norm(inputEl.value);
       const filtered = models.filter((m) => {
         if ((m.categoria || '').toLowerCase() !== category) return false;
+        if (allowedIds && !allowedIds.has(String(m.id))) return false;
         if (!query) return true;
         return norm(m.nombre).includes(query) || norm(m.identificador).includes(query);
       }).slice(0, 6);
@@ -387,6 +424,8 @@
       if (center && center.id) url.searchParams.set('center_id', String(center.id)); else url.searchParams.delete('center_id');
       if (cenefa && cenefa.id) url.searchParams.set('cenefa_id', String(cenefa.id)); else url.searchParams.delete('cenefa_id');
       if (esquina && esquina.id) url.searchParams.set('esquina_id', String(esquina.id)); else url.searchParams.delete('esquina_id');
+      if (cenefaOuter && cenefaOuter.id) url.searchParams.set('cenefa_outer_id', String(cenefaOuter.id)); else url.searchParams.delete('cenefa_outer_id');
+      if (esquinaOuter && esquinaOuter.id) url.searchParams.set('esquina_outer_id', String(esquinaOuter.id)); else url.searchParams.delete('esquina_outer_id');
 
       if (center && center.imagen) url.searchParams.set('center_img', center.imagen); else url.searchParams.delete('center_img');
       if (cenefa && cenefa.imagen) url.searchParams.set('cenefa_img', cenefa.imagen); else url.searchParams.delete('cenefa_img');
@@ -429,6 +468,8 @@
     const selectedCenter = models.find((m) => String(m.id) === String(selection.centerId || '')) || null;
     const selectedCenefa = models.find((m) => String(m.id) === String(selection.cenefaId || '')) || null;
     const selectedEsquina = models.find((m) => String(m.id) === String(selection.esquinaId || '')) || null;
+    const selectedCenefaOuter = models.find((m) => String(m.id) === String(selection.cenefaOuterId || '')) || null;
+    const selectedEsquinaOuter = models.find((m) => String(m.id) === String(selection.esquinaOuterId || '')) || null;
 
 
     if (searchMode === 'tapete') {
@@ -465,14 +506,14 @@
         selectedId: selectedCenter ? selectedCenter.id : null,
         onPick: (pickedModel) => {
           if (pickerMode === 'single' && forcedSingleCategory === 'cenefa') {
-            goToSelection(null, pickedModel, findEsquinaForCenefa(pickedModel));
+            { const outer = findOuterForCenefa(pickedModel); goToSelection(null, pickedModel, findEsquinaForCenefa(pickedModel), outer.cenefaOuter, outer.esquinaOuter); }
             return;
           }
           if (pickerMode === 'single' && forcedSingleCategory === 'esquina') {
-            goToSelection(null, selectedCenefa, pickedModel);
+            goToSelection(null, selectedCenefa, pickedModel, selectedCenefaOuter, selectedEsquinaOuter);
             return;
           }
-          goToSelection(pickedModel, selectedCenefa, selectedEsquina);
+          goToSelection(pickedModel, selectedCenefa, selectedEsquina, selectedCenefaOuter, selectedEsquinaOuter);
         },
       }));
       centerInput.addEventListener('focus', () => centerInput.dispatchEvent(new Event('input')));
@@ -480,13 +521,23 @@
     }
 
     if (pickerMode === 'dual' && cenefaInput) {
+      const connectedCenefaIds = new Set();
+      Object.keys(manualConnections || {}).forEach((folder) => {
+        const match = models.find((m) => (m.categoria || '').toLowerCase() === 'cenefa' && (m.carpeta_modelo || '').toString().toLowerCase() === folder);
+        if (match) connectedCenefaIds.add(String(match.id));
+      });
+      const hasConnectionFilter = connectedCenefaIds.size > 0;
       if (selectedCenefa) cenefaInput.value = selectedCenefa.nombre || '';
       cenefaInput.addEventListener('input', () => renderSelector({
         inputEl: cenefaInput,
         resultEl: cenefaResults,
         category: 'cenefa',
         selectedId: selectedCenefa ? selectedCenefa.id : null,
-        onPick: (cenefaModel) => goToSelection(selectedCenter, cenefaModel, findEsquinaForCenefa(cenefaModel)),
+        allowedIds: hasConnectionFilter ? connectedCenefaIds : null,
+        onPick: (cenefaModel) => {
+          const outer = findOuterForCenefa(cenefaModel);
+          goToSelection(selectedCenter, cenefaModel, findEsquinaForCenefa(cenefaModel), outer.cenefaOuter, outer.esquinaOuter);
+        },
       }));
       cenefaInput.addEventListener('focus', () => cenefaInput.dispatchEvent(new Event('input')));
       cenefaInput.dispatchEvent(new Event('input'));
@@ -597,14 +648,20 @@
     let esquinaOuterImg = null;
     let cenefaEditedCanvas = null;
     let esquinaEditedCanvas = null;
+    let cenefaOuterEditedCanvas = null;
+    let esquinaOuterEditedCanvas = null;
     let cenefaEditor = null;
     let esquinaEditor = null;
+    let cenefaOuterEditor = null;
+    let esquinaOuterEditor = null;
 
     function snapshotState() {
       return {
         main: currentImageData ? cloneImageData(currentImageData) : null,
         cenefa: cenefaEditor && cenefaEditor.current ? cloneImageData(cenefaEditor.current) : null,
         esquina: esquinaEditor && esquinaEditor.current ? cloneImageData(esquinaEditor.current) : null,
+        cenefaOuter: cenefaOuterEditor && cenefaOuterEditor.current ? cloneImageData(cenefaOuterEditor.current) : null,
+        esquinaOuter: esquinaOuterEditor && esquinaOuterEditor.current ? cloneImageData(esquinaOuterEditor.current) : null,
       };
     }
 
@@ -642,6 +699,37 @@
           esquinaEditor.current = cloneImageData(esquinaEditor.source);
           esquinaEditor.ctx.putImageData(esquinaEditor.current, 0, 0);
           esquinaEditedCanvas = null;
+        }
+      }
+
+      if (cenefaOuterEditor) {
+        if (snapshot.cenefaOuter) {
+          cenefaOuterEditor.current = cloneImageData(snapshot.cenefaOuter);
+          cenefaOuterEditor.ctx.putImageData(cenefaOuterEditor.current, 0, 0);
+          const c = document.createElement('canvas');
+          c.width = cenefaOuterEditor.canvas.width;
+          c.height = cenefaOuterEditor.canvas.height;
+          c.getContext('2d').putImageData(cenefaOuterEditor.current, 0, 0);
+          cenefaOuterEditedCanvas = c;
+        } else if (cenefaOuterEditor.source) {
+          cenefaOuterEditor.current = cloneImageData(cenefaOuterEditor.source);
+          cenefaOuterEditor.ctx.putImageData(cenefaOuterEditor.current, 0, 0);
+          cenefaOuterEditedCanvas = null;
+        }
+      }
+      if (esquinaOuterEditor) {
+        if (snapshot.esquinaOuter) {
+          esquinaOuterEditor.current = cloneImageData(snapshot.esquinaOuter);
+          esquinaOuterEditor.ctx.putImageData(esquinaOuterEditor.current, 0, 0);
+          const c = document.createElement('canvas');
+          c.width = esquinaOuterEditor.canvas.width;
+          c.height = esquinaOuterEditor.canvas.height;
+          c.getContext('2d').putImageData(esquinaOuterEditor.current, 0, 0);
+          esquinaOuterEditedCanvas = c;
+        } else if (esquinaOuterEditor.source) {
+          esquinaOuterEditor.current = cloneImageData(esquinaOuterEditor.source);
+          esquinaOuterEditor.ctx.putImageData(esquinaOuterEditor.current, 0, 0);
+          esquinaOuterEditedCanvas = null;
         }
       }
       drawPattern();
@@ -696,14 +784,14 @@
         const hasOuter = Boolean(cenefaOuterSrc || esquinaOuterSrc);
         const cols = hasOuter ? 14 : 12;
         const rows = hasOuter ? 10 : 8;
-        const tw = Math.floor(w / cols);
-        const th = Math.floor(h / rows);
+        const tw = w / cols;
+        const th = h / rows;
 
         const centerSource = centerSrc ? tile : null;
         const cenefaSource = (editTarget === 'cenefa') ? tile : (cenefaEditedCanvas || cenefaImg || tile);
         const cornerSource = (editTarget === 'esquina') ? tile : (esquinaEditedCanvas || esquinaImg || cenefaSource);
-        const cenefaOuterSource = cenefaOuterImg || cenefaSource;
-        const cornerOuterSource = esquinaOuterImg || cenefaOuterSource;
+        const cenefaOuterSource = (editTarget === 'cenefa_exterior') ? tile : (cenefaOuterEditedCanvas || cenefaOuterImg || cenefaSource);
+        const cornerOuterSource = (editTarget === 'esquina_exterior') ? tile : (esquinaOuterEditedCanvas || esquinaOuterImg || cenefaOuterSource);
 
         const centerMap = [[0, Math.PI / 2], [3 * Math.PI / 2, Math.PI]];
 
@@ -746,8 +834,8 @@
 
       const cols = 12;
       const rows = 8;
-      const tw = Math.floor(w / cols);
-      const th = Math.floor(h / rows);
+      const tw = w / cols;
+      const th = h / rows;
 
       if (category === 'cenefa') {
         pctx.fillStyle = '#fff';
@@ -988,6 +1076,16 @@
           esquinaEditor.ctx.putImageData(esquinaEditor.current, 0, 0);
           esquinaEditedCanvas = null;
         }
+        if (cenefaOuterEditor && cenefaOuterEditor.source) {
+          cenefaOuterEditor.current = cloneImageData(cenefaOuterEditor.source);
+          cenefaOuterEditor.ctx.putImageData(cenefaOuterEditor.current, 0, 0);
+          cenefaOuterEditedCanvas = null;
+        }
+        if (esquinaOuterEditor && esquinaOuterEditor.source) {
+          esquinaOuterEditor.current = cloneImageData(esquinaOuterEditor.source);
+          esquinaOuterEditor.ctx.putImageData(esquinaOuterEditor.current, 0, 0);
+          esquinaOuterEditedCanvas = null;
+        }
         undoStack.length = 0;
         redoStack.length = 0;
         renderEdit();
@@ -1095,6 +1193,8 @@
         const modelThumbs = [];
         const cCanvas = q('extraCenefaPreview canvas');
         const eCanvas = q('extraCornerPreview canvas');
+        const coCanvas = q('extraCenefaOuterPreview canvas');
+        const eoCanvas = q('extraCornerOuterPreview canvas');
 
         const mainLabel = selectedModelNameEl && selectedModelNameEl.textContent
           ? selectedModelNameEl.textContent.trim()
@@ -1114,6 +1214,14 @@
         if (esquinaSrc && esquinaSrc !== src) {
           const esquinaCanvas = await thumbCanvasFromSrc(esquinaSrc, eCanvas || null);
           if (esquinaCanvas) modelThumbs.push({ key: esquinaSrc, label: modelNameBySrc(esquinaSrc, 'Esquina'), canvas: esquinaCanvas });
+        }
+        if (cenefaOuterSrc && cenefaOuterSrc !== src) {
+          const cenefaOuterCanvas = await thumbCanvasFromSrc(cenefaOuterSrc, coCanvas || null);
+          if (cenefaOuterCanvas) modelThumbs.push({ key: cenefaOuterSrc, label: modelNameBySrc(cenefaOuterSrc, lang === 'en' ? 'Outer border' : 'Cenefa exterior'), canvas: cenefaOuterCanvas });
+        }
+        if (esquinaOuterSrc && esquinaOuterSrc !== src) {
+          const esquinaOuterCanvas = await thumbCanvasFromSrc(esquinaOuterSrc, eoCanvas || null);
+          if (esquinaOuterCanvas) modelThumbs.push({ key: esquinaOuterSrc, label: modelNameBySrc(esquinaOuterSrc, lang === 'en' ? 'Outer corner' : 'Esquina exterior'), canvas: esquinaOuterCanvas });
         }
 
         const seen = new Set();
@@ -1188,7 +1296,10 @@
       const cx = c.getContext('2d');
 
       function getEditor() {
-        return type === 'cenefa' ? cenefaEditor : esquinaEditor;
+        if (type === 'cenefa') return cenefaEditor;
+        if (type === 'esquina') return esquinaEditor;
+        if (type === 'cenefa_outer') return cenefaOuterEditor;
+        return esquinaOuterEditor;
       }
 
       function renderSquare() {
@@ -1275,6 +1386,8 @@
         sctx2.putImageData(currentData, 0, 0);
         if (type === 'cenefa') { cenefaEditedCanvas = syncCanvas; }
         if (type === 'esquina') { esquinaEditedCanvas = syncCanvas; }
+        if (type === 'cenefa_outer') { cenefaOuterEditedCanvas = syncCanvas; }
+        if (type === 'esquina_outer') { esquinaOuterEditedCanvas = syncCanvas; }
         drawPattern();
       }
 
@@ -1285,6 +1398,8 @@
         const currentData = new ImageData(new Uint8ClampedArray(sourceData.data), sourceData.width, sourceData.height);
         if (type === 'cenefa') cenefaEditor = { canvas: c, ctx: cx, source: cloneImageData(sourceData), current: cloneImageData(currentData) };
         if (type === 'esquina') esquinaEditor = { canvas: c, ctx: cx, source: cloneImageData(sourceData), current: cloneImageData(currentData) };
+        if (type === 'cenefa_outer') cenefaOuterEditor = { canvas: c, ctx: cx, source: cloneImageData(sourceData), current: cloneImageData(currentData) };
+        if (type === 'esquina_outer') esquinaOuterEditor = { canvas: c, ctx: cx, source: cloneImageData(sourceData), current: cloneImageData(currentData) };
         renderSquare();
         c.addEventListener('click', (ev) => {
           const rect = c.getBoundingClientRect();
@@ -1331,6 +1446,8 @@
       }
       renderStaticSquare('extraCenefaPreview', cenefaSrc, 'cenefa');
       renderStaticSquare('extraCornerPreview', esquinaSrc, 'esquina');
+      renderStaticSquare('extraCenefaOuterPreview', cenefaOuterSrc, 'cenefa_outer');
+      renderStaticSquare('extraCornerOuterPreview', esquinaOuterSrc, 'esquina_outer');
     });
   }
 
@@ -1382,8 +1499,8 @@
       const hasOuter = Boolean(cenefaOuterImg || esquinaOuterImg);
       const cols = hasOuter ? 14 : 12;
       const rows = hasOuter ? 10 : 8;
-      const tw = Math.floor(canvas.width / cols);
-      const th = Math.floor(canvas.height / rows);
+      const tw = canvas.width / cols;
+      const th = canvas.height / rows;
       pctx.fillStyle = '#fff';
       pctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -1490,10 +1607,12 @@
 
       function d(src, r, c, angle) {
         if (!src) return;
+        const bleed = 1;
         pctx.save();
+        pctx.imageSmoothingEnabled = false;
         pctx.translate(c * tw + tw / 2, r * th + th / 2);
         pctx.rotate(angle || 0);
-        pctx.drawImage(src, -tw / 2, -th / 2, tw, th);
+        pctx.drawImage(src, -(tw / 2 + bleed), -(th / 2 + bleed), tw + bleed * 2, th + bleed * 2);
         pctx.restore();
       }
 
@@ -1531,12 +1650,12 @@
 
     const open = async (src, modelName, category, cenefaSrc, esquinaSrc, cenefaOuterSrc, esquinaOuterSrc) => {
       clearTimeout(closeTimer);
-      if (category === 'cenefa' || category === 'esquina') {
+      if (['cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior'].includes(category)) {
         const [cenefaImg, esquinaImg, cenefaOuterImg, esquinaOuterImg] = await Promise.all([
           loadImageSafeOverlay(cenefaSrc || (category === 'cenefa' ? src : '')),
           loadImageSafeOverlay(esquinaSrc || (category === 'esquina' ? src : '')),
-          loadImageSafeOverlay(cenefaOuterSrc || ''),
-          loadImageSafeOverlay(esquinaOuterSrc || ''),
+          loadImageSafeOverlay(cenefaOuterSrc || (category === 'cenefa_exterior' ? src : '')),
+          loadImageSafeOverlay(esquinaOuterSrc || (category === 'esquina_exterior' ? src : '')),
         ]);
         drawBorderPattern(cenefaImg, esquinaImg, cenefaOuterImg, esquinaOuterImg);
       } else {

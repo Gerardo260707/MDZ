@@ -78,7 +78,7 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .mosaic-card .action{display:inline-block;text-decoration:none;font-size:12px}
 .empty-msg{grid-column:1/-1;padding:12px;border:1px dashed #bbb;background:#fafafa;color:#444}
 .custom-wrap{display:grid;grid-template-columns:1fr 160px 1.4fr;gap:14px;align-items:start}
-.extra-editors{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px}
+.extra-editors{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:10px}
 .extra-editor{max-width:none;aspect-ratio:1/1}
 .vector-editor{width:100%;max-width:300px;aspect-ratio:1;border:1px solid #888;background:#fff;padding:8px}
 .vector-editor svg,.editable-svg{width:100%;height:100%;display:block}
