@@ -1601,8 +1601,8 @@
       const esquinaOuterImg = asTileSource(esquinaOuterRaw);
 
       const hasOuter = Boolean(cenefaOuterImg || esquinaOuterImg);
-      const cols = hasOuter ? 14 : 12;
-      const rows = hasOuter ? 10 : 8;
+      const cols = hasOuter ? 10 : 8;
+      const rows = hasOuter ? 8 : 6;
       const tw = canvas.width / cols;
       const th = canvas.height / rows;
       pctx.fillStyle = '#fff';
@@ -1713,8 +1713,8 @@
       pctx.clearRect(0, 0, w, h);
 
       const hasOuter = Boolean(cenefaOuterImg || esquinaOuterImg);
-      const cols = hasOuter ? 14 : 12;
-      const rows = hasOuter ? 10 : 8;
+      const cols = hasOuter ? 10 : 8;
+      const rows = hasOuter ? 8 : 6;
       const tw = w / cols;
       const th = h / rows;
       pctx.fillStyle = '#fff';
