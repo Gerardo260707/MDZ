@@ -465,7 +465,12 @@ foreach ($items as $it) {
                 $esquinaOuterSrcV = imagen_con_version($esquinaOuterSrc);
                 $targetModel = $m;
                 $targetCategory = $cat;
-                if (in_array($cat, ['cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior'], true) && is_array($cenefaModel)) {
+                if ($cat === 'cenefa') {
+                    // Al personalizar una cenefa, siempre abrir el simulador con esa misma cenefa.
+                    $targetModel = $m;
+                    $targetCategory = 'cenefa';
+                } elseif (in_array($cat, ['esquina', 'cenefa_exterior', 'esquina_exterior'], true) && is_array($cenefaModel)) {
+                    // Para piezas conectadas, redirigir al contexto de la cenefa conectada.
                     $targetModel = $cenefaModel;
                     $targetCategory = 'cenefa';
                 }
