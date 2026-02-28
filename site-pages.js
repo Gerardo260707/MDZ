@@ -501,11 +501,17 @@
           ? (lang === 'en' ? 'Select border' : 'Seleccionar cenefa')
           : (forcedSingleCategory === 'esquina'
             ? (lang === 'en' ? 'Select corner' : 'Seleccionar esquina')
-            : (lang === 'en' ? 'Select center' : 'Seleccionar centro'));
+            : (forcedSingleCategory === 'cenefa_exterior'
+              ? (lang === 'en' ? 'Select outer border' : 'Seleccionar cenefa exterior')
+              : (forcedSingleCategory === 'esquina_exterior'
+                ? (lang === 'en' ? 'Select outer corner' : 'Seleccionar esquina exterior')
+                : (lang === 'en' ? 'Select center' : 'Seleccionar centro'))));
       }
       if (pickerMode === 'single') {
         if (forcedSingleCategory === 'cenefa' && selectedCenefa) centerInput.value = selectedCenefa.nombre || '';
         else if (forcedSingleCategory === 'esquina' && selectedEsquina) centerInput.value = selectedEsquina.nombre || '';
+        else if (forcedSingleCategory === 'cenefa_exterior' && selectedCenefaOuter) centerInput.value = selectedCenefaOuter.nombre || '';
+        else if (forcedSingleCategory === 'esquina_exterior' && selectedEsquinaOuter) centerInput.value = selectedEsquinaOuter.nombre || '';
         else if (selectedCenter) centerInput.value = selectedCenter.nombre || '';
       } else if (selectedCenter) centerInput.value = selectedCenter.nombre || '';
       centerInput.addEventListener('input', () => renderSelector({
@@ -764,31 +770,13 @@
       if (!source) return;
       const x = col * tileW;
       const y = row * tileH;
-      const bleed = 1;
+      const bleed = 2;
       ctx.save();
       ctx.imageSmoothingEnabled = false;
       ctx.translate(x + tileW / 2, y + tileH / 2);
       ctx.rotate(angle || 0);
       ctx.drawImage(source, -(tileW / 2 + bleed), -(tileH / 2 + bleed), tileW + bleed * 2, tileH + bleed * 2);
       ctx.restore();
-    }
-
-    function asTileSource(source, size = 512) {
-      if (!source) return null;
-      const c = document.createElement('canvas');
-      c.width = size;
-      c.height = size;
-      const cx = c.getContext('2d');
-      const sw = source.naturalWidth || source.width || size;
-      const sh = source.naturalHeight || source.height || size;
-      const scale = Math.max(size / sw, size / sh);
-      const dw = sw * scale;
-      const dh = sh * scale;
-      const dx = (size - dw) / 2;
-      const dy = (size - dh) / 2;
-      cx.clearRect(0, 0, size, size);
-      cx.drawImage(source, dx, dy, dw, dh);
-      return c;
     }
 
     function asTileSource(source, size = 512) {
@@ -1517,13 +1505,31 @@
       if (!source) return;
       const x = col * tileW;
       const y = row * tileH;
-      const bleed = 1;
+      const bleed = 2;
       ctx.save();
       ctx.imageSmoothingEnabled = false;
       ctx.translate(x + tileW / 2, y + tileH / 2);
       ctx.rotate(angle || 0);
       ctx.drawImage(source, -(tileW / 2 + bleed), -(tileH / 2 + bleed), tileW + bleed * 2, tileH + bleed * 2);
       ctx.restore();
+    }
+
+    function asTileSource(source, size = 512) {
+      if (!source) return null;
+      const c = document.createElement('canvas');
+      c.width = size;
+      c.height = size;
+      const cx = c.getContext('2d');
+      const sw = source.naturalWidth || source.width || size;
+      const sh = source.naturalHeight || source.height || size;
+      const scale = Math.max(size / sw, size / sh);
+      const dw = sw * scale;
+      const dh = sh * scale;
+      const dx = (size - dw) / 2;
+      const dy = (size - dh) / 2;
+      cx.clearRect(0, 0, size, size);
+      cx.drawImage(source, dx, dy, dw, dh);
+      return c;
     }
 
     canvases.forEach(async (canvas) => {
@@ -1658,7 +1664,7 @@
 
       function d(src, r, c, angle) {
         if (!src) return;
-        const bleed = 1;
+        const bleed = 2;
         pctx.save();
         pctx.imageSmoothingEnabled = false;
         pctx.translate(c * tw + tw / 2, r * th + th / 2);

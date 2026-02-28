@@ -511,11 +511,11 @@ $selectedImage = $editable['imagen'] ?? '';
 $selectedCategory = $editable['categoria'] ?? '';
 $editTarget = ($pickerMode === 'dual') ? 'centro' : ($selectedCategory !== '' ? $selectedCategory : 'centro');
 $entryCategory = strtolower(trim((string)($_GET['cat'] ?? ($editable['categoria'] ?? ''))));
-$showCenterEditor = true;
+$showCenterEditor = !($pickerMode === 'single' && $isBorderSelection);
 $searchMode = ($modelSource === 'tapete') ? 'tapete' : 'modelo';
 $isBorderSelection = in_array($selectedCategory, ['cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior'], true);
 $hasDoubleRing = (bool)$selectedCenefaOuter || (bool)$selectedEsquinaOuter;
-$disableSearch = ($pickerMode === 'single' && $isBorderSelection && $hasDoubleRing);
+$disableSearch = ($pickerMode === 'single' && $isBorderSelection);
 if ($pickerMode === 'dual' || $isBorderSelection) {
     $showCenefaExtra = (bool)$selectedCenefa;
     $showEsquinaExtra = (bool)$selectedEsquina;
