@@ -1,9 +1,12 @@
+<?php
+$lang = (($_GET['lang'] ?? 'es') === 'en') ? 'en' : 'es';
+?>
 <!doctype html>
-<html lang="es">
+<html lang="<?= $lang ?>">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mapa del sitio | Mosaicos Dzununcán</title>
+  <title><?= $lang === 'en' ? 'Colors' : 'Colores' ?> | Mosaicos Dzununcán</title>
   <link rel="stylesheet" href="assets.css" />
 </head>
 <body>
@@ -23,30 +26,18 @@
         <a data-keep-lang href="mantenimiento.html" data-i18n="nav_maintenance">Mantenimiento</a>
         <a data-keep-lang href="instalacion.html" data-i18n="nav_installation">Instalación</a>
         <a data-keep-lang href="contacto.html" data-i18n="nav_contact">Contacto</a>
-        
       </nav>
     </header>
     <div class="mosaic-strip"></div>
 
     <section>
-      <h2>Mapa del sitio</h2>
-      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:16px;">
-        <a data-keep-lang href="index.html">Inicio</a>
-        <a data-keep-lang href="mosaicos.html">Mosaicos</a>
-        <a data-keep-lang href="mosaicos.php">Catálogo (PHP)</a>
-        <a data-keep-lang href="personalizar.php">Personalizador</a>
-        <a data-keep-lang href="galeria.html">Galería</a>
-        <a data-keep-lang href="mantenimiento.html">Mantenimiento</a>
-        <a data-keep-lang href="instalacion.html">Instalación</a>
-        <a data-keep-lang href="contacto.html">Contacto</a>
-        
-        <a data-keep-lang href="legal.html#privacy">Políticas de seguridad</a>
-        <a data-keep-lang href="legal.html#terms">Términos y condiciones</a>
-      </div>
+      <h2 data-i18n="colors_title">Paleta de colores</h2>
+      <p data-i18n="colors_desc">Consulta todos los colores disponibles para personalizar tus diseños.</p>
+      <div id="colorsGrid" class="colors-grid"></div>
     </section>
   </main>
-
   <script src="app.js"></script>
+  <script src="customizer-colors.js"></script>
   <script src="site-pages.js"></script>
 </body>
 </html>

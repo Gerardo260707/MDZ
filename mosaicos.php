@@ -1,4 +1,105 @@
 <?php
+const VALID_CATEGORIAS = ['centro', 'cenefa', 'esquina', 'hexagonales', 'antiderrapante'];
+
+function carga_mapa_categorias_csv(string $csvPath): array {
+    if (!file_exists($csvPath)) {
+        return [];
+    }
+
+    $handle = fopen($csvPath, 'r');
+    if ($handle === false) {
+        return [];
+    }
+
+    $map = [];
+    $header = fgetcsv($handle);
+    if (!is_array($header)) {
+        fclose($handle);
+        return [];
+    }
+
+    while (($row = fgetcsv($handle)) !== false) {
+        $folder = strtolower(trim((string)($row[0] ?? '')));
+        $category = strtolower(trim((string)($row[1] ?? '')));
+        if ($folder === '' || str_starts_with($folder, '#')) {
+            continue;
+        }
+        if (!in_array($category, VALID_CATEGORIAS, true)) {
+            $category = '';
+        }
+        $map[$folder] = $category;
+    }
+
+    fclose($handle);
+    return $map;
+}
+
+function sincroniza_categorias_csv(array $folders, string $csvPath): array {
+    $existing = carga_mapa_categorias_csv($csvPath);
+    $dir = dirname($csvPath);
+    if (!is_dir($dir)) {
+        mkdir($dir, 0775, true);
+    }
+
+    $map = [];
+    foreach ($folders as $folder) {
+        $key = strtolower(trim((string)$folder));
+        if ($key === '') {
+            continue;
+        }
+        $map[$key] = $existing[$key] ?? '';
+    }
+
+    $handle = fopen($csvPath, 'w');
+    if ($handle !== false) {
+        fputcsv($handle, ['carpeta_modelo', 'categoria']);
+        foreach ($folders as $folder) {
+            $key = strtolower(trim((string)$folder));
+            if ($key === '') {
+                continue;
+            }
+            fputcsv($handle, [$folder, $map[$key] ?? '']);
+        }
+        fclose($handle);
+    }
+
+    return $map;
+}
+
+function carpeta_modelo_de_item(array $item): string {
+    $folder = trim((string)($item['carpeta_modelo'] ?? ''));
+    if ($folder !== '') return strtolower($folder);
+    $img = trim((string)($item['imagen'] ?? ''));
+    if (preg_match('#(?:^|/)Tapiz/([^/]+)/#i', $img, $m)) {
+        return strtolower(rawurldecode($m[1]));
+    }
+    return '';
+}
+
+function carga_conexiones_cenefa_esquina(string $csvPath): array {
+    if (!file_exists($csvPath)) return ['primary' => [], 'outer' => []];
+    $h = fopen($csvPath, 'r');
+    if ($h === false) return ['primary' => [], 'outer' => []];
+    $header = fgetcsv($h);
+    if (!is_array($header)) {
+        fclose($h);
+        return ['primary' => [], 'outer' => []];
+    }
+    $primary = [];
+    $outer = [];
+    while (($row = fgetcsv($h)) !== false) {
+        $cenefa = strtolower(trim((string)($row[0] ?? '')));
+        $esquina = strtolower(trim((string)($row[1] ?? '')));
+        $cenefaOuter = strtolower(trim((string)($row[2] ?? '')));
+        $esquinaOuter = strtolower(trim((string)($row[3] ?? '')));
+        if ($cenefa === '' || str_starts_with($cenefa, '#')) continue;
+        if ($esquina !== '') $primary[$cenefa] = $esquina;
+        if ($cenefaOuter !== '') $outer[$cenefa] = ['cenefa' => $cenefaOuter, 'esquina' => $esquinaOuter];
+    }
+    fclose($h);
+    return ['primary' => $primary, 'outer' => $outer];
+}
+
 function categoria_prefix(?string $categoria): string {
     $cat = strtolower(trim((string)$categoria));
     return match ($cat) {
@@ -24,7 +125,7 @@ function categoria_rank(?string $categoria): int {
 
 function normaliza_item(array $m): array {
     $id = (int)($m['id'] ?? 0);
-    $categoria = $m['categoria'] ?? 'centro';
+    $categoria = trim((string)($m['categoria'] ?? ''));
     $identificador = $m['identificador'] ?? '';
     if ($identificador === '') {
         $identificador = categoria_prefix($categoria) . '-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
@@ -74,11 +175,29 @@ if (empty($items)) {
     }
 }
 
+$categoriasPath = __DIR__ . '/config/categorias.csv';
+$mapCategoriasGlobal = carga_mapa_categorias_csv($categoriasPath);
+if (!empty($mapCategoriasGlobal)) {
+    foreach ($items as &$item) {
+        $folder = carpeta_modelo_de_item($item);
+        if ($folder !== '' && array_key_exists($folder, $mapCategoriasGlobal)) {
+            $item['categoria'] = $mapCategoriasGlobal[$folder];
+            if (($item['identificador'] ?? '') === '' && (int)($item['id'] ?? 0) > 0) {
+                $item['identificador'] = categoria_prefix($item['categoria']) . '-' . str_pad((string)$item['id'], 4, '0', STR_PAD_LEFT);
+            }
+        }
+    }
+    unset($item);
+}
+
 if (empty($items)) {
     $tapizDir = __DIR__ . '/Tapiz';
     if (is_dir($tapizDir)) {
         $folders = array_filter(scandir($tapizDir) ?: [], static fn($n) => $n !== '.' && $n !== '..' && is_dir($tapizDir . '/' . $n));
         sort($folders, SORT_NATURAL | SORT_FLAG_CASE);
+
+        $categoriasPath = __DIR__ . '/config/categorias.csv';
+        $mapCategorias = sincroniza_categorias_csv($folders, $categoriasPath);
 
         $idx = 1;
         $catCounters = ['centro'=>0,'cenefa'=>0,'esquina'=>0,'hexagonales'=>0,'antiderrapante'=>0];
@@ -97,7 +216,7 @@ if (empty($items)) {
             }
             $targetRel = 'Tapiz/' . rawurlencode($folder) . '/' . rawurlencode(basename($src));
 
-            $categoria = 'centro';
+            $categoria = trim((string)($mapCategorias[strtolower($folder)] ?? ''));
             if (isset($catCounters[$categoria])) {
                 $catCounters[$categoria]++;
             }
@@ -126,6 +245,17 @@ usort($items, static function ($a, $b) {
 }
 
 $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
+$conexiones = carga_conexiones_cenefa_esquina(__DIR__ . '/config/conexiones_cenefa_esquina.csv');
+$conexionesPrimary = (array)($conexiones['primary'] ?? []);
+$conexionesOuter = (array)($conexiones['outer'] ?? []);
+
+$byFolder = [];
+foreach ($items as $it) {
+    $folder = carpeta_modelo_de_item($it);
+    if ($folder !== '') {
+        $byFolder[$folder][strtolower((string)($it['categoria'] ?? ''))] = $it;
+    }
+}
 ?>
 <!doctype html>
 <html lang="<?= $lang ?>">
@@ -167,11 +297,50 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
         <div class="mosaic-grid mosaic-grid-small">
           <?php if (!empty($items)): ?>
             <?php foreach ($items as $m): ?>
+              <?php
+                $folder = carpeta_modelo_de_item($m);
+                $cat = strtolower((string)($m['categoria'] ?? ''));
+                $cenefaSrc = '';
+                $esquinaSrc = '';
+                $cenefaOuterSrc = '';
+                $esquinaOuterSrc = '';
+                if ($cat === 'cenefa') {
+                  $cenefaSrc = (string)($m['imagen'] ?? '');
+                  $mappedCornerFolder = $conexionesPrimary[$folder] ?? '';
+                  if ($mappedCornerFolder !== '' && isset($byFolder[$mappedCornerFolder]['esquina'])) {
+                    $esquinaSrc = (string)($byFolder[$mappedCornerFolder]['esquina']['imagen'] ?? '');
+                  } elseif (isset($byFolder[$folder]['esquina'])) {
+                    $esquinaSrc = (string)($byFolder[$folder]['esquina']['imagen'] ?? '');
+                  }
+                } elseif ($cat === 'esquina') {
+                  $esquinaSrc = (string)($m['imagen'] ?? '');
+                  $mappedCenefaFolder = array_search($folder, $conexionesPrimary, true);
+                  if ($mappedCenefaFolder !== false && isset($byFolder[$mappedCenefaFolder]['cenefa'])) {
+                    $cenefaSrc = (string)($byFolder[$mappedCenefaFolder]['cenefa']['imagen'] ?? '');
+                  } elseif (isset($byFolder[$folder]['cenefa'])) {
+                    $cenefaSrc = (string)($byFolder[$folder]['cenefa']['imagen'] ?? '');
+                  }
+                }
+                $cenefaBaseFolder = '';
+                if ($cat === 'cenefa') $cenefaBaseFolder = $folder;
+                if ($cat === 'esquina') {
+                  $mappedCenefaFolder = array_search($folder, $conexionesPrimary, true);
+                  $cenefaBaseFolder = $mappedCenefaFolder !== false ? (string)$mappedCenefaFolder : '';
+                }
+                if ($cenefaBaseFolder !== '' && isset($conexionesOuter[$cenefaBaseFolder])) {
+                  $out = $conexionesOuter[$cenefaBaseFolder];
+                  $outC = strtolower((string)($out['cenefa'] ?? ''));
+                  $outE = strtolower((string)($out['esquina'] ?? ''));
+                  if ($outC !== '' && isset($byFolder[$outC]['cenefa'])) $cenefaOuterSrc = (string)($byFolder[$outC]['cenefa']['imagen'] ?? '');
+                  if ($outE !== '' && isset($byFolder[$outE]['esquina'])) $esquinaOuterSrc = (string)($byFolder[$outE]['esquina']['imagen'] ?? '');
+                }
+              ?>
               <article class="mosaic-card">
-                <img src="<?= htmlspecialchars($m['imagen'] ?: 'assets/placeholder-tile.svg', ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" />
-                <p class="code"><?= htmlspecialchars(strtoupper($m['categoria']), ENT_QUOTES) ?> · <?= htmlspecialchars($m['identificador'], ENT_QUOTES) ?></p>
+                <img class="mosaic-preview-trigger" src="<?= htmlspecialchars($m['imagen'] ?: 'assets/placeholder-tile.svg', ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-model-name="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-category="<?= htmlspecialchars($cat, ENT_QUOTES) ?>" data-cenefa-src="<?= htmlspecialchars($cenefaSrc, ENT_QUOTES) ?>" data-esquina-src="<?= htmlspecialchars($esquinaSrc, ENT_QUOTES) ?>" data-cenefa-outer-src="<?= htmlspecialchars($cenefaOuterSrc, ENT_QUOTES) ?>" data-esquina-outer-src="<?= htmlspecialchars($esquinaOuterSrc, ENT_QUOTES) ?>" />
+                <?php $catLabel = $m['categoria'] !== '' ? strtoupper((string)$m['categoria']) : 'SIN CATEGORÍA'; ?>
+                <p class="code"><?= htmlspecialchars($catLabel, ENT_QUOTES) ?> · <?= htmlspecialchars($m['identificador'], ENT_QUOTES) ?></p>
                 <p class="name"><?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?></p>
-                <a class="action" href="personalizar.php?picker=single&id=<?= urlencode((string)$m['id']) ?>&lang=<?= $lang ?>&img=<?= urlencode((string)($m['imagen'] ?: "assets/placeholder-tile.svg")) ?>&name=<?= urlencode((string)$m['nombre']) ?>&cat=<?= urlencode((string)$m['categoria']) ?>" data-i18n="btn_customize">Personalizar</a>
+                <a class="action cta-pill" href="personalizar.php?picker=single&id=<?= urlencode((string)$m['id']) ?>&lang=<?= $lang ?>&img=<?= urlencode((string)($m['imagen'] ?: "assets/placeholder-tile.svg")) ?>&name=<?= urlencode((string)$m['nombre']) ?>&cat=<?= urlencode((string)$m['categoria']) ?>" data-i18n="btn_customize">Personalizar</a>
               </article>
             <?php endforeach; ?>
           <?php else: ?>
@@ -183,7 +352,7 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
         <div class="quote-top">
           <h4 data-i18n="custom_panel_title">Personalizar Diseño</h4>
           <p data-i18n="custom_panel_desc">Cambie los colores del mosaico de su elección.</p>
-          <a class="action quote-top-btn" data-keep-lang href="personalizar.php" data-i18n="custom_panel_cta">Pruebe el simulador de colores ahora</a>
+          <a class="action quote-top-btn cta-pill" data-keep-lang href="personalizar.php" data-i18n="custom_panel_cta">Pruebe el simulador de colores ahora</a>
         </div>
         <h3 data-i18n="quote_title">Solicite una Cotización</h3>
         <p data-i18n="quote_desc">Llene el siguiente formulario, comente los productos que desea y a la brevedad uno de nuestros agentes de venta se comunicará con usted.</p>
@@ -197,6 +366,14 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
       </aside>
     </section>
   </main>
+  <div id="modelOverlay" class="model-overlay" aria-hidden="true">
+    <div class="model-overlay-backdrop" data-overlay-close="true"></div>
+    <div class="model-overlay-card" role="dialog" aria-modal="true" aria-label="Vista previa del modelo">
+      <button type="button" class="model-overlay-close" data-overlay-close="true" aria-label="Cerrar vista previa">×</button>
+      <canvas id="modelOverlayPattern" class="model-overlay-pattern" width="1200" height="900" aria-hidden="true"></canvas>
+      <div class="model-overlay-footer"><strong id="modelOverlayName">MODELO</strong></div>
+    </div>
+  </div>
   <script src="app.js"></script>
   <script src="site-pages.js"></script>
 </body>

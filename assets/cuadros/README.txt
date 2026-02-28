@@ -1,7 +1,5 @@
-Pega aquí las 3 imágenes de accesos rápidos con estos nombres exactos:
-- galeria.jpg
-- instalacion.jpg
-- contacto.jpg
+Coloca aquí las imágenes de los 3 cuadros de la página de inicio.
 
-Si usas PNG, cambia las extensiones en index.html (config FEATURE_CARDS).
-Tamaño recomendado: 300x300 px o cuadrado.
+- Formatos soportados: .jpg, .jpeg, .png, .webp, .avif
+- Se usarán automáticamente las primeras 3 imágenes (orden alfabético).
+- Si reemplazas una imagen con el mismo nombre, se refresca por versión automática.

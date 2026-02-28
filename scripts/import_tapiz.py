@@ -27,20 +27,28 @@ def load_mapping() -> dict[str, str]:
         for row in reader:
             carpeta = (row.get('carpeta_modelo') or '').strip().lower()
             categoria = (row.get('categoria') or '').strip().lower()
-            if carpeta and categoria in VALID_CATS:
-                m[carpeta] = categoria
+            if not carpeta or carpeta.startswith('#'):
+                continue
+            if categoria not in VALID_CATS:
+                categoria = ''
+            m[carpeta] = categoria
     return m
 
 
-def ensure_mapping_template(model_dirs: list[Path], current: dict[str, str]) -> None:
-    if MAP_PATH.exists() and current:
-        return
+def ensure_mapping_template(model_dirs: list[Path], current: dict[str, str]) -> dict[str, str]:
+    ordered: dict[str, str] = {}
+    for d in model_dirs:
+        key = d.name.lower()
+        ordered[key] = current.get(key, '')
+
     MAP_PATH.parent.mkdir(parents=True, exist_ok=True)
     with MAP_PATH.open('w', encoding='utf-8', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(['carpeta_modelo', 'categoria'])
         for d in model_dirs:
-            writer.writerow([d.name, current.get(d.name.lower(), 'centro')])
+            writer.writerow([d.name, ordered[d.name.lower()]])
+
+    return ordered
 
 
 def find_first_png(folder: Path) -> Path | None:
@@ -59,12 +67,11 @@ def main() -> int:
         print(f'ERROR: No hay carpetas de modelos dentro de {TAPIZ_DIR}')
         return 1
 
-    ensure_mapping_template(model_dirs, mapping)
-    mapping = load_mapping()
+    mapping = ensure_mapping_template(model_dirs, mapping)
 
     records = []
-    counters = {'centro': 0, 'cenefa': 0, 'esquina': 0, 'hexagonales': 0, 'antiderrapante': 0}
-    pref = {'centro': 'CTR', 'cenefa': 'CEN', 'esquina': 'ESQ', 'hexagonales': 'HEX', 'antiderrapante': 'ANT'}
+    counters = {'centro': 0, 'cenefa': 0, 'esquina': 0, 'hexagonales': 0, 'antiderrapante': 0, '': 0}
+    pref = {'centro': 'CTR', 'cenefa': 'CEN', 'esquina': 'ESQ', 'hexagonales': 'HEX', 'antiderrapante': 'ANT', '': 'MOD'}
 
     idx = 1
     for model_dir in model_dirs:
@@ -73,9 +80,9 @@ def main() -> int:
             continue
 
         folder_name = model_dir.name
-        cat = mapping.get(folder_name.lower(), 'centro')
+        cat = mapping.get(folder_name.lower(), '')
         if cat not in counters:
-            cat = 'centro'
+            cat = ''
         counters[cat] += 1
         ident = f"{pref[cat]}-{counters[cat]:04d}"
 
