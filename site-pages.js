@@ -8,7 +8,7 @@
   function normalizeAssetSrc(rawSrc) {
     let src = String(rawSrc || '').trim();
     if (!src) return '';
-    src = src.replace(/&amp;/g, '&');
+    src = src.replace(/&amp;/g, '&').replace(/\+/g, '%20');
     for (let i = 0; i < 2; i++) {
       if (!/%[0-9a-f]{2}/i.test(src)) break;
       try {
@@ -19,7 +19,7 @@
         break;
       }
     }
-    return src;
+    return src.replace(/\\/g, '/');
   }
 
   function tByLang(lang, es, en) {
