@@ -22,6 +22,47 @@
     return src.replace(/\\/g, '/');
   }
 
+
+  function buildImageCandidates(rawSrc) {
+    const base = normalizeAssetSrc(rawSrc);
+    if (!base) return [];
+    const out = [];
+    const push = (v) => { if (v && !out.includes(v)) out.push(v); };
+    push(base);
+
+    const parts = base.split('?');
+    const pathPart = parts[0] || '';
+    const queryPart = parts.length > 1 ? ('?' + parts.slice(1).join('?')) : '';
+    if (pathPart) {
+      push(encodeURI(pathPart) + queryPart);
+      push(pathPart.replace(/ /g, '%20') + queryPart);
+    }
+    return out;
+  }
+
+  function loadImageWithFallback(rawSrc, { cacheBust = false } = {}) {
+    return new Promise((resolve) => {
+      const candidates = buildImageCandidates(rawSrc);
+      if (!candidates.length) return resolve(null);
+      const next = (idx) => {
+        if (idx >= candidates.length) return resolve(null);
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => next(idx + 1);
+        const src = candidates[idx];
+        if (cacheBust) {
+          const cleaned = src.replace(/([?&])ov=[^&#]*(&?)/, (m, p1, p2) => (p1 === '?' && p2 ? '?' : (p2 ? p1 : ''))).replace(/[?&]$/, '');
+          const sep = cleaned.includes('?') ? '&' : '?';
+          img.src = `${cleaned}${sep}ov=${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        } else {
+          img.src = src;
+        }
+      };
+      next(0);
+    });
+  }
+
   function tByLang(lang, es, en) {
     return lang === 'en' ? en : es;
   }
@@ -1320,15 +1361,7 @@
     }
 
     function loadImageSafe(imageSrc) {
-      return new Promise((resolve) => {
-        const safeSrc = normalizeAssetSrc(imageSrc);
-        if (!safeSrc) return resolve(null);
-        const image = new Image();
-        image.crossOrigin = 'anonymous';
-        image.onload = () => resolve(image);
-        image.onerror = () => resolve(null);
-        image.src = safeSrc;
-      });
+      return loadImageWithFallback(imageSrc);
     }
 
 
@@ -1486,7 +1519,10 @@
         drawPattern();
         updateHistoryButtons();
       };
-      if (src) img.src = normalizeAssetSrc(src);
+      if (src) {
+        const candidates = buildImageCandidates(src);
+        img.src = candidates[0] || '';
+      }
       else {
         sctx.fillStyle = '#fff';
         sctx.fillRect(0, 0, 600, 600);
@@ -1509,15 +1545,7 @@
     if (!canvases.length) return;
 
     function loadImageSafeTapete(src) {
-      return new Promise((resolve) => {
-        const safeSrc = normalizeAssetSrc(src);
-        if (!safeSrc) return resolve(null);
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => resolve(img);
-        img.onerror = () => resolve(null);
-        img.src = safeSrc;
-      });
+      return loadImageWithFallback(src);
     }
 
     function drawTile(ctx, source, row, col, tileW, tileH, angle) {
@@ -1748,17 +1776,7 @@
     }
 
     function loadImageSafeOverlay(src) {
-      return new Promise((resolve) => {
-        const safeSrc = normalizeAssetSrc(src);
-        if (!safeSrc) return resolve(null);
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => resolve(img);
-        img.onerror = () => resolve(null);
-        const cleaned = safeSrc.replace(/([?&])ov=[^&#]*(&?)/, (m, p1, p2) => (p1 === '?' && p2 ? '?' : (p2 ? p1 : ''))).replace(/[?&]$/, '');
-        const sep = cleaned.includes('?') ? '&' : '?';
-        img.src = `${cleaned}${sep}ov=${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      });
+      return loadImageWithFallback(src, { cacheBust: true });
     }
 
     const open = async (src, modelName, category, cenefaSrc, esquinaSrc, cenefaOuterSrc, esquinaOuterSrc) => {
