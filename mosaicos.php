@@ -397,14 +397,25 @@ foreach ($items as $it) {
                 $esquinaSrcV = imagen_con_version($esquinaSrc);
                 $cenefaOuterSrcV = imagen_con_version($cenefaOuterSrc);
                 $esquinaOuterSrcV = imagen_con_version($esquinaOuterSrc);
+                $targetModel = $m;
+                $targetCategory = $cat;
+                if (in_array($cat, ['cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior'], true) && is_array($cenefaModel)) {
+                    $targetModel = $cenefaModel;
+                    $targetCategory = 'cenefa';
+                }
+
+                $targetImg = imagen_con_version((string)($targetModel['imagen'] ?? $mainSrc));
+                $targetName = (string)($targetModel['nombre'] ?? ($m['nombre'] ?? 'Modelo'));
+                $targetId = (string)($targetModel['id'] ?? '');
+
                 $customizeParams = [
                     'picker' => 'single',
-                    'id' => (string)$m['id'],
                     'lang' => $lang,
-                    'img' => $mainSrc,
-                    'name' => (string)$m['nombre'],
-                    'cat' => $cat,
+                    'img' => $targetImg,
+                    'name' => $targetName,
+                    'cat' => $targetCategory,
                 ];
+                if ($targetId !== '' && $targetId !== '0') $customizeParams['id'] = $targetId;
                 if (is_array($cenefaModel)) {
                     if (!empty($cenefaModel['id'])) $customizeParams['cenefa_id'] = (string)$cenefaModel['id'];
                     $customizeParams['cenefa_img'] = imagen_con_version((string)($cenefaModel['imagen'] ?? ''));
