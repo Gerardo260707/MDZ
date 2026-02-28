@@ -282,6 +282,7 @@
     const searchMode = ((searchRow && searchRow.dataset.searchMode) || 'modelo').toLowerCase();
     const tapetePresets = Array.isArray(window.CUSTOMIZER_TAPETES) ? window.CUSTOMIZER_TAPETES : [];
     const manualConnections = (window.CUSTOMIZER_CONNECTIONS && typeof window.CUSTOMIZER_CONNECTIONS === 'object') ? window.CUSTOMIZER_CONNECTIONS : {};
+    const manualOuterConnections = (window.CUSTOMIZER_CONNECTIONS_OUTER && typeof window.CUSTOMIZER_CONNECTIONS_OUTER === 'object') ? window.CUSTOMIZER_CONNECTIONS_OUTER : {};
 
     function norm(text) {
       return String(text || '').toLowerCase().replace(/[\s_\-]+/g, ' ').trim();
@@ -379,6 +380,8 @@
       const center = preset.centro || null;
       const cenefa = preset.cenefa || null;
       const esquina = preset.esquina || null;
+      const cenefaOuter = preset.cenefa_exterior || null;
+      const esquinaOuter = preset.esquina_exterior || null;
 
       if (center && center.id) url.searchParams.set('center_id', String(center.id)); else url.searchParams.delete('center_id');
       if (cenefa && cenefa.id) url.searchParams.set('cenefa_id', String(cenefa.id)); else url.searchParams.delete('cenefa_id');
@@ -387,10 +390,14 @@
       if (center && center.imagen) url.searchParams.set('center_img', center.imagen); else url.searchParams.delete('center_img');
       if (cenefa && cenefa.imagen) url.searchParams.set('cenefa_img', cenefa.imagen); else url.searchParams.delete('cenefa_img');
       if (esquina && esquina.imagen) url.searchParams.set('esquina_img', esquina.imagen); else url.searchParams.delete('esquina_img');
+      if (cenefaOuter && cenefaOuter.imagen) url.searchParams.set('cenefa_outer_img', cenefaOuter.imagen); else url.searchParams.delete('cenefa_outer_img');
+      if (esquinaOuter && esquinaOuter.imagen) url.searchParams.set('esquina_outer_img', esquinaOuter.imagen); else url.searchParams.delete('esquina_outer_img');
 
       if (center && center.nombre) url.searchParams.set('center_name', center.nombre); else url.searchParams.delete('center_name');
       if (cenefa && cenefa.nombre) url.searchParams.set('cenefa_name', cenefa.nombre); else url.searchParams.delete('cenefa_name');
       if (esquina && esquina.nombre) url.searchParams.set('esquina_name', esquina.nombre); else url.searchParams.delete('esquina_name');
+      if (cenefaOuter && cenefaOuter.nombre) url.searchParams.set('cenefa_outer_name', cenefaOuter.nombre); else url.searchParams.delete('cenefa_outer_name');
+      if (esquinaOuter && esquinaOuter.nombre) url.searchParams.set('esquina_outer_name', esquinaOuter.nombre); else url.searchParams.delete('esquina_outer_name');
 
       window.location.assign(url.pathname + url.search + url.hash);
     }
@@ -489,8 +496,10 @@
     const centerSrc = (big.dataset.centerImage || '').trim();
     const cenefaSrc = (big.dataset.cenefaImage || '').trim();
     const esquinaSrc = (big.dataset.esquinaImage || '').trim();
+    const cenefaOuterSrc = (big.dataset.cenefaOuterImage || '').trim();
+    const esquinaOuterSrc = (big.dataset.esquinaOuterImage || '').trim();
     const editTarget = (big.dataset.editTarget || '').toLowerCase();
-    if (!src && !cenefaSrc && !esquinaSrc) {
+    if (!src && !cenefaSrc && !esquinaSrc && !cenefaOuterSrc && !esquinaOuterSrc) {
       if (editor) editor.innerHTML = `<p class="empty-msg">${lang === 'en' ? 'Select a model from the search bar above to start customizing.' : 'Selecciona un modelo en la barra de búsqueda para comenzar a personalizar.'}</p>`;
       big.innerHTML = `<p class="empty-msg">${lang === 'en' ? 'Pattern preview will appear here once a model is selected.' : 'La vista previa aparecerá aquí cuando elijas un modelo.'}</p>`;
       palette.innerHTML = '';
@@ -583,6 +592,8 @@
     let centerImg = null;
     let cenefaImg = null;
     let esquinaImg = null;
+    let cenefaOuterImg = null;
+    let esquinaOuterImg = null;
     let cenefaEditedCanvas = null;
     let esquinaEditedCanvas = null;
     let cenefaEditor = null;
@@ -678,42 +689,54 @@
       const h = patternCanvas.height;
       pctx.clearRect(0, 0, w, h);
 
-      if (cenefaSrc || esquinaSrc) {
-        const cols = 12;
-        const rows = 8;
+      if (cenefaSrc || esquinaSrc || cenefaOuterSrc || esquinaOuterSrc) {
+        const hasOuter = Boolean(cenefaOuterSrc || esquinaOuterSrc);
+        const cols = hasOuter ? 14 : 12;
+        const rows = hasOuter ? 10 : 8;
         const tw = Math.floor(w / cols);
         const th = Math.floor(h / rows);
 
         const centerSource = centerSrc ? tile : null;
         const cenefaSource = (editTarget === 'cenefa') ? tile : (cenefaEditedCanvas || cenefaImg || tile);
         const cornerSource = (editTarget === 'esquina') ? tile : (esquinaEditedCanvas || esquinaImg || cenefaSource);
+        const cenefaOuterSource = cenefaOuterImg || cenefaSource;
+        const cornerOuterSource = esquinaOuterImg || cenefaOuterSource;
 
         const centerMap = [[0, Math.PI / 2], [3 * Math.PI / 2, Math.PI]];
+
+        function drawBorderRing(ring, borderSource, cornerSrc) {
+          const left = ring;
+          const right = cols - 1 - ring;
+          const top = ring;
+          const bottom = rows - 1 - ring;
+          for (let c = left + 1; c < right; c++) {
+            drawTile(pctx, borderSource, top, c, tw, th, 0);
+            drawTile(pctx, borderSource, bottom, c, tw, th, Math.PI);
+          }
+          for (let r = top + 1; r < bottom; r++) {
+            drawTile(pctx, borderSource, r, left, tw, th, -Math.PI / 2);
+            drawTile(pctx, borderSource, r, right, tw, th, Math.PI / 2);
+          }
+          drawTile(pctx, cornerSrc, top, left, tw, th, 0);
+          drawTile(pctx, cornerSrc, top, right, tw, th, Math.PI / 2);
+          drawTile(pctx, cornerSrc, bottom, right, tw, th, Math.PI);
+          drawTile(pctx, cornerSrc, bottom, left, tw, th, -Math.PI / 2);
+        }
 
         pctx.fillStyle = '#fff';
         pctx.fillRect(0, 0, w, h);
 
+        if (hasOuter) drawBorderRing(0, cenefaOuterSource, cornerOuterSource);
+        drawBorderRing(hasOuter ? 1 : 0, cenefaSource, cornerSource);
+
+        const ringCount = hasOuter ? 2 : 1;
         if (centerSource) {
-          for (let r = 1; r <= 6; r++) {
-            for (let c = 1; c <= 10; c++) {
-              drawTile(pctx, centerSource, r, c, tw, th, centerMap[(r - 1) % 2][(c - 1) % 2]);
+          for (let r = ringCount; r < rows - ringCount; r++) {
+            for (let c = ringCount; c < cols - ringCount; c++) {
+              drawTile(pctx, centerSource, r, c, tw, th, centerMap[(r - ringCount) % 2][(c - ringCount) % 2]);
             }
           }
         }
-
-        for (let c = 1; c < cols - 1; c++) {
-          drawTile(pctx, cenefaSource, 0, c, tw, th, 0);
-          drawTile(pctx, cenefaSource, rows - 1, c, tw, th, Math.PI);
-        }
-        for (let r = 1; r < rows - 1; r++) {
-          drawTile(pctx, cenefaSource, r, 0, tw, th, -Math.PI / 2);
-          drawTile(pctx, cenefaSource, r, cols - 1, tw, th, Math.PI / 2);
-        }
-
-        drawTile(pctx, cornerSource, 0, 0, tw, th, 0);
-        drawTile(pctx, cornerSource, 0, cols - 1, tw, th, Math.PI / 2);
-        drawTile(pctx, cornerSource, rows - 1, cols - 1, tw, th, Math.PI);
-        drawTile(pctx, cornerSource, rows - 1, 0, tw, th, -Math.PI / 2);
 
         return;
       }
@@ -1269,8 +1292,8 @@
       });
     }
 
-    Promise.all([loadImageSafe(centerSrc), loadImageSafe(cenefaSrc), loadImageSafe(esquinaSrc)]).then((loaded) => {
-      [centerImg, cenefaImg, esquinaImg] = loaded;
+    Promise.all([loadImageSafe(centerSrc), loadImageSafe(cenefaSrc), loadImageSafe(esquinaSrc), loadImageSafe(cenefaOuterSrc), loadImageSafe(esquinaOuterSrc)]).then((loaded) => {
+      [centerImg, cenefaImg, esquinaImg, cenefaOuterImg, esquinaOuterImg] = loaded;
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => {
@@ -1340,46 +1363,62 @@
       const centerSrc = (canvas.dataset.centerImage || '').trim();
       const cenefaSrc = (canvas.dataset.cenefaImage || '').trim();
       const esquinaSrc = (canvas.dataset.esquinaImage || '').trim();
+      const cenefaOuterSrc = (canvas.dataset.cenefaOuterImage || '').trim();
+      const esquinaOuterSrc = (canvas.dataset.esquinaOuterImage || '').trim();
 
-      const [centerImg, cenefaImg, esquinaImg] = await Promise.all([
+      const [centerImg, cenefaImg, esquinaImg, cenefaOuterImg, esquinaOuterImg] = await Promise.all([
         loadImageSafeTapete(centerSrc),
         loadImageSafeTapete(cenefaSrc),
         loadImageSafeTapete(esquinaSrc),
+        loadImageSafeTapete(cenefaOuterSrc),
+        loadImageSafeTapete(esquinaOuterSrc),
       ]);
 
-      const cols = 12;
-      const rows = 8;
+      const hasOuter = Boolean(cenefaOuterImg || esquinaOuterImg);
+      const cols = hasOuter ? 14 : 12;
+      const rows = hasOuter ? 10 : 8;
       const tw = Math.floor(canvas.width / cols);
       const th = Math.floor(canvas.height / rows);
       pctx.fillStyle = '#fff';
       pctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const centerMap = [[0, Math.PI / 2], [3 * Math.PI / 2, Math.PI]];
-      if (centerImg) {
-        for (let r = 1; r <= 6; r++) {
-          for (let c = 1; c <= 10; c++) {
-            drawTile(pctx, centerImg, r, c, tw, th, centerMap[(r - 1) % 2][(c - 1) % 2]);
+      function drawBorderRing(ring, borderSource, cornerSrc) {
+        if (!borderSource && !cornerSrc) return;
+        const left = ring;
+        const right = cols - 1 - ring;
+        const top = ring;
+        const bottom = rows - 1 - ring;
+        for (let c = left + 1; c < right; c++) {
+          if (borderSource) {
+            drawTile(pctx, borderSource, top, c, tw, th, 0);
+            drawTile(pctx, borderSource, bottom, c, tw, th, Math.PI);
           }
         }
+        for (let r = top + 1; r < bottom; r++) {
+          if (borderSource) {
+            drawTile(pctx, borderSource, r, left, tw, th, -Math.PI / 2);
+            drawTile(pctx, borderSource, r, right, tw, th, Math.PI / 2);
+          }
+        }
+        const corner = cornerSrc || borderSource;
+        if (corner) {
+          drawTile(pctx, corner, top, left, tw, th, 0);
+          drawTile(pctx, corner, top, right, tw, th, Math.PI / 2);
+          drawTile(pctx, corner, bottom, right, tw, th, Math.PI);
+          drawTile(pctx, corner, bottom, left, tw, th, -Math.PI / 2);
+        }
       }
 
-      if (cenefaImg) {
-        for (let c = 1; c < cols - 1; c++) {
-          drawTile(pctx, cenefaImg, 0, c, tw, th, 0);
-          drawTile(pctx, cenefaImg, rows - 1, c, tw, th, Math.PI);
+      const centerMap = [[0, Math.PI / 2], [3 * Math.PI / 2, Math.PI]];
+      drawBorderRing(0, cenefaOuterImg, esquinaOuterImg);
+      drawBorderRing(hasOuter ? 1 : 0, cenefaImg, esquinaImg);
+      const ringCount = hasOuter ? 2 : 1;
+      if (centerImg) {
+        for (let r = ringCount; r < rows - ringCount; r++) {
+          for (let c = ringCount; c < cols - ringCount; c++) {
+            drawTile(pctx, centerImg, r, c, tw, th, centerMap[(r - ringCount) % 2][(c - ringCount) % 2]);
+          }
         }
-        for (let r = 1; r < rows - 1; r++) {
-          drawTile(pctx, cenefaImg, r, 0, tw, th, -Math.PI / 2);
-          drawTile(pctx, cenefaImg, r, cols - 1, tw, th, Math.PI / 2);
-        }
-      }
-
-      const cornerSource = esquinaImg || cenefaImg;
-      if (cornerSource) {
-        drawTile(pctx, cornerSource, 0, 0, tw, th, 0);
-        drawTile(pctx, cornerSource, 0, cols - 1, tw, th, Math.PI / 2);
-        drawTile(pctx, cornerSource, rows - 1, cols - 1, tw, th, Math.PI);
-        drawTile(pctx, cornerSource, rows - 1, 0, tw, th, -Math.PI / 2);
       }
     });
   }
@@ -1431,41 +1470,47 @@
       }
     }
 
-    function drawBorderPattern(cenefaImg, esquinaImg) {
-      if (!pctx) return;
+    function drawBorderPattern(cenefaImg, esquinaImg, cenefaOuterImg, esquinaOuterImg) {
       const w = patternCanvas.width;
       const h = patternCanvas.height;
       pctx.clearRect(0, 0, w, h);
+
+      const hasOuter = Boolean(cenefaOuterImg || esquinaOuterImg);
+      const cols = hasOuter ? 14 : 12;
+      const rows = hasOuter ? 10 : 8;
+      const tw = w / cols;
+      const th = h / rows;
       pctx.fillStyle = '#fff';
       pctx.fillRect(0, 0, w, h);
 
-      const cols = 8;
-      const rows = 6;
-      const tw = w / cols;
-      const th = h / rows;
-
-      function d(source, r, c, angle) {
-        if (!source) return;
+      function d(src, r, c, angle) {
+        if (!src) return;
         pctx.save();
         pctx.translate(c * tw + tw / 2, r * th + th / 2);
         pctx.rotate(angle || 0);
-        pctx.drawImage(source, -tw / 2, -th / 2, tw, th);
+        pctx.drawImage(src, -tw / 2, -th / 2, tw, th);
         pctx.restore();
       }
 
-      for (let c = 1; c < cols - 1; c++) {
-        d(cenefaImg, 0, c, 0);
-        d(cenefaImg, rows - 1, c, Math.PI);
-      }
-      for (let r = 1; r < rows - 1; r++) {
-        d(cenefaImg, r, 0, -Math.PI / 2);
-        d(cenefaImg, r, cols - 1, Math.PI / 2);
+      function drawRing(ring, border, corner) {
+        const left = ring, right = cols - 1 - ring, top = ring, bottom = rows - 1 - ring;
+        for (let c = left + 1; c < right; c++) {
+          d(border, top, c, 0);
+          d(border, bottom, c, Math.PI);
+        }
+        for (let r = top + 1; r < bottom; r++) {
+          d(border, r, left, -Math.PI / 2);
+          d(border, r, right, Math.PI / 2);
+        }
+        const cc = corner || border;
+        d(cc, top, left, 0);
+        d(cc, top, right, Math.PI / 2);
+        d(cc, bottom, right, Math.PI);
+        d(cc, bottom, left, -Math.PI / 2);
       }
 
-      d(esquinaImg || cenefaImg, 0, 0, 0);
-      d(esquinaImg || cenefaImg, 0, cols - 1, Math.PI / 2);
-      d(esquinaImg || cenefaImg, rows - 1, cols - 1, Math.PI);
-      d(esquinaImg || cenefaImg, rows - 1, 0, -Math.PI / 2);
+      drawRing(0, cenefaOuterImg, esquinaOuterImg);
+      drawRing(hasOuter ? 1 : 0, cenefaImg, esquinaImg);
     }
 
     function loadImageSafeOverlay(src) {
@@ -1479,14 +1524,16 @@
       });
     }
 
-    const open = async (src, modelName, category, cenefaSrc, esquinaSrc) => {
+    const open = async (src, modelName, category, cenefaSrc, esquinaSrc, cenefaOuterSrc, esquinaOuterSrc) => {
       clearTimeout(closeTimer);
       if (category === 'cenefa' || category === 'esquina') {
-        const [cenefaImg, esquinaImg] = await Promise.all([
+        const [cenefaImg, esquinaImg, cenefaOuterImg, esquinaOuterImg] = await Promise.all([
           loadImageSafeOverlay(cenefaSrc || (category === 'cenefa' ? src : '')),
           loadImageSafeOverlay(esquinaSrc || (category === 'esquina' ? src : '')),
+          loadImageSafeOverlay(cenefaOuterSrc || ''),
+          loadImageSafeOverlay(esquinaOuterSrc || ''),
         ]);
-        drawBorderPattern(cenefaImg, esquinaImg);
+        drawBorderPattern(cenefaImg, esquinaImg, cenefaOuterImg, esquinaOuterImg);
       } else {
         const img = await loadImageSafeOverlay(src);
         if (img) drawRotatedPattern(img);
@@ -1516,6 +1563,8 @@
         (img.dataset.category || '').toLowerCase(),
         img.dataset.cenefaSrc || '',
         img.dataset.esquinaSrc || '',
+        img.dataset.cenefaOuterSrc || '',
+        img.dataset.esquinaOuterSrc || '',
       ));
     });
 

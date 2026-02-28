@@ -37,28 +37,40 @@ function carga_conexiones_cenefa_esquina(string $csvPath): array {
         if (!is_dir($dir)) mkdir($dir, 0775, true);
         $h = fopen($csvPath, 'w');
         if ($h !== false) {
-            fputcsv($h, ['cenefa', 'esquina']);
+            fputcsv($h, ['cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior']);
             fclose($h);
         }
-        return [];
+        return ['primary' => [], 'outer' => [], 'rows' => []];
     }
 
     $h = fopen($csvPath, 'r');
-    if ($h === false) return [];
+    if ($h === false) return ['primary' => [], 'outer' => [], 'rows' => []];
     $header = fgetcsv($h);
     if (!is_array($header)) {
         fclose($h);
-        return [];
+        return ['primary' => [], 'outer' => [], 'rows' => []];
     }
-    $map = [];
+    $primary = [];
+    $outer = [];
+    $rows = [];
     while (($row = fgetcsv($h)) !== false) {
         $cenefa = strtolower(trim((string)($row[0] ?? '')));
         $esquina = strtolower(trim((string)($row[1] ?? '')));
-        if ($cenefa === '' || $esquina === '' || str_starts_with($cenefa, '#')) continue;
-        $map[$cenefa] = $esquina;
+        $cenefaOuter = strtolower(trim((string)($row[2] ?? '')));
+        $esquinaOuter = strtolower(trim((string)($row[3] ?? '')));
+        if ($cenefa === '' || str_starts_with($cenefa, '#')) continue;
+        if ($esquina !== '') $primary[$cenefa] = $esquina;
+        if ($cenefaOuter !== '') {
+            $outer[$cenefa] = ['cenefa' => $cenefaOuter, 'esquina' => $esquinaOuter];
+        }
+        $rows[$cenefa] = [
+            'esquina' => $esquina,
+            'cenefa_exterior' => $cenefaOuter,
+            'esquina_exterior' => $esquinaOuter,
+        ];
     }
     fclose($h);
-    return $map;
+    return ['primary' => $primary, 'outer' => $outer, 'rows' => $rows];
 }
 
 function categoria_prefix(?string $categoria): string {
@@ -185,17 +197,23 @@ function carga_tapetes_csv(string $csvPath, array $models): array {
         $centroQ = trim((string)($row[1] ?? ''));
         $cenefaQ = trim((string)($row[2] ?? ''));
         $esquinaQ = trim((string)($row[3] ?? ''));
+        $cenefaOuterQ = trim((string)($row[4] ?? ''));
+        $esquinaOuterQ = trim((string)($row[5] ?? ''));
         if ($name === '' || str_starts_with($name, '#')) continue;
 
         $centro = find_model($models, $centroQ);
         $cenefa = find_model($models, $cenefaQ);
         $esquina = find_model($models, $esquinaQ);
+        $cenefaOuter = find_model($models, $cenefaOuterQ);
+        $esquinaOuter = find_model($models, $esquinaOuterQ);
 
         $rows[] = [
             'nombre' => $name,
             'centro' => $centro,
             'cenefa' => $cenefa,
             'esquina' => $esquina,
+            'cenefa_exterior' => $cenefaOuter,
+            'esquina_exterior' => $esquinaOuter,
         ];
     }
     fclose($h);
@@ -277,6 +295,8 @@ $modelSource = strtolower(trim((string)($_GET['source'] ?? '')));
 $models = ($modelSource === 'tapete') ? carga_modelos_tapete() : carga_modelos();
 $tapetePresets = ($modelSource === 'tapete') ? carga_tapetes_csv(__DIR__ . '/config/tapetes.csv', $models) : [];
 $conexionesCsv = carga_conexiones_cenefa_esquina(__DIR__ . '/config/conexiones_cenefa_esquina.csv');
+$conexionesPrimary = (array)($conexionesCsv['primary'] ?? []);
+$conexionesOuter = (array)($conexionesCsv['outer'] ?? []);
 $modelById = [];
 foreach ($models as $item) $modelById[(string)$item['id']] = $item;
 
@@ -291,10 +311,14 @@ if ($esquinaId === '' && $legacyId !== '' && isset($modelById[$legacyId]) && $mo
 $selectedCenter = ($centerId !== '' && isset($modelById[$centerId])) ? $modelById[$centerId] : null;
 $selectedCenefa = ($cenefaId !== '' && isset($modelById[$cenefaId])) ? $modelById[$cenefaId] : null;
 $selectedEsquina = ($esquinaId !== '' && isset($modelById[$esquinaId])) ? $modelById[$esquinaId] : null;
+$selectedCenefaOuter = null;
+$selectedEsquinaOuter = null;
 
 $centerImgParam = trim((string)($_GET['center_img'] ?? ''));
 $cenefaImgParam = trim((string)($_GET['cenefa_img'] ?? ''));
 $esquinaImgParam = trim((string)($_GET['esquina_img'] ?? ''));
+$cenefaOuterImgParam = trim((string)($_GET['cenefa_outer_img'] ?? ''));
+$esquinaOuterImgParam = trim((string)($_GET['esquina_outer_img'] ?? ''));
 if (!$selectedCenter && $centerImgParam !== '') {
     $selectedCenter = [
         'id' => 0,
@@ -326,9 +350,30 @@ if (!$selectedEsquina && $esquinaImgParam !== '') {
     ];
 }
 
+
+if (!$selectedCenefaOuter && $cenefaOuterImgParam !== '') {
+    $selectedCenefaOuter = [
+        'id' => 0,
+        'nombre' => (string)($_GET['cenefa_outer_name'] ?? ($lang === 'en' ? 'Outer Border' : 'Cenefa exterior')),
+        'imagen' => $cenefaOuterImgParam,
+        'categoria' => 'cenefa',
+        'identificador' => '',
+        'carpeta_modelo' => '',
+    ];
+}
+if (!$selectedEsquinaOuter && $esquinaOuterImgParam !== '') {
+    $selectedEsquinaOuter = [
+        'id' => 0,
+        'nombre' => (string)($_GET['esquina_outer_name'] ?? ($lang === 'en' ? 'Outer Corner' : 'Esquina exterior')),
+        'imagen' => $esquinaOuterImgParam,
+        'categoria' => 'esquina',
+        'identificador' => '',
+        'carpeta_modelo' => '',
+    ];
+}
 if ($selectedCenefa && !$selectedEsquina) {
     $cenefaFolder = carpeta_modelo_de_item($selectedCenefa);
-    $mappedCornerFolder = $conexionesCsv[$cenefaFolder] ?? '';
+    $mappedCornerFolder = $conexionesPrimary[$cenefaFolder] ?? '';
     if ($mappedCornerFolder !== '') {
         foreach ($models as $m) {
             if (($m['categoria'] ?? '') !== 'esquina') continue;
@@ -349,7 +394,7 @@ if ($selectedCenefa && !$selectedEsquina) {
 
 if ($selectedEsquina && !$selectedCenefa) {
     $esquinaFolder = carpeta_modelo_de_item($selectedEsquina);
-    $mappedCenefaFolder = array_search($esquinaFolder, $conexionesCsv, true);
+    $mappedCenefaFolder = array_search($esquinaFolder, $conexionesPrimary, true);
     if ($mappedCenefaFolder !== false) {
         foreach ($models as $m) {
             if (($m['categoria'] ?? '') !== 'cenefa') continue;
@@ -368,6 +413,28 @@ if ($selectedEsquina && !$selectedCenefa) {
     }
 }
 
+
+if ($selectedCenefa && !$selectedCenefaOuter) {
+    $cenefaFolder = carpeta_modelo_de_item($selectedCenefa);
+    $outerDef = $conexionesOuter[$cenefaFolder] ?? null;
+    $outerCenefaFolder = strtolower(trim((string)($outerDef['cenefa'] ?? '')));
+    if ($outerCenefaFolder !== '') {
+        foreach ($models as $m) {
+            if (($m['categoria'] ?? '') !== 'cenefa') continue;
+            if (carpeta_modelo_de_item($m) === $outerCenefaFolder) { $selectedCenefaOuter = $m; break; }
+        }
+    }
+}
+if ($selectedCenefaOuter && !$selectedEsquinaOuter) {
+    $outerFolder = carpeta_modelo_de_item($selectedCenefaOuter);
+    $mappedOuterCorner = $conexionesPrimary[$outerFolder] ?? '';
+    if ($mappedOuterCorner !== '') {
+        foreach ($models as $m) {
+            if (($m['categoria'] ?? '') !== 'esquina') continue;
+            if (carpeta_modelo_de_item($m) === $mappedOuterCorner) { $selectedEsquinaOuter = $m; break; }
+        }
+    }
+}
 $entryCategoryRaw = strtolower(trim((string)($_GET['cat'] ?? '')));
 if ($pickerMode === 'dual') {
     $editable = $selectedCenter;
@@ -488,6 +555,8 @@ if ($pickerMode === 'dual') {
                data-center-image="<?= htmlspecialchars($selectedCenter['imagen'] ?? '', ENT_QUOTES) ?>"
                data-cenefa-image="<?= htmlspecialchars($selectedCenefa['imagen'] ?? '', ENT_QUOTES) ?>"
                data-esquina-image="<?= htmlspecialchars($selectedEsquina['imagen'] ?? '', ENT_QUOTES) ?>"
+               data-cenefa-outer-image="<?= htmlspecialchars($selectedCenefaOuter['imagen'] ?? '', ENT_QUOTES) ?>"
+               data-esquina-outer-image="<?= htmlspecialchars($selectedEsquinaOuter['imagen'] ?? '', ENT_QUOTES) ?>"
                data-picker-mode="<?= htmlspecialchars($pickerMode, ENT_QUOTES) ?>"></div>
           <button id="download" class="action" style="margin-top:8px" data-i18n="custom_download">Descargar imagen</button>
         </div>
@@ -504,7 +573,8 @@ if ($pickerMode === 'dual') {
       'pickerMode' => $pickerMode,
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
     window.CUSTOMIZER_TAPETES = <?= json_encode($tapetePresets, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
-    window.CUSTOMIZER_CONNECTIONS = <?= json_encode($conexionesCsv, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    window.CUSTOMIZER_CONNECTIONS = <?= json_encode($conexionesPrimary, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    window.CUSTOMIZER_CONNECTIONS_OUTER = <?= json_encode($conexionesOuter, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
   </script>
   <script src="app.js"></script>
   <script src="customizer-colors.js"></script>

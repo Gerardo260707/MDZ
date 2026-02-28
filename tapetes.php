@@ -125,17 +125,23 @@ function carga_tapetes_csv(string $csvPath, array $models): array {
         $centroQ = trim((string)($row[1] ?? ''));
         $cenefaQ = trim((string)($row[2] ?? ''));
         $esquinaQ = trim((string)($row[3] ?? ''));
+        $cenefaOuterQ = trim((string)($row[4] ?? ''));
+        $esquinaOuterQ = trim((string)($row[5] ?? ''));
         if ($name === '' || str_starts_with($name, '#')) continue;
 
         $centro = find_model($models, $centroQ);
         $cenefa = find_model($models, $cenefaQ);
         $esquina = find_model($models, $esquinaQ);
+        $cenefaOuter = find_model($models, $cenefaOuterQ);
+        $esquinaOuter = find_model($models, $esquinaOuterQ);
 
         $rows[] = [
             'nombre' => $name,
             'centro' => $centro,
             'cenefa' => $cenefa,
             'esquina' => $esquina,
+            'cenefa_exterior' => $cenefaOuter,
+            'esquina_exterior' => $esquinaOuter,
         ];
     }
     fclose($h);
@@ -178,7 +184,7 @@ $tapetes = carga_tapetes_csv(__DIR__ . '/config/tapetes.csv', $models);
 
     <section>
       <h2><?= $lang === 'en' ? 'Rugs' : 'Tapetes' ?></h2>
-      <p><?= $lang === 'en' ? 'Define rugs in <code>config/tapetes.csv</code> using: <strong>Nombre_Tapete,Centro,Cenefa,Esquina</strong>.' : 'Defina sus tapetes en <code>config/tapetes.csv</code> con el formato: <strong>Nombre_Tapete,Centro,Cenefa,Esquina</strong>.' ?></p>
+      <p><?= $lang === 'en' ? 'Define rugs in <code>config/tapetes.csv</code> using: <strong>Nombre_Tapete,Centro,Cenefa,Esquina,Cenefa_Exterior,Esquina_Exterior</strong>.' : 'Defina sus tapetes en <code>config/tapetes.csv</code> con el formato: <strong>Nombre_Tapete,Centro,Cenefa,Esquina,Cenefa_Exterior,Esquina_Exterior</strong>.' ?></p>
       <a class="action cta-pill" data-keep-lang href="personalizar.php?picker=dual&amp;source=tapete"><?= $lang === 'en' ? 'Customize rug' : 'Personalizar tapete' ?></a>
     </section>
 
@@ -192,7 +198,9 @@ $tapetes = carga_tapetes_csv(__DIR__ . '/config/tapetes.csv', $models);
               width="1200" height="800"
               data-center-image="<?= htmlspecialchars($tapete['centro']['imagen'] ?? '', ENT_QUOTES) ?>"
               data-cenefa-image="<?= htmlspecialchars($tapete['cenefa']['imagen'] ?? '', ENT_QUOTES) ?>"
-              data-esquina-image="<?= htmlspecialchars($tapete['esquina']['imagen'] ?? '', ENT_QUOTES) ?>"></canvas>
+              data-esquina-image="<?= htmlspecialchars($tapete['esquina']['imagen'] ?? '', ENT_QUOTES) ?>"
+              data-cenefa-outer-image="<?= htmlspecialchars($tapete['cenefa_exterior']['imagen'] ?? '', ENT_QUOTES) ?>"
+              data-esquina-outer-image="<?= htmlspecialchars($tapete['esquina_exterior']['imagen'] ?? '', ENT_QUOTES) ?>"></canvas>
             <div class="tapete-meta">
               <?php
                 $centerId = (string)($tapete['centro']['id'] ?? '');
@@ -210,6 +218,10 @@ $tapetes = carga_tapetes_csv(__DIR__ . '/config/tapetes.csv', $models);
                   'center_name' => (string)($tapete['centro']['nombre'] ?? ''),
                   'cenefa_name' => (string)($tapete['cenefa']['nombre'] ?? ''),
                   'esquina_name' => (string)($tapete['esquina']['nombre'] ?? ''),
+                  'cenefa_outer_img' => (string)($tapete['cenefa_exterior']['imagen'] ?? ''),
+                  'esquina_outer_img' => (string)($tapete['esquina_exterior']['imagen'] ?? ''),
+                  'cenefa_outer_name' => (string)($tapete['cenefa_exterior']['nombre'] ?? ''),
+                  'esquina_outer_name' => (string)($tapete['esquina_exterior']['nombre'] ?? ''),
                 ];
                 if ($centerId !== '') $params['center_id'] = $centerId;
                 if ($cenefaId !== '') $params['cenefa_id'] = $cenefaId;
@@ -223,7 +235,7 @@ $tapetes = carga_tapetes_csv(__DIR__ . '/config/tapetes.csv', $models);
               <p>
                 <?= $lang === 'en' ? 'Center' : 'Centro' ?>: <strong><?= htmlspecialchars($tapete['centro']['nombre'] ?? '—', ENT_QUOTES) ?></strong> ·
                 <?= $lang === 'en' ? 'Border' : 'Cenefa' ?>: <strong><?= htmlspecialchars($tapete['cenefa']['nombre'] ?? '—', ENT_QUOTES) ?></strong> ·
-                <?= $lang === 'en' ? 'Corner' : 'Esquina' ?>: <strong><?= htmlspecialchars($tapete['esquina']['nombre'] ?? '—', ENT_QUOTES) ?></strong>
+                <?= $lang === 'en' ? 'Corner' : 'Esquina' ?>: <strong><?= htmlspecialchars($tapete['esquina']['nombre'] ?? '—', ENT_QUOTES) ?></strong><?php if (!empty($tapete['cenefa_exterior']) || !empty($tapete['esquina_exterior'])): ?> · <?= $lang === 'en' ? 'Outer border' : 'Cenefa exterior' ?>: <strong><?= htmlspecialchars($tapete['cenefa_exterior']['nombre'] ?? '—', ENT_QUOTES) ?></strong> · <?= $lang === 'en' ? 'Outer corner' : 'Esquina exterior' ?>: <strong><?= htmlspecialchars($tapete['esquina_exterior']['nombre'] ?? '—', ENT_QUOTES) ?></strong><?php endif; ?>
               </p>
             </div>
           </article>

@@ -77,23 +77,27 @@ function carpeta_modelo_de_item(array $item): string {
 }
 
 function carga_conexiones_cenefa_esquina(string $csvPath): array {
-    if (!file_exists($csvPath)) return [];
+    if (!file_exists($csvPath)) return ['primary' => [], 'outer' => []];
     $h = fopen($csvPath, 'r');
-    if ($h === false) return [];
+    if ($h === false) return ['primary' => [], 'outer' => []];
     $header = fgetcsv($h);
     if (!is_array($header)) {
         fclose($h);
-        return [];
+        return ['primary' => [], 'outer' => []];
     }
-    $map = [];
+    $primary = [];
+    $outer = [];
     while (($row = fgetcsv($h)) !== false) {
         $cenefa = strtolower(trim((string)($row[0] ?? '')));
         $esquina = strtolower(trim((string)($row[1] ?? '')));
-        if ($cenefa === '' || $esquina === '' || str_starts_with($cenefa, '#')) continue;
-        $map[$cenefa] = $esquina;
+        $cenefaOuter = strtolower(trim((string)($row[2] ?? '')));
+        $esquinaOuter = strtolower(trim((string)($row[3] ?? '')));
+        if ($cenefa === '' || str_starts_with($cenefa, '#')) continue;
+        if ($esquina !== '') $primary[$cenefa] = $esquina;
+        if ($cenefaOuter !== '') $outer[$cenefa] = ['cenefa' => $cenefaOuter, 'esquina' => $esquinaOuter];
     }
     fclose($h);
-    return $map;
+    return ['primary' => $primary, 'outer' => $outer];
 }
 
 function categoria_prefix(?string $categoria): string {
@@ -242,6 +246,8 @@ usort($items, static function ($a, $b) {
 
 $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
 $conexiones = carga_conexiones_cenefa_esquina(__DIR__ . '/config/conexiones_cenefa_esquina.csv');
+$conexionesPrimary = (array)($conexiones['primary'] ?? []);
+$conexionesOuter = (array)($conexiones['outer'] ?? []);
 
 $byFolder = [];
 foreach ($items as $it) {
@@ -296,9 +302,11 @@ foreach ($items as $it) {
                 $cat = strtolower((string)($m['categoria'] ?? ''));
                 $cenefaSrc = '';
                 $esquinaSrc = '';
+                $cenefaOuterSrc = '';
+                $esquinaOuterSrc = '';
                 if ($cat === 'cenefa') {
                   $cenefaSrc = (string)($m['imagen'] ?? '');
-                  $mappedCornerFolder = $conexiones[$folder] ?? '';
+                  $mappedCornerFolder = $conexionesPrimary[$folder] ?? '';
                   if ($mappedCornerFolder !== '' && isset($byFolder[$mappedCornerFolder]['esquina'])) {
                     $esquinaSrc = (string)($byFolder[$mappedCornerFolder]['esquina']['imagen'] ?? '');
                   } elseif (isset($byFolder[$folder]['esquina'])) {
@@ -306,16 +314,29 @@ foreach ($items as $it) {
                   }
                 } elseif ($cat === 'esquina') {
                   $esquinaSrc = (string)($m['imagen'] ?? '');
-                  $mappedCenefaFolder = array_search($folder, $conexiones, true);
+                  $mappedCenefaFolder = array_search($folder, $conexionesPrimary, true);
                   if ($mappedCenefaFolder !== false && isset($byFolder[$mappedCenefaFolder]['cenefa'])) {
                     $cenefaSrc = (string)($byFolder[$mappedCenefaFolder]['cenefa']['imagen'] ?? '');
                   } elseif (isset($byFolder[$folder]['cenefa'])) {
                     $cenefaSrc = (string)($byFolder[$folder]['cenefa']['imagen'] ?? '');
                   }
                 }
+                $cenefaBaseFolder = '';
+                if ($cat === 'cenefa') $cenefaBaseFolder = $folder;
+                if ($cat === 'esquina') {
+                  $mappedCenefaFolder = array_search($folder, $conexionesPrimary, true);
+                  $cenefaBaseFolder = $mappedCenefaFolder !== false ? (string)$mappedCenefaFolder : '';
+                }
+                if ($cenefaBaseFolder !== '' && isset($conexionesOuter[$cenefaBaseFolder])) {
+                  $out = $conexionesOuter[$cenefaBaseFolder];
+                  $outC = strtolower((string)($out['cenefa'] ?? ''));
+                  $outE = strtolower((string)($out['esquina'] ?? ''));
+                  if ($outC !== '' && isset($byFolder[$outC]['cenefa'])) $cenefaOuterSrc = (string)($byFolder[$outC]['cenefa']['imagen'] ?? '');
+                  if ($outE !== '' && isset($byFolder[$outE]['esquina'])) $esquinaOuterSrc = (string)($byFolder[$outE]['esquina']['imagen'] ?? '');
+                }
               ?>
               <article class="mosaic-card">
-                <img class="mosaic-preview-trigger" src="<?= htmlspecialchars($m['imagen'] ?: 'assets/placeholder-tile.svg', ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-model-name="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-category="<?= htmlspecialchars($cat, ENT_QUOTES) ?>" data-cenefa-src="<?= htmlspecialchars($cenefaSrc, ENT_QUOTES) ?>" data-esquina-src="<?= htmlspecialchars($esquinaSrc, ENT_QUOTES) ?>" />
+                <img class="mosaic-preview-trigger" src="<?= htmlspecialchars($m['imagen'] ?: 'assets/placeholder-tile.svg', ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-model-name="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-category="<?= htmlspecialchars($cat, ENT_QUOTES) ?>" data-cenefa-src="<?= htmlspecialchars($cenefaSrc, ENT_QUOTES) ?>" data-esquina-src="<?= htmlspecialchars($esquinaSrc, ENT_QUOTES) ?>" data-cenefa-outer-src="<?= htmlspecialchars($cenefaOuterSrc, ENT_QUOTES) ?>" data-esquina-outer-src="<?= htmlspecialchars($esquinaOuterSrc, ENT_QUOTES) ?>" />
                 <?php $catLabel = $m['categoria'] !== '' ? strtoupper((string)$m['categoria']) : 'SIN CATEGORÍA'; ?>
                 <p class="code"><?= htmlspecialchars($catLabel, ENT_QUOTES) ?> · <?= htmlspecialchars($m['identificador'], ENT_QUOTES) ?></p>
                 <p class="name"><?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?></p>
