@@ -1,5 +1,5 @@
 <?php
-const VALID_CATEGORIAS = ['centro', 'cenefa', 'esquina', 'hexagonales', 'antiderrapante'];
+const VALID_CATEGORIAS = ['centro', 'cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior', 'hexagonales', 'antiderrapante'];
 
 function carga_mapa_categorias_csv(string $csvPath): array {
     if (!file_exists($csvPath)) return [];
@@ -79,6 +79,8 @@ function categoria_prefix(?string $categoria): string {
         'cenefa' => 'CEN',
         'esquina' => 'ESQ',
         'centro' => 'CTR',
+        'cenefa_exterior' => 'CEX',
+        'esquina_exterior' => 'EEX',
         'hexagonales' => 'HEX',
         'antiderrapante' => 'ANT',
         default => 'MOD',
@@ -88,7 +90,7 @@ function categoria_prefix(?string $categoria): string {
 function pair_key(array $m): string {
     $base = (string)($m['carpeta_modelo'] ?? $m['nombre'] ?? '');
     $base = strtolower($base);
-    $base = str_replace(['centro', 'cenefa', 'esquina', 'corner', 'bord', 'border'], '', $base);
+    $base = str_replace(['centro', 'cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior', 'corner', 'bord', 'border', 'outer'], '', $base);
     $base = preg_replace('/[^a-z0-9]+/', '-', $base);
     return trim((string)$base, '-');
 }
@@ -397,7 +399,7 @@ if ($selectedEsquina && !$selectedCenefa) {
     $mappedCenefaFolder = array_search($esquinaFolder, $conexionesPrimary, true);
     if ($mappedCenefaFolder !== false) {
         foreach ($models as $m) {
-            if (($m['categoria'] ?? '') !== 'cenefa') continue;
+            if (($m['categoria'] ?? '') !== 'cenefa' && ($m['categoria'] ?? '') !== 'cenefa_exterior') continue;
             if (carpeta_modelo_de_item($m) === $mappedCenefaFolder) {
                 $selectedCenefa = $m;
                 break;
@@ -416,22 +418,36 @@ if ($selectedEsquina && !$selectedCenefa) {
 
 if ($selectedCenefa && !$selectedCenefaOuter) {
     $cenefaFolder = carpeta_modelo_de_item($selectedCenefa);
-    $outerDef = $conexionesOuter[$cenefaFolder] ?? null;
-    $outerCenefaFolder = strtolower(trim((string)($outerDef['cenefa'] ?? '')));
-    if ($outerCenefaFolder !== '') {
-        foreach ($models as $m) {
-            if (($m['categoria'] ?? '') !== 'cenefa') continue;
-            if (carpeta_modelo_de_item($m) === $outerCenefaFolder) { $selectedCenefaOuter = $m; break; }
+    foreach ($models as $m) {
+        if (($m['categoria'] ?? '') !== 'cenefa_exterior') continue;
+        if (carpeta_modelo_de_item($m) === $cenefaFolder) { $selectedCenefaOuter = $m; break; }
+    }
+
+    if (!$selectedCenefaOuter) {
+        $outerDef = $conexionesOuter[$cenefaFolder] ?? null;
+        $outerCenefaFolder = strtolower(trim((string)($outerDef['cenefa'] ?? '')));
+        if ($outerCenefaFolder !== '') {
+            foreach ($models as $m) {
+                if (($m['categoria'] ?? '') !== 'cenefa' && ($m['categoria'] ?? '') !== 'cenefa_exterior') continue;
+                if (carpeta_modelo_de_item($m) === $outerCenefaFolder) { $selectedCenefaOuter = $m; break; }
+            }
         }
     }
 }
 if ($selectedCenefaOuter && !$selectedEsquinaOuter) {
     $outerFolder = carpeta_modelo_de_item($selectedCenefaOuter);
-    $mappedOuterCorner = $conexionesPrimary[$outerFolder] ?? '';
-    if ($mappedOuterCorner !== '') {
-        foreach ($models as $m) {
-            if (($m['categoria'] ?? '') !== 'esquina') continue;
-            if (carpeta_modelo_de_item($m) === $mappedOuterCorner) { $selectedEsquinaOuter = $m; break; }
+    foreach ($models as $m) {
+        if (($m['categoria'] ?? '') !== 'esquina_exterior') continue;
+        if (carpeta_modelo_de_item($m) === $outerFolder) { $selectedEsquinaOuter = $m; break; }
+    }
+
+    if (!$selectedEsquinaOuter) {
+        $mappedOuterCorner = $conexionesPrimary[$outerFolder] ?? '';
+        if ($mappedOuterCorner !== '') {
+            foreach ($models as $m) {
+                if (($m['categoria'] ?? '') !== 'esquina' && ($m['categoria'] ?? '') !== 'esquina_exterior') continue;
+                if (carpeta_modelo_de_item($m) === $mappedOuterCorner) { $selectedEsquinaOuter = $m; break; }
+            }
         }
     }
 }
@@ -443,6 +459,8 @@ if ($pickerMode === 'dual') {
         'cenefa' => $selectedCenefa,
         'esquina' => $selectedEsquina,
         'centro' => $selectedCenter,
+        'cenefa_exterior' => ($selectedCenefaOuter ?: $selectedCenefa),
+        'esquina_exterior' => ($selectedEsquinaOuter ?: $selectedEsquina),
         default => ($selectedCenter ?: $selectedCenefa ?: $selectedEsquina),
     };
 }

@@ -1,5 +1,5 @@
 <?php
-const VALID_CATEGORIAS = ['centro', 'cenefa', 'esquina', 'hexagonales', 'antiderrapante'];
+const VALID_CATEGORIAS = ['centro', 'cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior', 'hexagonales', 'antiderrapante'];
 
 function carga_mapa_categorias_csv(string $csvPath): array {
     if (!file_exists($csvPath)) {
@@ -106,6 +106,8 @@ function categoria_prefix(?string $categoria): string {
         'cenefa' => 'CEN',
         'esquina' => 'ESQ',
         'centro' => 'CTR',
+        'cenefa_exterior' => 'CEX',
+        'esquina_exterior' => 'EEX',
         'hexagonales' => 'HEX',
         'antiderrapante' => 'ANT',
         default => 'MOD',
@@ -116,7 +118,7 @@ function categoria_rank(?string $categoria): int {
     $cat = strtolower(trim((string)$categoria));
     return match ($cat) {
         'centro' => 1,
-        'cenefa', 'esquina' => 2,
+        'cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior' => 2,
         'hexagonales' => 3,
         'antiderrapante' => 4,
         default => 9,
@@ -304,7 +306,7 @@ foreach ($items as $it) {
           <form class="quote-form" action="mailto:ventas@mosaicosdzununcan.com" method="post" enctype="text/plain">
             <input type="text" name="nombre" data-i18n-placeholder="quote_name" placeholder="Nombre" required />
             <input type="email" name="email" data-i18n-placeholder="quote_email" placeholder="Email" required />
-            <input type="tel" name="telefono" data-i18n-placeholder="quote_phone" placeholder="Teléfono" />
+            <input type="tel" name="telefono" data-i18n-placeholder="quote_phone" placeholder="Teléfono" required minlength="8" inputmode="tel" />
             <textarea name="comentarios" rows="6" data-i18n-placeholder="quote_comments" placeholder="Comentarios" required></textarea>
             <button type="submit" class="action quote-submit" data-i18n="quote_send">Enviar</button>
           </form>

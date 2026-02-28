@@ -44,7 +44,7 @@
         <form class="quote-form" action="mailto:ventas@mosaicosdzununcan.com" method="post" enctype="text/plain">
           <input type="text" name="nombre" data-i18n-placeholder="quote_name" placeholder="Nombre" required />
           <input type="email" name="email" data-i18n-placeholder="quote_email" placeholder="Email" required />
-          <input type="tel" name="telefono" data-i18n-placeholder="quote_phone" placeholder="Teléfono" />
+          <input type="tel" name="telefono" data-i18n-placeholder="quote_phone" placeholder="Teléfono" required minlength="8" inputmode="tel" />
           <textarea name="comentarios" rows="8" data-i18n-placeholder="quote_comments" placeholder="Comentarios" required></textarea>
           <button type="submit" class="action quote-submit" data-i18n="quote_send">Enviar</button>
         </form>

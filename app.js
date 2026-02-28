@@ -69,6 +69,12 @@
       if (dict[key]) node.setAttribute('placeholder', dict[key]);
     });
 
+    document.querySelectorAll('[data-lang-only]').forEach((node) => {
+      const only = node.getAttribute('data-lang-only');
+      const show = only === safeLang;
+      node.hidden = !show;
+    });
+
     document.querySelectorAll('[data-i18n-title]').forEach((node) => {
       const key = node.getAttribute('data-i18n-title');
       if (dict[key]) {

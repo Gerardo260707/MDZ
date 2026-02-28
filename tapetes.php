@@ -1,5 +1,5 @@
 <?php
-const VALID_CATEGORIAS = ['centro', 'cenefa', 'esquina', 'hexagonales', 'antiderrapante'];
+const VALID_CATEGORIAS = ['centro', 'cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior', 'hexagonales', 'antiderrapante'];
 
 function carga_mapa_categorias_csv(string $csvPath): array {
     if (!file_exists($csvPath)) return [];

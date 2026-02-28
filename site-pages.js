@@ -667,10 +667,12 @@
       if (!source) return;
       const x = col * tileW;
       const y = row * tileH;
+      const bleed = 1;
       ctx.save();
+      ctx.imageSmoothingEnabled = false;
       ctx.translate(x + tileW / 2, y + tileH / 2);
       ctx.rotate(angle || 0);
-      ctx.drawImage(source, -tileW / 2, -tileH / 2, tileW, tileH);
+      ctx.drawImage(source, -(tileW / 2 + bleed), -(tileH / 2 + bleed), tileW + bleed * 2, tileH + bleed * 2);
       ctx.restore();
     }
 
@@ -1352,10 +1354,12 @@
       if (!source) return;
       const x = col * tileW;
       const y = row * tileH;
+      const bleed = 1;
       ctx.save();
+      ctx.imageSmoothingEnabled = false;
       ctx.translate(x + tileW / 2, y + tileH / 2);
       ctx.rotate(angle || 0);
-      ctx.drawImage(source, -tileW / 2, -tileH / 2, tileW, tileH);
+      ctx.drawImage(source, -(tileW / 2 + bleed), -(tileH / 2 + bleed), tileW + bleed * 2, tileH + bleed * 2);
       ctx.restore();
     }
 
@@ -1578,6 +1582,51 @@
     });
   }
 
+
+  function initQuoteValidation() {
+    const forms = document.querySelectorAll('.quote-form');
+    if (!forms.length) return;
+    const lang = getLang();
+
+    forms.forEach((form) => {
+      const emailInput = form.querySelector('input[type="email"]');
+      const phoneInput = form.querySelector('input[name="telefono"]');
+      if (phoneInput) {
+        phoneInput.setAttribute('required', 'required');
+        phoneInput.setAttribute('minlength', '8');
+      }
+
+      form.addEventListener('submit', (e) => {
+        let valid = true;
+
+        if (emailInput && !emailInput.checkValidity()) {
+          valid = false;
+          emailInput.reportValidity();
+        }
+
+        if (phoneInput) {
+          const digits = (phoneInput.value || '').replace(/\D/g, '');
+          if (digits.length < 8) {
+            valid = false;
+            const msg = lang === 'en'
+              ? 'Please enter at least 8 digits in the phone number.'
+              : 'Por favor ingrese al menos 8 dígitos en el teléfono.';
+            phoneInput.setCustomValidity(msg);
+            phoneInput.reportValidity();
+          } else {
+            phoneInput.setCustomValidity('');
+          }
+        }
+
+        if (!valid) e.preventDefault();
+      });
+
+      if (phoneInput) {
+        phoneInput.addEventListener('input', () => phoneInput.setCustomValidity(''));
+      }
+    });
+  }
+
   function initDarkFooter() {
     const main = document.querySelector('main.site');
     if (!main || document.getElementById('siteDarkFooter')) return;
@@ -1613,6 +1662,7 @@
     initDecoratedOverlay();
     initTapetesPage();
     initMosaicosActions();
+    initQuoteValidation();
     initDarkFooter();
   });
 })();
