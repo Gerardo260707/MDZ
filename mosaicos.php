@@ -346,6 +346,10 @@ foreach ($items as $it) {
                 $esquinaSrc = '';
                 $cenefaOuterSrc = '';
                 $esquinaOuterSrc = '';
+                $cenefaModel = null;
+                $esquinaModel = null;
+                $cenefaOuterModel = null;
+                $esquinaOuterModel = null;
 
                 $innerCenefaFolder = '';
                 if ($cat === 'cenefa') {
@@ -361,43 +365,74 @@ foreach ($items as $it) {
 
                 if ($innerCenefaFolder !== '') {
                   if (isset($byFolder[$innerCenefaFolder]['cenefa'])) {
-                    $cenefaSrc = (string)($byFolder[$innerCenefaFolder]['cenefa']['imagen'] ?? '');
+                    $cenefaModel = $byFolder[$innerCenefaFolder]['cenefa'];
+                    $cenefaSrc = (string)($cenefaModel['imagen'] ?? '');
                   }
 
                   $innerCornerFolder = (string)($conexionesPrimary[$innerCenefaFolder] ?? '');
                   if ($innerCornerFolder !== '' && isset($byFolder[$innerCornerFolder]['esquina'])) {
-                    $esquinaSrc = (string)($byFolder[$innerCornerFolder]['esquina']['imagen'] ?? '');
+                    $esquinaModel = $byFolder[$innerCornerFolder]['esquina'];
+                    $esquinaSrc = (string)($esquinaModel['imagen'] ?? '');
                   }
 
                   $out = $conexionesOuter[$innerCenefaFolder] ?? [];
                   $outC = strtolower((string)($out['cenefa'] ?? ''));
                   $outE = strtolower((string)($out['esquina'] ?? ''));
                   if ($outC !== '') {
-                    if (isset($byFolder[$outC]['cenefa_exterior'])) $cenefaOuterSrc = (string)($byFolder[$outC]['cenefa_exterior']['imagen'] ?? '');
-                    elseif (isset($byFolder[$outC]['cenefa'])) $cenefaOuterSrc = (string)($byFolder[$outC]['cenefa']['imagen'] ?? '');
+                    if (isset($byFolder[$outC]['cenefa_exterior'])) { $cenefaOuterModel = $byFolder[$outC]['cenefa_exterior']; $cenefaOuterSrc = (string)($cenefaOuterModel['imagen'] ?? ''); }
+                    elseif (isset($byFolder[$outC]['cenefa'])) { $cenefaOuterModel = $byFolder[$outC]['cenefa']; $cenefaOuterSrc = (string)($cenefaOuterModel['imagen'] ?? ''); }
                   }
                   if ($outE !== '') {
-                    if (isset($byFolder[$outE]['esquina_exterior'])) $esquinaOuterSrc = (string)($byFolder[$outE]['esquina_exterior']['imagen'] ?? '');
-                    elseif (isset($byFolder[$outE]['esquina'])) $esquinaOuterSrc = (string)($byFolder[$outE]['esquina']['imagen'] ?? '');
+                    if (isset($byFolder[$outE]['esquina_exterior'])) { $esquinaOuterModel = $byFolder[$outE]['esquina_exterior']; $esquinaOuterSrc = (string)($esquinaOuterModel['imagen'] ?? ''); }
+                    elseif (isset($byFolder[$outE]['esquina'])) { $esquinaOuterModel = $byFolder[$outE]['esquina']; $esquinaOuterSrc = (string)($esquinaOuterModel['imagen'] ?? ''); }
                   }
                 }
 
-                if ($cat === 'cenefa') $cenefaSrc = (string)($m['imagen'] ?? $cenefaSrc);
-                if ($cat === 'esquina') $esquinaSrc = (string)($m['imagen'] ?? $esquinaSrc);
-                if ($cat === 'cenefa_exterior') $cenefaOuterSrc = (string)($m['imagen'] ?? $cenefaOuterSrc);
-                if ($cat === 'esquina_exterior') $esquinaOuterSrc = (string)($m['imagen'] ?? $esquinaOuterSrc);
+                if ($cat === 'cenefa') { $cenefaModel = $m; $cenefaSrc = (string)($m['imagen'] ?? $cenefaSrc); }
+                if ($cat === 'esquina') { $esquinaModel = $m; $esquinaSrc = (string)($m['imagen'] ?? $esquinaSrc); }
+                if ($cat === 'cenefa_exterior') { $cenefaOuterModel = $m; $cenefaOuterSrc = (string)($m['imagen'] ?? $cenefaOuterSrc); }
+                if ($cat === 'esquina_exterior') { $esquinaOuterModel = $m; $esquinaOuterSrc = (string)($m['imagen'] ?? $esquinaOuterSrc); }
                 $mainSrc = imagen_con_version((string)($m['imagen'] ?: 'assets/placeholder-tile.svg'));
                 $cenefaSrcV = imagen_con_version($cenefaSrc);
                 $esquinaSrcV = imagen_con_version($esquinaSrc);
                 $cenefaOuterSrcV = imagen_con_version($cenefaOuterSrc);
                 $esquinaOuterSrcV = imagen_con_version($esquinaOuterSrc);
+                $customizeParams = [
+                    'picker' => 'single',
+                    'id' => (string)$m['id'],
+                    'lang' => $lang,
+                    'img' => $mainSrc,
+                    'name' => (string)$m['nombre'],
+                    'cat' => $cat,
+                ];
+                if (is_array($cenefaModel) && !empty($cenefaModel['id'])) {
+                    $customizeParams['cenefa_id'] = (string)$cenefaModel['id'];
+                    $customizeParams['cenefa_img'] = imagen_con_version((string)($cenefaModel['imagen'] ?? ''));
+                    $customizeParams['cenefa_name'] = (string)($cenefaModel['nombre'] ?? '');
+                }
+                if (is_array($esquinaModel) && !empty($esquinaModel['id'])) {
+                    $customizeParams['esquina_id'] = (string)$esquinaModel['id'];
+                    $customizeParams['esquina_img'] = imagen_con_version((string)($esquinaModel['imagen'] ?? ''));
+                    $customizeParams['esquina_name'] = (string)($esquinaModel['nombre'] ?? '');
+                }
+                if (is_array($cenefaOuterModel) && !empty($cenefaOuterModel['id'])) {
+                    $customizeParams['cenefa_outer_id'] = (string)$cenefaOuterModel['id'];
+                    $customizeParams['cenefa_outer_img'] = imagen_con_version((string)($cenefaOuterModel['imagen'] ?? ''));
+                    $customizeParams['cenefa_outer_name'] = (string)($cenefaOuterModel['nombre'] ?? '');
+                }
+                if (is_array($esquinaOuterModel) && !empty($esquinaOuterModel['id'])) {
+                    $customizeParams['esquina_outer_id'] = (string)$esquinaOuterModel['id'];
+                    $customizeParams['esquina_outer_img'] = imagen_con_version((string)($esquinaOuterModel['imagen'] ?? ''));
+                    $customizeParams['esquina_outer_name'] = (string)($esquinaOuterModel['nombre'] ?? '');
+                }
+                $customizeUrl = 'personalizar.php?' . http_build_query(array_filter($customizeParams, static fn($v) => $v !== ''));
               ?>
               <article class="mosaic-card">
                 <img class="mosaic-preview-trigger" src="<?= htmlspecialchars($mainSrc, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-model-name="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-category="<?= htmlspecialchars($cat, ENT_QUOTES) ?>" data-cenefa-src="<?= htmlspecialchars($cenefaSrcV, ENT_QUOTES) ?>" data-esquina-src="<?= htmlspecialchars($esquinaSrcV, ENT_QUOTES) ?>" data-cenefa-outer-src="<?= htmlspecialchars($cenefaOuterSrcV, ENT_QUOTES) ?>" data-esquina-outer-src="<?= htmlspecialchars($esquinaOuterSrcV, ENT_QUOTES) ?>" />
                 <?php $catLabel = $m['categoria'] !== '' ? strtoupper((string)$m['categoria']) : 'SIN CATEGORÍA'; ?>
                 <p class="code"><?= htmlspecialchars($catLabel, ENT_QUOTES) ?> · <?= htmlspecialchars($m['identificador'], ENT_QUOTES) ?></p>
                 <p class="name"><?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?></p>
-                <a class="action cta-pill" href="personalizar.php?picker=single&id=<?= urlencode((string)$m['id']) ?>&lang=<?= $lang ?>&img=<?= urlencode($mainSrc) ?>&name=<?= urlencode((string)$m['nombre']) ?>&cat=<?= urlencode((string)$m['categoria']) ?>" data-i18n="btn_customize">Personalizar</a>
+                <a class="action cta-pill" href="<?= htmlspecialchars($customizeUrl, ENT_QUOTES) ?>" data-i18n="btn_customize">Personalizar</a>
               </article>
             <?php endforeach; ?>
           <?php else: ?>
