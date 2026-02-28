@@ -107,6 +107,53 @@ function imagen_con_version(string $src): string {
     return $result;
 }
 
+
+function normaliza_conexion_clave(string $value): string {
+    $v = strtolower(trim($value));
+    $v = str_replace(['_', '-'], ' ', $v);
+    $v = preg_replace('/\s+/', ' ', $v);
+    return trim((string)$v);
+}
+
+function resolver_carpeta_desde_conexion(string $value, array $aliasMap): string {
+    $k = normaliza_conexion_clave($value);
+    if ($k === '') return '';
+    return (string)($aliasMap[$k] ?? $k);
+}
+
+function normalizar_conexiones_con_modelos(array $primary, array $outer, array $models): array {
+    $aliasMap = [];
+    foreach ($models as $m) {
+        $folder = carpeta_modelo_de_item($m);
+        if ($folder === '') continue;
+        $keys = [$folder, (string)($m['nombre'] ?? ''), (string)($m['identificador'] ?? '')];
+        foreach ($keys as $raw) {
+            $nk = normaliza_conexion_clave((string)$raw);
+            if ($nk !== '' && !isset($aliasMap[$nk])) $aliasMap[$nk] = $folder;
+        }
+    }
+
+    $normalizedPrimary = [];
+    foreach ($primary as $cenefaRaw => $esquinaRaw) {
+        $cenefaFolder = resolver_carpeta_desde_conexion((string)$cenefaRaw, $aliasMap);
+        $esquinaFolder = resolver_carpeta_desde_conexion((string)$esquinaRaw, $aliasMap);
+        if ($cenefaFolder === '') continue;
+        $normalizedPrimary[$cenefaFolder] = $esquinaFolder;
+    }
+
+    $normalizedOuter = [];
+    foreach ($outer as $cenefaRaw => $defs) {
+        $cenefaFolder = resolver_carpeta_desde_conexion((string)$cenefaRaw, $aliasMap);
+        if ($cenefaFolder === '') continue;
+        $normalizedOuter[$cenefaFolder] = [
+            'cenefa' => resolver_carpeta_desde_conexion((string)($defs['cenefa'] ?? ''), $aliasMap),
+            'esquina' => resolver_carpeta_desde_conexion((string)($defs['esquina'] ?? ''), $aliasMap),
+        ];
+    }
+
+    return ['primary' => $normalizedPrimary, 'outer' => $normalizedOuter];
+}
+
 function carga_conexiones_cenefa_esquina(string $csvPath): array {
     if (!file_exists($csvPath)) return ['primary' => [], 'outer' => [], 'rows' => []];
     $h = fopen($csvPath, 'r');
@@ -277,6 +324,9 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
 $conexiones = carga_conexiones_cenefa_esquina(__DIR__ . '/config/conexiones_cenefa_esquina.csv');
 $conexionesPrimary = (array)($conexiones['primary'] ?? []);
 $conexionesOuter = (array)($conexiones['outer'] ?? []);
+$conexionesNormalizadas = normalizar_conexiones_con_modelos($conexionesPrimary, $conexionesOuter, $items);
+$conexionesPrimary = (array)($conexionesNormalizadas['primary'] ?? []);
+$conexionesOuter = (array)($conexionesNormalizadas['outer'] ?? []);
 $conexionesRows = (array)($conexiones['rows'] ?? []);
 $reverseOuterCenefa = [];
 $reverseOuterEsquina = [];

@@ -97,6 +97,57 @@ function pair_key(array $m): string {
 
 
 
+
+function normaliza_conexion_clave(string $value): string {
+    $v = strtolower(trim($value));
+    $v = str_replace(['_', '-'], ' ', $v);
+    $v = preg_replace('/\s+/', ' ', $v);
+    return trim((string)$v);
+}
+
+function resolver_carpeta_desde_conexion(string $value, array $aliasMap): string {
+    $k = normaliza_conexion_clave($value);
+    if ($k === '') return '';
+    return (string)($aliasMap[$k] ?? $k);
+}
+
+function normalizar_conexiones_con_modelos(array $primary, array $outer, array $models): array {
+    $aliasMap = [];
+    foreach ($models as $m) {
+        $folder = carpeta_modelo_de_item($m);
+        if ($folder === '') continue;
+        $keys = [
+            $folder,
+            (string)($m['nombre'] ?? ''),
+            (string)($m['identificador'] ?? ''),
+        ];
+        foreach ($keys as $raw) {
+            $nk = normaliza_conexion_clave((string)$raw);
+            if ($nk !== '' && !isset($aliasMap[$nk])) $aliasMap[$nk] = $folder;
+        }
+    }
+
+    $normalizedPrimary = [];
+    foreach ($primary as $cenefaRaw => $esquinaRaw) {
+        $cenefaFolder = resolver_carpeta_desde_conexion((string)$cenefaRaw, $aliasMap);
+        $esquinaFolder = resolver_carpeta_desde_conexion((string)$esquinaRaw, $aliasMap);
+        if ($cenefaFolder === '') continue;
+        $normalizedPrimary[$cenefaFolder] = $esquinaFolder;
+    }
+
+    $normalizedOuter = [];
+    foreach ($outer as $cenefaRaw => $defs) {
+        $cenefaFolder = resolver_carpeta_desde_conexion((string)$cenefaRaw, $aliasMap);
+        if ($cenefaFolder === '') continue;
+        $normalizedOuter[$cenefaFolder] = [
+            'cenefa' => resolver_carpeta_desde_conexion((string)($defs['cenefa'] ?? ''), $aliasMap),
+            'esquina' => resolver_carpeta_desde_conexion((string)($defs['esquina'] ?? ''), $aliasMap),
+        ];
+    }
+
+    return ['primary' => $normalizedPrimary, 'outer' => $normalizedOuter];
+}
+
 function build_image_rel_with_version(string $baseName, string $folder, string $fileName, string $absPath): string {
     $rel = $baseName . '/' . rawurlencode($folder) . '/' . rawurlencode($fileName);
     $mtime = @filemtime($absPath);
@@ -299,6 +350,9 @@ $tapetePresets = ($modelSource === 'tapete') ? carga_tapetes_csv(__DIR__ . '/con
 $conexionesCsv = carga_conexiones_cenefa_esquina(__DIR__ . '/config/conexiones_cenefa_esquina.csv');
 $conexionesPrimary = (array)($conexionesCsv['primary'] ?? []);
 $conexionesOuter = (array)($conexionesCsv['outer'] ?? []);
+$conexionesNormalizadas = normalizar_conexiones_con_modelos($conexionesPrimary, $conexionesOuter, $models);
+$conexionesPrimary = (array)($conexionesNormalizadas['primary'] ?? []);
+$conexionesOuter = (array)($conexionesNormalizadas['outer'] ?? []);
 $reverseOuterCenefa = [];
 $reverseOuterEsquina = [];
 foreach ($conexionesOuter as $innerFolder => $outerDef) {
