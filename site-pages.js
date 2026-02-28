@@ -5,6 +5,23 @@
     return window.siteI18n ? window.siteI18n.getLang() : 'es';
   }
 
+  function normalizeAssetSrc(rawSrc) {
+    let src = String(rawSrc || '').trim();
+    if (!src) return '';
+    src = src.replace(/&amp;/g, '&');
+    for (let i = 0; i < 2; i++) {
+      if (!/%[0-9a-f]{2}/i.test(src)) break;
+      try {
+        const decoded = decodeURIComponent(src);
+        if (!decoded || decoded === src) break;
+        src = decoded;
+      } catch (_) {
+        break;
+      }
+    }
+    return src;
+  }
+
   function tByLang(lang, es, en) {
     return lang === 'en' ? en : es;
   }
@@ -559,12 +576,12 @@
     }
     }
 
-    const src = (big.dataset.image || '').trim();
-    const centerSrc = (big.dataset.centerImage || '').trim();
-    const cenefaSrc = (big.dataset.cenefaImage || '').trim();
-    const esquinaSrc = (big.dataset.esquinaImage || '').trim();
-    const cenefaOuterSrc = (big.dataset.cenefaOuterImage || '').trim();
-    const esquinaOuterSrc = (big.dataset.esquinaOuterImage || '').trim();
+    const src = normalizeAssetSrc(big.dataset.image || '');
+    const centerSrc = normalizeAssetSrc(big.dataset.centerImage || '');
+    const cenefaSrc = normalizeAssetSrc(big.dataset.cenefaImage || '');
+    const esquinaSrc = normalizeAssetSrc(big.dataset.esquinaImage || '');
+    const cenefaOuterSrc = normalizeAssetSrc(big.dataset.cenefaOuterImage || '');
+    const esquinaOuterSrc = normalizeAssetSrc(big.dataset.esquinaOuterImage || '');
     const editTarget = (big.dataset.editTarget || '').toLowerCase();
     if (!src && !cenefaSrc && !esquinaSrc && !cenefaOuterSrc && !esquinaOuterSrc) {
       if (editor) editor.innerHTML = `<p class="empty-msg">${lang === 'en' ? 'Select a model from the search bar above to start customizing.' : 'Selecciona un modelo en la barra de búsqueda para comenzar a personalizar.'}</p>`;
@@ -1304,12 +1321,13 @@
 
     function loadImageSafe(imageSrc) {
       return new Promise((resolve) => {
-        if (!imageSrc) return resolve(null);
+        const safeSrc = normalizeAssetSrc(imageSrc);
+        if (!safeSrc) return resolve(null);
         const image = new Image();
         image.crossOrigin = 'anonymous';
         image.onload = () => resolve(image);
         image.onerror = () => resolve(null);
-        image.src = imageSrc;
+        image.src = safeSrc;
       });
     }
 
@@ -1468,7 +1486,7 @@
         drawPattern();
         updateHistoryButtons();
       };
-      if (src) img.src = src;
+      if (src) img.src = normalizeAssetSrc(src);
       else {
         sctx.fillStyle = '#fff';
         sctx.fillRect(0, 0, 600, 600);
@@ -1492,12 +1510,13 @@
 
     function loadImageSafeTapete(src) {
       return new Promise((resolve) => {
-        if (!src) return resolve(null);
+        const safeSrc = normalizeAssetSrc(src);
+        if (!safeSrc) return resolve(null);
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = () => resolve(img);
         img.onerror = () => resolve(null);
-        img.src = src;
+        img.src = safeSrc;
       });
     }
 
@@ -1534,11 +1553,11 @@
 
     canvases.forEach(async (canvas) => {
       const pctx = canvas.getContext('2d');
-      const centerSrc = (canvas.dataset.centerImage || '').trim();
-      const cenefaSrc = (canvas.dataset.cenefaImage || '').trim();
-      const esquinaSrc = (canvas.dataset.esquinaImage || '').trim();
-      const cenefaOuterSrc = (canvas.dataset.cenefaOuterImage || '').trim();
-      const esquinaOuterSrc = (canvas.dataset.esquinaOuterImage || '').trim();
+      const centerSrc = normalizeAssetSrc(canvas.dataset.centerImage || '');
+      const cenefaSrc = normalizeAssetSrc(canvas.dataset.cenefaImage || '');
+      const esquinaSrc = normalizeAssetSrc(canvas.dataset.esquinaImage || '');
+      const cenefaOuterSrc = normalizeAssetSrc(canvas.dataset.cenefaOuterImage || '');
+      const esquinaOuterSrc = normalizeAssetSrc(canvas.dataset.esquinaOuterImage || '');
 
       const [centerRaw, cenefaRaw, esquinaRaw, cenefaOuterRaw, esquinaOuterRaw] = await Promise.all([
         loadImageSafeTapete(centerSrc),
@@ -1675,7 +1694,7 @@
 
       function d(src, r, c, angle) {
         if (!src) return;
-        const bleed = 1.4;
+        const bleed = 1.35;
         pctx.save();
         pctx.imageSmoothingEnabled = false;
         pctx.translate(c * tw + tw / 2, r * th + th / 2);
@@ -1729,12 +1748,13 @@
 
     function loadImageSafeOverlay(src) {
       return new Promise((resolve) => {
-        if (!src) return resolve(null);
+        const safeSrc = normalizeAssetSrc(src);
+        if (!safeSrc) return resolve(null);
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = () => resolve(img);
         img.onerror = () => resolve(null);
-        const cleaned = src.replace(/([?&])ov=[^&#]*(&?)/, (m, p1, p2) => (p1 === '?' && p2 ? '?' : (p2 ? p1 : ''))).replace(/[?&]$/, '');
+        const cleaned = safeSrc.replace(/([?&])ov=[^&#]*(&?)/, (m, p1, p2) => (p1 === '?' && p2 ? '?' : (p2 ? p1 : ''))).replace(/[?&]$/, '');
         const sep = cleaned.includes('?') ? '&' : '?';
         img.src = `${cleaned}${sep}ov=${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       });
