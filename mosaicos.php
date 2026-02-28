@@ -287,7 +287,7 @@ foreach ($items as $it) {
     </header>
     <div class="mosaic-strip"></div>
 
-    <section id="mosaic-options">
+    <section>
       <h2 data-i18n="decorated_title">Mosaicos Decorados</h2>
       <p data-i18n="decorated_desc">Seleccione un modelo para ver su ficha. Puede personalizar colores en el simulador.</p>
 
@@ -309,33 +309,6 @@ foreach ($items as $it) {
             <button type="submit" class="action quote-submit" data-i18n="quote_send">Enviar</button>
           </form>
         </div>
-
-        <div class="mobile-wa-wrap">
-          <button type="button" id="waToggleBtn" class="action cta-pill wa-mobile-btn" aria-expanded="false">Contactar por WhatsApp</button>
-          <div id="waComposer" class="wa-composer" aria-hidden="true">
-            <label for="waMessageInput">Mensaje para tienda:</label>
-            <textarea id="waMessageInput" rows="4">Hola, me gustaría información y una cotización sobre sus opciones de mosaicos.</textarea>
-            <button type="button" id="waSendBtn" class="action cta-pill">Enviar por WhatsApp</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="category-grid mosaic-options-grid">
-        <article class="category-card">
-          <img src="assets/placeholder-tile.svg" alt="Decorados" />
-          <h3>Decorados</h3>
-          <a class="cta-pill" href="mosaicos.php?lang=<?= $lang ?>#catalogo-decorados">Ver decorados</a>
-        </article>
-        <article class="category-card">
-          <img src="assets/placeholder-tile.svg" alt="Personalizar" />
-          <h3>Personalizar</h3>
-          <a class="cta-pill" href="personalizar.php?lang=<?= $lang ?>">Ir al simulador</a>
-        </article>
-        <article class="category-card">
-          <img src="assets/placeholder-tile.svg" alt="Especiales" />
-          <h3>Especiales</h3>
-          <a class="cta-pill" href="especiales.php?lang=<?= $lang ?>">Ver especiales</a>
-        </article>
       </div>
     </section>
 

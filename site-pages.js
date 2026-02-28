@@ -26,7 +26,7 @@
 
     const lang = getLang();
     const FEATURE_CARDS = [
-      { file: '', label: tByLang(lang, 'Mosaicos', 'Mosaics'), href: 'mosaicos.html#mosaic-options', button: tByLang(lang, 'Ver modelos » clic aquí', 'View models » click here') },
+      { file: '', label: tByLang(lang, 'Mosaicos', 'Mosaics'), href: 'mosaicos.html', button: tByLang(lang, 'Ver modelos » clic aquí', 'View models » click here') },
       { file: '', label: tByLang(lang, 'Tapetes', 'Rugs'), href: 'tapetes.php', button: tByLang(lang, 'Personalizar', 'Customize') },
       { file: '', label: tByLang(lang, 'Colores', 'Colors'), href: 'colores.php', button: tByLang(lang, 'Ver colores', 'View colors') }
     ];
@@ -1595,35 +1595,12 @@
   function initMosaicosActions() {
     const quoteToggleBtn = q('quoteToggleBtn');
     const quoteContainer = q('quoteContainer');
-    const waToggleBtn = q('waToggleBtn');
-    const waComposer = q('waComposer');
-    const waMessageInput = q('waMessageInput');
-    const waSendBtn = q('waSendBtn');
-    const lang = getLang();
 
     if (quoteToggleBtn && quoteContainer) {
       quoteToggleBtn.addEventListener('click', () => {
         const isOpen = quoteContainer.classList.toggle('open');
         quoteContainer.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
         quoteToggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      });
-    }
-
-    if (waToggleBtn && waComposer) {
-      waToggleBtn.addEventListener('click', () => {
-        const isOpen = waComposer.classList.toggle('open');
-        waComposer.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
-        waToggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      });
-    }
-
-    if (waSendBtn && waMessageInput) {
-      waSendBtn.addEventListener('click', () => {
-        const defaultMsg = lang === 'en'
-          ? 'Hi, I would like information and a quote for your mosaic options.'
-          : 'Hola, me gustaría información y una cotización sobre sus opciones de mosaicos.';
-        const message = (waMessageInput.value || '').trim() || defaultMsg;
-        window.location.assign(`https://wa.me/529992495158?text=${encodeURIComponent(message)}`);
       });
     }
   }

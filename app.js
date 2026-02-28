@@ -91,6 +91,23 @@
 
   window.siteI18n = { getLang, applyLang };
 
+  function loadWhatsAppWidget() {
+    if (document.querySelector('link[data-wa-widget]')) return;
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = 'Whatsapp/whatsapp-widget.css';
+    css.setAttribute('data-wa-widget', '1');
+    document.head.appendChild(css);
+
+    if (!document.querySelector('script[data-wa-widget]')) {
+      const script = document.createElement('script');
+      script.src = 'Whatsapp/whatsapp-widget.js';
+      script.defer = true;
+      script.setAttribute('data-wa-widget', '1');
+      document.body.appendChild(script);
+    }
+  }
+
   document.addEventListener('click', (e) => {
     const target = e.target.closest('[data-set-lang]');
     if (!target) return;
@@ -100,5 +117,8 @@
     window.location.assign(buildUrlWithLang(lang));
   });
 
-  document.addEventListener('DOMContentLoaded', () => applyLang(getLang()));
+  document.addEventListener('DOMContentLoaded', () => {
+    applyLang(getLang());
+    loadWhatsAppWidget();
+  });
 })();

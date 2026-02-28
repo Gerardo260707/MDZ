@@ -1,0 +1,12 @@
+.wa-float-btn{position:fixed;left:14px;bottom:14px;width:56px;height:56px;border-radius:50%;border:0;background:#25d366;box-shadow:0 10px 20px rgba(0,0,0,.24);z-index:1500;display:none;align-items:center;justify-content:center;padding:0;cursor:pointer}
+.wa-float-btn img{width:30px;height:30px;display:block}
+.wa-float-btn span{font-size:28px;line-height:1;color:#fff}
+.wa-float-btn.show{display:flex}
+.wa-float-panel{position:fixed;left:14px;bottom:80px;width:min(90vw,320px);background:#fff;border:1px solid #d9d9d9;border-radius:12px;padding:12px;z-index:1500;box-shadow:0 14px 28px rgba(0,0,0,.2);display:none}
+.wa-float-panel.open{display:grid;gap:8px}
+.wa-float-panel textarea{width:100%;border:1px solid #cfcfcf;border-radius:6px;padding:10px;font-size:14px;font-family:Arial,Helvetica,sans-serif;resize:vertical;min-height:100px}
+.wa-float-actions{display:flex;justify-content:flex-end;gap:8px}
+.wa-float-actions button{border:0;border-radius:999px;padding:8px 12px;cursor:pointer}
+.wa-cancel{background:#efefef;color:#333}
+.wa-send{background:#25d366;color:#fff}
+@media (min-width: 901px){.wa-float-btn,.wa-float-panel{display:none !important}}

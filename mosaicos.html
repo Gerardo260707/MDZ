@@ -9,7 +9,7 @@
     (function () {
       const params = new URLSearchParams(window.location.search);
       const lang = params.get('lang');
-      const target = lang ? `mosaicos.php?lang=${encodeURIComponent(lang)}` : 'mosaicos.php';
+      const target = lang ? `mosaicos-menu.php?lang=${encodeURIComponent(lang)}` : 'mosaicos-menu.php';
       window.location.replace(target);
     })();
   </script>
@@ -17,7 +17,7 @@
 <body>
   <main>
     <p>Redirigiendo a la página de mosaicos...</p>
-    <p><a href="mosaicos.php">Continuar a Mosaicos</a></p>
+    <p><a href="mosaicos-menu.php">Continuar a Mosaicos</a></p>
   </main>
 </body>
 </html>
