@@ -764,6 +764,43 @@
       ctx.restore();
     }
 
+    function asTileSource(source, size = 512) {
+      if (!source) return null;
+      const c = document.createElement('canvas');
+      c.width = size;
+      c.height = size;
+      const cx = c.getContext('2d');
+      const sw = source.naturalWidth || source.width || size;
+      const sh = source.naturalHeight || source.height || size;
+      const scale = Math.max(size / sw, size / sh);
+      const dw = sw * scale;
+      const dh = sh * scale;
+      const dx = (size - dw) / 2;
+      const dy = (size - dh) / 2;
+      cx.clearRect(0, 0, size, size);
+      cx.drawImage(source, dx, dy, dw, dh);
+      return c;
+    }
+
+    function asTileSource(source, size = 512) {
+      if (!source) return null;
+      const c = document.createElement('canvas');
+      c.width = size;
+      c.height = size;
+      const cx = c.getContext('2d');
+      const sw = source.naturalWidth || source.width || size;
+      const sh = source.naturalHeight || source.height || size;
+      const scale = Math.max(size / sw, size / sh);
+      const dw = sw * scale;
+      const dh = sh * scale;
+      const dx = (size - dw) / 2;
+      const dy = (size - dh) / 2;
+      cx.imageSmoothingEnabled = true;
+      cx.clearRect(0, 0, size, size);
+      cx.drawImage(source, dx, dy, dw, dh);
+      return c;
+    }
+
     function drawPattern() {
       if (!currentImageData) return;
       const tile = document.createElement('canvas');
@@ -788,10 +825,10 @@
         const th = h / rows;
 
         const centerSource = centerSrc ? tile : null;
-        const cenefaSource = (editTarget === 'cenefa') ? tile : (cenefaEditedCanvas || cenefaImg || tile);
-        const cornerSource = (editTarget === 'esquina') ? tile : (esquinaEditedCanvas || esquinaImg || cenefaSource);
-        const cenefaOuterSource = (editTarget === 'cenefa_exterior') ? tile : (cenefaOuterEditedCanvas || cenefaOuterImg || cenefaSource);
-        const cornerOuterSource = (editTarget === 'esquina_exterior') ? tile : (esquinaOuterEditedCanvas || esquinaOuterImg || cenefaOuterSource);
+        const cenefaSource = asTileSource((editTarget === 'cenefa') ? tile : (cenefaEditedCanvas || cenefaImg || tile));
+        const cornerSource = asTileSource((editTarget === 'esquina') ? tile : (esquinaEditedCanvas || esquinaImg || cenefaSource));
+        const cenefaOuterSource = asTileSource((editTarget === 'cenefa_exterior') ? tile : (cenefaOuterEditedCanvas || cenefaOuterImg || cenefaSource));
+        const cornerOuterSource = asTileSource((editTarget === 'esquina_exterior') ? tile : (esquinaOuterEditedCanvas || esquinaOuterImg || cenefaOuterSource));
 
         const centerMap = [[0, Math.PI / 2], [3 * Math.PI / 2, Math.PI]];
 
@@ -1488,13 +1525,18 @@
       const cenefaOuterSrc = (canvas.dataset.cenefaOuterImage || '').trim();
       const esquinaOuterSrc = (canvas.dataset.esquinaOuterImage || '').trim();
 
-      const [centerImg, cenefaImg, esquinaImg, cenefaOuterImg, esquinaOuterImg] = await Promise.all([
+      const [centerRaw, cenefaRaw, esquinaRaw, cenefaOuterRaw, esquinaOuterRaw] = await Promise.all([
         loadImageSafeTapete(centerSrc),
         loadImageSafeTapete(cenefaSrc),
         loadImageSafeTapete(esquinaSrc),
         loadImageSafeTapete(cenefaOuterSrc),
         loadImageSafeTapete(esquinaOuterSrc),
       ]);
+      const centerImg = asTileSource(centerRaw);
+      const cenefaImg = asTileSource(cenefaRaw);
+      const esquinaImg = asTileSource(esquinaRaw);
+      const cenefaOuterImg = asTileSource(cenefaOuterRaw);
+      const esquinaOuterImg = asTileSource(esquinaOuterRaw);
 
       const hasOuter = Boolean(cenefaOuterImg || esquinaOuterImg);
       const cols = hasOuter ? 14 : 12;
@@ -1633,8 +1675,30 @@
         d(cc, bottom, left, -Math.PI / 2);
       }
 
-      drawRing(0, cenefaOuterImg, esquinaOuterImg);
-      drawRing(hasOuter ? 1 : 0, cenefaImg, esquinaImg);
+      const normalize = (source) => {
+        if (!source) return null;
+        const c = document.createElement('canvas');
+        c.width = 512;
+        c.height = 512;
+        const cx = c.getContext('2d');
+        const sw = source.naturalWidth || source.width || 512;
+        const sh = source.naturalHeight || source.height || 512;
+        const scale = Math.max(512 / sw, 512 / sh);
+        const dw = sw * scale;
+        const dh = sh * scale;
+        const dx = (512 - dw) / 2;
+        const dy = (512 - dh) / 2;
+        cx.clearRect(0, 0, 512, 512);
+        cx.drawImage(source, dx, dy, dw, dh);
+        return c;
+      };
+      const nC = normalize(cenefaImg);
+      const nE = normalize(esquinaImg);
+      const nCO = normalize(cenefaOuterImg);
+      const nEO = normalize(esquinaOuterImg);
+
+      drawRing(0, nCO, nEO);
+      drawRing(hasOuter ? 1 : 0, nC, nE);
     }
 
     function loadImageSafeOverlay(src) {

@@ -299,6 +299,14 @@ $tapetePresets = ($modelSource === 'tapete') ? carga_tapetes_csv(__DIR__ . '/con
 $conexionesCsv = carga_conexiones_cenefa_esquina(__DIR__ . '/config/conexiones_cenefa_esquina.csv');
 $conexionesPrimary = (array)($conexionesCsv['primary'] ?? []);
 $conexionesOuter = (array)($conexionesCsv['outer'] ?? []);
+$reverseOuterCenefa = [];
+$reverseOuterEsquina = [];
+foreach ($conexionesOuter as $innerFolder => $outerDef) {
+    $oc = strtolower(trim((string)($outerDef['cenefa'] ?? '')));
+    $oe = strtolower(trim((string)($outerDef['esquina'] ?? '')));
+    if ($oc !== '') $reverseOuterCenefa[$oc] = strtolower((string)$innerFolder);
+    if ($oe !== '') $reverseOuterEsquina[$oe] = strtolower((string)$innerFolder);
+}
 $modelById = [];
 foreach ($models as $item) $modelById[(string)$item['id']] = $item;
 
@@ -418,6 +426,28 @@ if ($selectedEsquina && !$selectedCenefa) {
 }
 
 
+
+if ($selectedCenefaOuter && !$selectedCenefa) {
+    $outerFolder = carpeta_modelo_de_item($selectedCenefaOuter);
+    $innerFolder = (string)($reverseOuterCenefa[$outerFolder] ?? '');
+    if ($innerFolder !== '') {
+        foreach ($models as $m) {
+            if (($m['categoria'] ?? '') !== 'cenefa') continue;
+            if (carpeta_modelo_de_item($m) === $innerFolder) { $selectedCenefa = $m; break; }
+        }
+    }
+}
+if ($selectedEsquinaOuter && !$selectedCenefa) {
+    $outerFolder = carpeta_modelo_de_item($selectedEsquinaOuter);
+    $innerFolder = (string)($reverseOuterEsquina[$outerFolder] ?? '');
+    if ($innerFolder !== '') {
+        foreach ($models as $m) {
+            if (($m['categoria'] ?? '') !== 'cenefa') continue;
+            if (carpeta_modelo_de_item($m) === $innerFolder) { $selectedCenefa = $m; break; }
+        }
+    }
+}
+
 if ($selectedCenefa && !$selectedCenefaOuter) {
     $cenefaFolder = carpeta_modelo_de_item($selectedCenefa);
     foreach ($models as $m) {
@@ -484,16 +514,17 @@ $editTarget = ($pickerMode === 'dual') ? 'centro' : ($selectedCategory !== '' ? 
 $entryCategory = strtolower(trim((string)($_GET['cat'] ?? ($editable['categoria'] ?? ''))));
 $showCenterEditor = true;
 $searchMode = ($modelSource === 'tapete') ? 'tapete' : 'modelo';
-if ($pickerMode === 'dual') {
+$isBorderSelection = in_array($selectedCategory, ['cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior'], true);
+if ($pickerMode === 'dual' || $isBorderSelection) {
     $showCenefaExtra = (bool)$selectedCenefa;
     $showEsquinaExtra = (bool)$selectedEsquina;
     $showCenefaOuterExtra = (bool)$selectedCenefaOuter;
     $showEsquinaOuterExtra = (bool)$selectedEsquinaOuter;
 } else {
-    $showCenefaExtra = ($selectedCategory === 'esquina') && (bool)$selectedCenefa;
-    $showEsquinaExtra = ($selectedCategory === 'cenefa') && (bool)$selectedEsquina;
-    $showCenefaOuterExtra = ($selectedCategory === 'esquina_exterior') && (bool)$selectedCenefaOuter;
-    $showEsquinaOuterExtra = ($selectedCategory === 'cenefa_exterior') && (bool)$selectedEsquinaOuter;
+    $showCenefaExtra = false;
+    $showEsquinaExtra = false;
+    $showCenefaOuterExtra = false;
+    $showEsquinaOuterExtra = false;
 }
 ?>
 <!doctype html>
