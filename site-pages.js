@@ -281,6 +281,7 @@
     const selectedModelNameEl = q('selectedModelName');
     const searchRow = document.querySelector('.model-search-row');
     const searchMode = ((searchRow && searchRow.dataset.searchMode) || 'modelo').toLowerCase();
+    const searchDisabled = Boolean(searchRow && searchRow.dataset.searchDisabled === '1');
     const tapetePresets = Array.isArray(window.CUSTOMIZER_TAPETES) ? window.CUSTOMIZER_TAPETES : [];
     const manualConnections = (window.CUSTOMIZER_CONNECTIONS && typeof window.CUSTOMIZER_CONNECTIONS === 'object') ? window.CUSTOMIZER_CONNECTIONS : {};
     const manualOuterConnections = (window.CUSTOMIZER_CONNECTIONS_OUTER && typeof window.CUSTOMIZER_CONNECTIONS_OUTER === 'object') ? window.CUSTOMIZER_CONNECTIONS_OUTER : {};
@@ -482,11 +483,19 @@
       renderTapeteSelector();
     } else {
 
+    const rawSingle = (big.dataset.entryCategory || big.dataset.category || '').toLowerCase().trim();
     const forcedSingleCategory = pickerMode === 'single'
-      ? ((big.dataset.entryCategory || big.dataset.category || '').toLowerCase().trim() || 'centro')
+      ? (['cenefa','esquina','cenefa_exterior','esquina_exterior','centro'].includes(rawSingle) ? rawSingle : (rawSingle.includes('esquina') ? (rawSingle.includes('exterior') ? 'esquina_exterior' : 'esquina') : (rawSingle.includes('cenefa') ? (rawSingle.includes('exterior') ? 'cenefa_exterior' : 'cenefa') : 'centro')))
       : 'centro';
 
-      if (centerInput) {
+      if (searchDisabled) {
+        if (centerInput) centerInput.setAttribute('disabled', 'disabled');
+        if (cenefaInput) cenefaInput.setAttribute('disabled', 'disabled');
+        if (centerResults) centerResults.innerHTML = '';
+        if (cenefaResults) cenefaResults.innerHTML = '';
+      }
+
+      if (centerInput && !searchDisabled) {
       if (pickerMode === 'single') {
         centerInput.placeholder = (forcedSingleCategory === 'cenefa')
           ? (lang === 'en' ? 'Select border' : 'Seleccionar cenefa')
@@ -520,7 +529,7 @@
       centerInput.dispatchEvent(new Event('input'));
     }
 
-    if (pickerMode === 'dual' && cenefaInput) {
+    if (pickerMode === 'dual' && cenefaInput && !searchDisabled) {
       const connectedCenefaIds = new Set();
       Object.keys(manualConnections || {}).forEach((folder) => {
         const match = models.find((m) => (m.categoria || '').toLowerCase() === 'cenefa' && (m.carpeta_modelo || '').toString().toLowerCase() === folder);

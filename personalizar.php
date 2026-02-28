@@ -448,38 +448,37 @@ if ($selectedEsquinaOuter && !$selectedCenefa) {
     }
 }
 
-if ($selectedCenefa && !$selectedCenefaOuter) {
-    $cenefaFolder = carpeta_modelo_de_item($selectedCenefa);
-    foreach ($models as $m) {
-        if (($m['categoria'] ?? '') !== 'cenefa_exterior') continue;
-        if (carpeta_modelo_de_item($m) === $cenefaFolder) { $selectedCenefaOuter = $m; break; }
-    }
 
-    if (!$selectedCenefaOuter) {
-        $outerDef = $conexionesOuter[$cenefaFolder] ?? null;
-        $outerCenefaFolder = strtolower(trim((string)($outerDef['cenefa'] ?? '')));
-        if ($outerCenefaFolder !== '') {
-            foreach ($models as $m) {
-                if (($m['categoria'] ?? '') !== 'cenefa' && ($m['categoria'] ?? '') !== 'cenefa_exterior') continue;
-                if (carpeta_modelo_de_item($m) === $outerCenefaFolder) { $selectedCenefaOuter = $m; break; }
-            }
+if ($selectedCenefa && !$selectedEsquina) {
+    $cenefaFolder = carpeta_modelo_de_item($selectedCenefa);
+    $mappedCornerFolder = $conexionesPrimary[$cenefaFolder] ?? '';
+    if ($mappedCornerFolder !== '') {
+        foreach ($models as $m) {
+            if (($m['categoria'] ?? '') !== 'esquina') continue;
+            if (carpeta_modelo_de_item($m) === $mappedCornerFolder) { $selectedEsquina = $m; break; }
         }
     }
 }
-if ($selectedCenefaOuter && !$selectedEsquinaOuter) {
-    $outerFolder = carpeta_modelo_de_item($selectedCenefaOuter);
-    foreach ($models as $m) {
-        if (($m['categoria'] ?? '') !== 'esquina_exterior') continue;
-        if (carpeta_modelo_de_item($m) === $outerFolder) { $selectedEsquinaOuter = $m; break; }
-    }
 
-    if (!$selectedEsquinaOuter) {
-        $mappedOuterCorner = $conexionesPrimary[$outerFolder] ?? '';
-        if ($mappedOuterCorner !== '') {
-            foreach ($models as $m) {
-                if (($m['categoria'] ?? '') !== 'esquina' && ($m['categoria'] ?? '') !== 'esquina_exterior') continue;
-                if (carpeta_modelo_de_item($m) === $mappedOuterCorner) { $selectedEsquinaOuter = $m; break; }
-            }
+if ($selectedCenefa && !$selectedCenefaOuter) {
+    $cenefaFolder = carpeta_modelo_de_item($selectedCenefa);
+    $outerDef = $conexionesOuter[$cenefaFolder] ?? null;
+    $outerCenefaFolder = strtolower(trim((string)($outerDef['cenefa'] ?? '')));
+    if ($outerCenefaFolder !== '') {
+        foreach ($models as $m) {
+            if (($m['categoria'] ?? '') !== 'cenefa_exterior' && ($m['categoria'] ?? '') !== 'cenefa') continue;
+            if (carpeta_modelo_de_item($m) === $outerCenefaFolder) { $selectedCenefaOuter = $m; break; }
+        }
+    }
+}
+if ($selectedCenefa && $selectedCenefaOuter && !$selectedEsquinaOuter) {
+    $cenefaFolder = carpeta_modelo_de_item($selectedCenefa);
+    $outerDef = $conexionesOuter[$cenefaFolder] ?? null;
+    $outerCornerFolder = strtolower(trim((string)($outerDef['esquina'] ?? '')));
+    if ($outerCornerFolder !== '') {
+        foreach ($models as $m) {
+            if (($m['categoria'] ?? '') !== 'esquina_exterior' && ($m['categoria'] ?? '') !== 'esquina') continue;
+            if (carpeta_modelo_de_item($m) === $outerCornerFolder) { $selectedEsquinaOuter = $m; break; }
         }
     }
 }
@@ -515,6 +514,8 @@ $entryCategory = strtolower(trim((string)($_GET['cat'] ?? ($editable['categoria'
 $showCenterEditor = true;
 $searchMode = ($modelSource === 'tapete') ? 'tapete' : 'modelo';
 $isBorderSelection = in_array($selectedCategory, ['cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior'], true);
+$hasDoubleRing = (bool)$selectedCenefaOuter || (bool)$selectedEsquinaOuter;
+$disableSearch = ($pickerMode === 'single' && $isBorderSelection && $hasDoubleRing);
 if ($pickerMode === 'dual' || $isBorderSelection) {
     $showCenefaExtra = (bool)$selectedCenefa;
     $showEsquinaExtra = (bool)$selectedEsquina;
@@ -559,14 +560,14 @@ if ($pickerMode === 'dual' || $isBorderSelection) {
     <section>
       <h2 data-i18n="custom_title">Personalizar Diseño</h2>
       <p><strong id="selectedModelName"><?= htmlspecialchars($selectedName, ENT_QUOTES) ?></strong></p>
-      <div class="model-search-row" data-picker-mode="<?= $pickerMode ?>" data-search-mode="<?= htmlspecialchars($searchMode, ENT_QUOTES) ?>">
+      <div class="model-search-row" data-picker-mode="<?= $pickerMode ?>" data-search-mode="<?= htmlspecialchars($searchMode, ENT_QUOTES) ?>" data-search-disabled="<?= $disableSearch ? '1' : '0' ?>">
         <div class="model-search" id="centerSearchWrap">
-          <input id="centerSearchInput" type="search" autocomplete="off" <?= $searchMode === 'tapete' ? '' : 'data-i18n-placeholder="custom_select_center"' ?> placeholder="<?= $searchMode === 'tapete' ? 'Seleccionar tapete' : 'Seleccionar centro' ?>" />
+          <input id="centerSearchInput" type="search" autocomplete="off" <?= $disableSearch ? 'disabled' : '' ?> <?= $searchMode === 'tapete' ? '' : 'data-i18n-placeholder="custom_select_center"' ?> placeholder="<?= $searchMode === 'tapete' ? 'Seleccionar tapete' : 'Seleccionar centro' ?>" />
           <div class="model-search-results" id="centerSearchResults"></div>
         </div>
         <?php if ($pickerMode === 'dual' && $searchMode !== 'tapete'): ?>
         <div class="model-search" id="cenefaSearchWrap">
-          <input id="cenefaSearchInput" type="search" autocomplete="off" data-i18n-placeholder="custom_select_cenefa" placeholder="Seleccionar cenefa" />
+          <input id="cenefaSearchInput" type="search" autocomplete="off" <?= $disableSearch ? 'disabled' : '' ?> data-i18n-placeholder="custom_select_cenefa" placeholder="Seleccionar cenefa" />
           <div class="model-search-results" id="cenefaSearchResults"></div>
         </div>
         <?php endif; ?>

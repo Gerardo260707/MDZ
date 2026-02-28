@@ -76,6 +76,21 @@ function carpeta_modelo_de_item(array $item): string {
     return '';
 }
 
+
+function imagen_con_version(string $src): string {
+    $clean = trim($src);
+    if ($clean === '' || preg_match('#^https?://#i', $clean)) return $clean;
+    $parts = parse_url($clean);
+    $path = (string)($parts['path'] ?? $clean);
+    if ($path === '') return $clean;
+    $local = __DIR__ . '/' . ltrim($path, '/');
+    if (!is_file($local)) return $clean;
+    $mtime = @filemtime($local);
+    if ($mtime === false) return $clean;
+    $sep = str_contains($clean, '?') ? '&' : '?';
+    return $clean . $sep . 'v=' . $mtime;
+}
+
 function carga_conexiones_cenefa_esquina(string $csvPath): array {
     if (!file_exists($csvPath)) return ['primary' => [], 'outer' => [], 'rows' => []];
     $h = fopen($csvPath, 'r');
@@ -239,13 +254,7 @@ if (empty($items)) {
 }
 
 if (!empty($items)) {
-usort($items, static function ($a, $b) {
-    $rankCmp = categoria_rank($a['categoria']) <=> categoria_rank($b['categoria']);
-    if ($rankCmp !== 0) {
-        return $rankCmp;
-    }
-    return strcasecmp((string)$a['nombre'], (string)$b['nombre']);
-});
+    usort($items, static fn($a, $b) => strcasecmp((string)$a['nombre'], (string)$b['nombre']));
 }
 
 $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
@@ -377,13 +386,18 @@ foreach ($items as $it) {
                 if ($cat === 'esquina') $esquinaSrc = (string)($m['imagen'] ?? $esquinaSrc);
                 if ($cat === 'cenefa_exterior') $cenefaOuterSrc = (string)($m['imagen'] ?? $cenefaOuterSrc);
                 if ($cat === 'esquina_exterior') $esquinaOuterSrc = (string)($m['imagen'] ?? $esquinaOuterSrc);
+                $mainSrc = imagen_con_version((string)($m['imagen'] ?: 'assets/placeholder-tile.svg'));
+                $cenefaSrcV = imagen_con_version($cenefaSrc);
+                $esquinaSrcV = imagen_con_version($esquinaSrc);
+                $cenefaOuterSrcV = imagen_con_version($cenefaOuterSrc);
+                $esquinaOuterSrcV = imagen_con_version($esquinaOuterSrc);
               ?>
               <article class="mosaic-card">
-                <img class="mosaic-preview-trigger" src="<?= htmlspecialchars($m['imagen'] ?: 'assets/placeholder-tile.svg', ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-model-name="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-category="<?= htmlspecialchars($cat, ENT_QUOTES) ?>" data-cenefa-src="<?= htmlspecialchars($cenefaSrc, ENT_QUOTES) ?>" data-esquina-src="<?= htmlspecialchars($esquinaSrc, ENT_QUOTES) ?>" data-cenefa-outer-src="<?= htmlspecialchars($cenefaOuterSrc, ENT_QUOTES) ?>" data-esquina-outer-src="<?= htmlspecialchars($esquinaOuterSrc, ENT_QUOTES) ?>" />
+                <img class="mosaic-preview-trigger" src="<?= htmlspecialchars($mainSrc, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-model-name="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-category="<?= htmlspecialchars($cat, ENT_QUOTES) ?>" data-cenefa-src="<?= htmlspecialchars($cenefaSrcV, ENT_QUOTES) ?>" data-esquina-src="<?= htmlspecialchars($esquinaSrcV, ENT_QUOTES) ?>" data-cenefa-outer-src="<?= htmlspecialchars($cenefaOuterSrcV, ENT_QUOTES) ?>" data-esquina-outer-src="<?= htmlspecialchars($esquinaOuterSrcV, ENT_QUOTES) ?>" />
                 <?php $catLabel = $m['categoria'] !== '' ? strtoupper((string)$m['categoria']) : 'SIN CATEGORÍA'; ?>
                 <p class="code"><?= htmlspecialchars($catLabel, ENT_QUOTES) ?> · <?= htmlspecialchars($m['identificador'], ENT_QUOTES) ?></p>
                 <p class="name"><?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?></p>
-                <a class="action cta-pill" href="personalizar.php?picker=single&id=<?= urlencode((string)$m['id']) ?>&lang=<?= $lang ?>&img=<?= urlencode((string)($m['imagen'] ?: "assets/placeholder-tile.svg")) ?>&name=<?= urlencode((string)$m['nombre']) ?>&cat=<?= urlencode((string)$m['categoria']) ?>" data-i18n="btn_customize">Personalizar</a>
+                <a class="action cta-pill" href="personalizar.php?picker=single&id=<?= urlencode((string)$m['id']) ?>&lang=<?= $lang ?>&img=<?= urlencode($mainSrc) ?>&name=<?= urlencode((string)$m['nombre']) ?>&cat=<?= urlencode((string)$m['categoria']) ?>" data-i18n="btn_customize">Personalizar</a>
               </article>
             <?php endforeach; ?>
           <?php else: ?>
