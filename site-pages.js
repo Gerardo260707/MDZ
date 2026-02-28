@@ -1664,7 +1664,7 @@
 
       function d(src, r, c, angle) {
         if (!src) return;
-        const bleed = 2;
+        const bleed = 0.9;
         pctx.save();
         pctx.imageSmoothingEnabled = false;
         pctx.translate(c * tw + tw / 2, r * th + th / 2);
@@ -1698,12 +1698,13 @@
         const cx = c.getContext('2d');
         const sw = source.naturalWidth || source.width || 512;
         const sh = source.naturalHeight || source.height || 512;
-        const scale = Math.max(512 / sw, 512 / sh);
+        const scale = Math.min(512 / sw, 512 / sh);
         const dw = sw * scale;
         const dh = sh * scale;
         const dx = (512 - dw) / 2;
         const dy = (512 - dh) / 2;
-        cx.clearRect(0, 0, 512, 512);
+        cx.fillStyle = "#fff";
+        cx.fillRect(0, 0, 512, 512);
         cx.drawImage(source, dx, dy, dw, dh);
         return c;
       };
@@ -1723,7 +1724,8 @@
         img.crossOrigin = 'anonymous';
         img.onload = () => resolve(img);
         img.onerror = () => resolve(null);
-        img.src = src;
+        const sep = src.includes('?') ? '&' : '?';
+        img.src = `${src}${sep}ov=${Date.now()}`;
       });
     }
 
