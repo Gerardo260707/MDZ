@@ -511,11 +511,12 @@ $selectedImage = $editable['imagen'] ?? '';
 $selectedCategory = $editable['categoria'] ?? '';
 $editTarget = ($pickerMode === 'dual') ? 'centro' : ($selectedCategory !== '' ? $selectedCategory : 'centro');
 $entryCategory = strtolower(trim((string)($_GET['cat'] ?? ($editable['categoria'] ?? ''))));
-$showCenterEditor = !($pickerMode === 'single' && $isBorderSelection);
 $searchMode = ($modelSource === 'tapete') ? 'tapete' : 'modelo';
 $isBorderSelection = in_array($selectedCategory, ['cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior'], true);
 $hasDoubleRing = (bool)$selectedCenefaOuter || (bool)$selectedEsquinaOuter;
-$disableSearch = ($pickerMode === 'single' && $isBorderSelection);
+$showCenterEditor = !($pickerMode === 'single' && $isBorderSelection);
+$showSearch = !($pickerMode === 'single' && $searchMode !== 'tapete' && $selectedCategory !== 'cenefa');
+$disableSearch = !$showSearch || ($pickerMode === 'single' && $isBorderSelection && $selectedCategory !== 'cenefa');
 if ($pickerMode === 'dual' || $isBorderSelection) {
     $showCenefaExtra = (bool)$selectedCenefa;
     $showEsquinaExtra = (bool)$selectedEsquina;
@@ -561,11 +562,11 @@ if ($pickerMode === 'dual' || $isBorderSelection) {
       <h2 data-i18n="custom_title">Personalizar Diseño</h2>
       <p><strong id="selectedModelName"><?= htmlspecialchars($selectedName, ENT_QUOTES) ?></strong></p>
       <div class="model-search-row" data-picker-mode="<?= $pickerMode ?>" data-search-mode="<?= htmlspecialchars($searchMode, ENT_QUOTES) ?>" data-search-disabled="<?= $disableSearch ? '1' : '0' ?>">
-        <div class="model-search" id="centerSearchWrap">
+        <?php if ($showSearch): ?><div class="model-search" id="centerSearchWrap">
           <input id="centerSearchInput" type="search" autocomplete="off" <?= $disableSearch ? 'disabled' : '' ?> <?= $searchMode === 'tapete' ? '' : 'data-i18n-placeholder="custom_select_center"' ?> placeholder="<?= $searchMode === 'tapete' ? 'Seleccionar tapete' : 'Seleccionar centro' ?>" />
           <div class="model-search-results" id="centerSearchResults"></div>
-        </div>
-        <?php if ($pickerMode === 'dual' && $searchMode !== 'tapete'): ?>
+        </div><?php endif; ?>
+        <?php if ($pickerMode === 'dual' && $searchMode !== 'tapete' && $showSearch): ?>
         <div class="model-search" id="cenefaSearchWrap">
           <input id="cenefaSearchInput" type="search" autocomplete="off" <?= $disableSearch ? 'disabled' : '' ?> data-i18n-placeholder="custom_select_cenefa" placeholder="Seleccionar cenefa" />
           <div class="model-search-results" id="cenefaSearchResults"></div>
