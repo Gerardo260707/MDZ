@@ -1,0 +1,43 @@
+<?php
+$lang = (($_GET['lang'] ?? 'es') === 'en') ? 'en' : 'es';
+?>
+<!doctype html>
+<html lang="<?= $lang ?>">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><?= $lang === 'en' ? 'Colors' : 'Colores' ?> | Mosaicos Dzununcán</title>
+  <link rel="stylesheet" href="assets.css" />
+</head>
+<body>
+  <main class="site">
+    <header class="top">
+      <div class="brand-row">
+        <div class="logo"><img src="assets/logo-dzununcan.svg" alt="Mosaicos Dzununcán" /></div>
+        <div class="langs"><span data-i18n="lang_label">Idioma</span> ▪
+          <button class="lang-btn" data-set-lang="es" data-lang-active="es">🇲🇽</button>
+          <button class="lang-btn" data-set-lang="en" data-lang-active="en">🇺🇸</button>
+        </div>
+      </div>
+      <nav>
+        <a data-keep-lang href="index.html" data-i18n="nav_home">Inicio</a>
+        <a data-keep-lang href="mosaicos.html" data-i18n="nav_mosaics">Mosaicos</a>
+        <a data-keep-lang href="galeria.html" data-i18n="nav_gallery">Galería</a>
+        <a data-keep-lang href="mantenimiento.html" data-i18n="nav_maintenance">Mantenimiento</a>
+        <a data-keep-lang href="instalacion.html" data-i18n="nav_installation">Instalación</a>
+        <a data-keep-lang href="contacto.html" data-i18n="nav_contact">Contacto</a>
+      </nav>
+    </header>
+    <div class="mosaic-strip"></div>
+
+    <section>
+      <h2 data-i18n="colors_title">Paleta de colores</h2>
+      <p data-i18n="colors_desc">Consulta todos los colores disponibles para personalizar tus diseños.</p>
+      <div id="colorsGrid" class="colors-grid"></div>
+    </section>
+  </main>
+  <script src="app.js"></script>
+  <script src="customizer-colors.js"></script>
+  <script src="site-pages.js"></script>
+</body>
+</html>

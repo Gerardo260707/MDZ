@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mosaicos</title>
+  <link rel="canonical" href="mosaicos.php" />
+  <script>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const lang = params.get('lang');
+      const target = lang ? `mosaicos.php?lang=${encodeURIComponent(lang)}` : 'mosaicos.php';
+      window.location.replace(target);
+    })();
+  </script>
+</head>
+<body>
+  <main>
+    <p>Redirigiendo a la página de mosaicos...</p>
+    <p><a href="mosaicos.php">Continuar a Mosaicos</a></p>
+  </main>
+</body>
+</html>
