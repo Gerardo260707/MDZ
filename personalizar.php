@@ -87,16 +87,6 @@ function categoria_prefix(?string $categoria): string {
     };
 }
 
-function pair_key(array $m): string {
-    $base = (string)($m['carpeta_modelo'] ?? $m['nombre'] ?? '');
-    $base = strtolower($base);
-    $base = str_replace(['centro', 'cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior', 'corner', 'bord', 'border', 'outer'], '', $base);
-    $base = preg_replace('/[^a-z0-9]+/', '-', $base);
-    return trim((string)$base, '-');
-}
-
-
-
 
 function normaliza_conexion_clave(string $value): string {
     $v = strtolower(trim($value));
@@ -469,13 +459,6 @@ if ($selectedCenefa && !$selectedEsquina) {
     }
 }
 
-if ($selectedCenefa && !$selectedEsquina) {
-    $k = pair_key($selectedCenefa);
-    foreach ($models as $m) {
-        if ($m['categoria'] === 'esquina' && pair_key($m) === $k) { $selectedEsquina = $m; break; }
-    }
-}
-
 if ($selectedEsquina && !$selectedCenefa) {
     $esquinaFolder = carpeta_modelo_de_item($selectedEsquina);
     $mappedCenefaFolder = array_search($esquinaFolder, $conexionesPrimary, true);
@@ -489,15 +472,6 @@ if ($selectedEsquina && !$selectedCenefa) {
         }
     }
 }
-
-if ($selectedEsquina && !$selectedCenefa) {
-    $k = pair_key($selectedEsquina);
-    foreach ($models as $m) {
-        if (($m['categoria'] ?? '') === 'cenefa' && pair_key($m) === $k) { $selectedCenefa = $m; break; }
-    }
-}
-
-
 
 if ($selectedCenefaOuter && !$selectedCenefa) {
     $outerFolder = carpeta_modelo_de_item($selectedCenefaOuter);
