@@ -559,24 +559,16 @@ $editTarget = ($pickerMode === 'dual') ? 'centro' : ($selectedCategory !== '' ? 
 $entryCategory = strtolower(trim((string)($_GET['cat'] ?? ($editable['categoria'] ?? ''))));
 $searchMode = ($modelSource === 'tapete') ? 'tapete' : 'modelo';
 $isBorderSelection = in_array($selectedCategory, ['cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior'], true);
-$hasDoubleRing = (bool)$selectedCenefaOuter || (bool)$selectedEsquinaOuter;
 $isSingleBorderEntry = ($pickerMode === 'single' && $isBorderSelection);
 $showCenterEditor = !$isSingleBorderEntry;
 $showCenterSearch = ($searchMode === 'tapete') || !$isSingleBorderEntry;
 $showCenefaSearch = ($searchMode !== 'tapete') && ($pickerMode === 'dual' || ($pickerMode === 'single' && $selectedCategory === 'cenefa'));
 $showSearch = $showCenterSearch || $showCenefaSearch;
 $disableSearch = false;
-if ($pickerMode === 'dual' || $isBorderSelection) {
-    $showCenefaExtra = (bool)$selectedCenefa;
-    $showEsquinaExtra = (bool)$selectedEsquina;
-    $showCenefaOuterExtra = (bool)$selectedCenefaOuter;
-    $showEsquinaOuterExtra = (bool)$selectedEsquinaOuter;
-} else {
-    $showCenefaExtra = false;
-    $showEsquinaExtra = false;
-    $showCenefaOuterExtra = false;
-    $showEsquinaOuterExtra = false;
-}
+$showCenefaExtra = (bool)$selectedCenefa;
+$showEsquinaExtra = (bool)$selectedEsquina;
+$showCenefaOuterExtra = (bool)$selectedCenefaOuter;
+$showEsquinaOuterExtra = (bool)$selectedEsquinaOuter;
 ?>
 <!doctype html>
 <html lang="<?= $lang ?>">
