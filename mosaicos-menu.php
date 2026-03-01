@@ -37,17 +37,17 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
 
       <div class="category-grid mosaic-options-grid">
         <article class="category-card">
-          <img src="assets/placeholder-tile.svg" alt="Decorados" />
+          <img src="assets/mosaicos-menu/decorados.jpg" alt="Decorados" onerror="this.src='assets/placeholder-tile.svg'" />
           <h3>Decorados</h3>
           <a class="cta-pill" href="mosaicos.php?lang=<?= $lang ?>">Ver decorados</a>
         </article>
         <article class="category-card">
-          <img src="assets/placeholder-tile.svg" alt="Personalizar" />
+          <img src="assets/mosaicos-menu/personalizar.jpg" alt="Personalizar" onerror="this.src='assets/placeholder-tile.svg'" />
           <h3>Personalizar</h3>
           <a class="cta-pill" href="personalizar.php?lang=<?= $lang ?>">Ir al simulador</a>
         </article>
         <article class="category-card">
-          <img src="assets/placeholder-tile.svg" alt="Especiales" />
+          <img src="assets/mosaicos-menu/especiales.jpg" alt="Especiales" onerror="this.src='assets/placeholder-tile.svg'" />
           <h3>Especiales</h3>
           <a class="cta-pill" href="especiales.php?lang=<?= $lang ?>">Ver especiales</a>
         </article>

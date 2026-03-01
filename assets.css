@@ -128,6 +128,10 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .inline-quote-container{margin-top:14px;display:none}
 .inline-quote-container.open{display:block}
 .mosaic-options-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+
+.mosaic-options-grid .category-card{display:grid;gap:10px;align-content:start}
+.mosaic-options-grid .category-card img{width:100%;height:auto;aspect-ratio:16/7;object-fit:cover;object-position:center;border:1px solid #ccc;display:block}
+
 .cta-pill{display:inline-block;padding:10px 14px !important;border-radius:999px !important;background:linear-gradient(90deg,#f39845 0%,#f16800 100%) !important;color:#fff !important;font-weight:700;letter-spacing:.2px;text-decoration:none !important;box-shadow:0 8px 18px rgba(241,104,0,.28);transition:transform .16s ease,box-shadow .16s ease;border:0}
 .cta-pill:hover{transform:translateY(-1px) scale(1.03);box-shadow:0 12px 24px rgba(241,104,0,.32)}
 
