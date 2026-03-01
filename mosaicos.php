@@ -530,13 +530,18 @@ foreach ($items as $it) {
                     }
                 }
                 $customizeUrl = 'personalizar.php?' . http_build_query(array_filter($customizeParams, static fn($v) => $v !== ''));
+                $isBorderCat = in_array($cat, ['cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior'], true);
+                // En mosaicos decorados, el botón de personalizar para conexiones de borde se muestra únicamente en la cenefa.
+                $showCustomizeBtn = !$isBorderCat || $cat === 'cenefa';
               ?>
               <article class="mosaic-card">
                 <img class="mosaic-preview-trigger" src="<?= htmlspecialchars($mainSrc, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-model-name="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-category="<?= htmlspecialchars($cat, ENT_QUOTES) ?>" data-cenefa-src="<?= htmlspecialchars($cenefaSrcV, ENT_QUOTES) ?>" data-esquina-src="<?= htmlspecialchars($esquinaSrcV, ENT_QUOTES) ?>" data-cenefa-outer-src="<?= htmlspecialchars($cenefaOuterSrcV, ENT_QUOTES) ?>" data-esquina-outer-src="<?= htmlspecialchars($esquinaOuterSrcV, ENT_QUOTES) ?>" />
                 <?php $catLabel = $m['categoria'] !== '' ? strtoupper((string)$m['categoria']) : 'SIN CATEGORÍA'; ?>
                 <p class="code"><?= htmlspecialchars($catLabel, ENT_QUOTES) ?> · <?= htmlspecialchars($m['identificador'], ENT_QUOTES) ?></p>
                 <p class="name"><?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?></p>
+                <?php if ($showCustomizeBtn): ?>
                 <a class="action cta-pill" href="<?= htmlspecialchars($customizeUrl, ENT_QUOTES) ?>" data-i18n="btn_customize">Personalizar</a>
+                <?php endif; ?>
               </article>
             <?php endforeach; ?>
           <?php else: ?>
