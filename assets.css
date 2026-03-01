@@ -154,7 +154,7 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .model-overlay.open .model-overlay-card{transform:translateY(0) scale(1);opacity:1}
 .model-overlay-close{position:absolute;right:10px;top:8px;z-index:3;border:0;background:rgba(0,0,0,.5);color:#fff;width:34px;height:34px;border-radius:50%;font-size:24px;line-height:1;cursor:pointer}
 .model-overlay-pattern{width:100%;height:100%;display:block;background:#f0f0f0;object-fit:contain}
-.model-overlay-footer{height:46px;background:#000;color:#d7ecff;display:flex;align-items:center;padding:0 20px;font-size:12px;letter-spacing:.8px}
+.model-overlay-footer{height:46px;background:rgba(0,0,0,.78);color:#f2f7ff;display:flex;align-items:center;padding:0 20px;font-size:12px;letter-spacing:.8px;backdrop-filter:blur(2px)}
 
 .compare-toggle{background:linear-gradient(90deg,#8b5a3c 0%,#6e432b 100%) !important}
 .compare-toggle.active{box-shadow:0 0 0 3px rgba(139,90,60,.28),0 10px 24px rgba(110,67,43,.35) !important;transform:translateY(-1px)}

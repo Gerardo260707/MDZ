@@ -2281,10 +2281,16 @@
       return loadImageWithFallback(src, { cacheBust: true });
     }
 
+    function buildOverlayLabel(modelName) {
+      const prefix = lang === 'en' ? 'Model:' : 'Modelo:';
+      const safeName = String(modelName || (lang === 'en' ? 'Model' : 'Modelo')).trim();
+      return `${prefix} ${safeName}`;
+    }
+
     function payloadFromImg(img) {
       return {
         src: img.getAttribute('src') || '',
-        modelName: img.dataset.modelName || img.alt || 'Modelo',
+        modelName: img.dataset.overlayModelName || img.dataset.modelName || img.alt || (lang === 'en' ? 'Model' : 'Modelo'),
         category: (img.dataset.category || '').toLowerCase(),
         cenefaSrc: img.dataset.cenefaSrc || '',
         esquinaSrc: img.dataset.esquinaSrc || '',
@@ -2314,7 +2320,7 @@
       clearTimeout(closeTimer);
       ensureCanvasSize();
       await renderOverlayPayload(pctx, patternCanvas, payload);
-      nameEl.textContent = `MODELO: ${(payload.modelName || 'Modelo').toUpperCase()}`;
+      nameEl.textContent = buildOverlayLabel(payload.modelName);
       overlay.classList.remove('closing');
       overlay.classList.add('open');
       overlay.setAttribute('aria-hidden', 'false');
@@ -2346,7 +2352,7 @@
       await Promise.all(tasks);
 
       payloads.forEach((payload, idx) => {
-        if (labels[idx]) labels[idx].textContent = `MODELO ${String.fromCharCode(65 + idx)}: ${(payload.modelName || 'Modelo').toUpperCase()}`;
+        if (labels[idx]) labels[idx].textContent = buildOverlayLabel(payload.modelName);
       });
 
       compareSlots.forEach((slot, idx) => {
