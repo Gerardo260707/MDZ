@@ -161,7 +161,9 @@
     const leftLabel = q('compareLabelLeft');
     const rightLabel = q('compareLabelRight');
     const sharedPalette = q('comparePaletteShared');
-    if (!toggleBtn || !comparator || !leftCanvas || !rightCanvas || !patternCanvas || !leftLabel || !rightLabel || !sharedPalette || !colors.length) return;
+    const compareUndoBtn = q('compareUndo');
+    const compareHomeBtn = q('compareHome');
+    if (!toggleBtn || !comparator || !leftCanvas || !rightCanvas || !patternCanvas || !leftLabel || !rightLabel || !sharedPalette || !compareUndoBtn || !compareHomeBtn || !colors.length) return;
 
     const lang = getLang();
     // Siempre iniciar oculto; solo mostrar al presionar el botón.
@@ -173,6 +175,31 @@
     let rightColor = '#FFFFFF';
     let leftColorName = lang === 'en' ? 'Color 1' : 'Color 1';
     let rightColorName = lang === 'en' ? 'Color 2' : 'Color 2';
+
+    const compareHistory = [];
+
+    function snapshotCompareState() {
+      return { leftColor, rightColor, leftColorName, rightColorName };
+    }
+
+    function applyCompareState(state) {
+      if (!state) return;
+      leftColor = state.leftColor;
+      rightColor = state.rightColor;
+      leftColorName = state.leftColorName;
+      rightColorName = state.rightColorName;
+      updateCompareLabels();
+      paintSolid(leftCanvas, leftColor);
+      paintSolid(rightCanvas, rightColor);
+      paintPattern();
+      compareUndoBtn.disabled = compareHistory.length === 0;
+    }
+
+    function pushCompareState() {
+      compareHistory.push(snapshotCompareState());
+      if (compareHistory.length > 80) compareHistory.shift();
+      compareUndoBtn.disabled = compareHistory.length === 0;
+    }
 
     function paintSolid(canvas, hex) {
       const ctx = canvas.getContext('2d');
@@ -245,6 +272,7 @@
     }
 
     leftCanvas.addEventListener('click', () => {
+      pushCompareState();
       leftColor = selectedColor.hex;
       leftColorName = (selectedColor.name || selectedColor.id || 'Color 1').trim();
       updateCompareLabels();
@@ -252,11 +280,29 @@
       paintPattern();
     });
     rightCanvas.addEventListener('click', () => {
+      pushCompareState();
       rightColor = selectedColor.hex;
       rightColorName = (selectedColor.name || selectedColor.id || 'Color 2').trim();
       updateCompareLabels();
       paintSolid(rightCanvas, rightColor);
       paintPattern();
+    });
+
+
+    compareUndoBtn.addEventListener('click', () => {
+      if (!compareHistory.length) return;
+      const previous = compareHistory.pop();
+      applyCompareState(previous);
+    });
+
+    compareHomeBtn.addEventListener('click', () => {
+      pushCompareState();
+      applyCompareState({
+        leftColor: '#FFFFFF',
+        rightColor: '#FFFFFF',
+        leftColorName: lang === 'en' ? 'Color 1' : 'Color 1',
+        rightColorName: lang === 'en' ? 'Color 2' : 'Color 2'
+      });
     });
 
     toggleBtn.addEventListener('click', () => {
@@ -273,6 +319,7 @@
     paintSolid(leftCanvas, leftColor);
     paintSolid(rightCanvas, rightColor);
     paintPattern();
+    compareUndoBtn.disabled = true;
   }
 
   function initCategories() {
