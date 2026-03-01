@@ -620,7 +620,6 @@ $showEsquinaOuterExtra = (bool)$selectedEsquinaOuter;
       <div class="custom-wrap" id="customWrap" data-has-model="<?= $editable ? '1' : '0' ?>">
         <div>
           <p data-i18n="custom_step1">1. Selecciona un color.</p>
-          <p class="note" data-i18n="custom_step_area">2. Da clic en una sección del mosaico (PNG) para aplicar el color solo en esa zona.</p>
           <?php if ($showCenterEditor): ?>
           <div class="vector-editor" id="vectorEditor"></div>
           <?php endif; ?>

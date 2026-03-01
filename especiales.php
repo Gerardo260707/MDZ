@@ -71,7 +71,6 @@ $labels=[
     <div class="mosaic-strip"></div>
     <section>
       <h2><?= $lang==='en' ? 'Specials' : 'Especiales' ?></h2>
-      <p><?= $lang==='en' ? 'Classify folders in config/categorias_especiales.csv (formas, antiderrapantes, zoclos).' : 'Clasifica carpetas en config/categorias_especiales.csv (formas, antiderrapantes, zoclos).' ?></p>
     </section>
     <section class="panel especiales-grid">
       <?php foreach ($items as $it): $c=$it['cat']; $lbl=$labels[$lang][$c] ?? $labels[$lang]['other']; ?>
