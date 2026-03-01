@@ -2015,9 +2015,12 @@
     }
 
     function compareModeMessage(count) {
+      const mobile = isMobileCompareMode();
       if (lang === 'en') {
-        return `Compare mode is on: select ${count} models (2 or more) to view them side by side, or press the button again to exit.`;
+        if (mobile) return 'Compare mode is on: select 2 models to view them side by side, or press the button again to exit.';
+        return `Compare mode is on: select ${count} models or more to view them side by side, or press the button again to exit.`;
       }
+      if (mobile) return 'Modo comparación activado: selecciona 2 modelos para verlos lado a lado, o presiona el botón nuevamente para salir.';
       return `Modo comparación activado: selecciona ${count} modelos o más para verlos lado a lado, o presiona el botón nuevamente para salir.`;
     }
 
