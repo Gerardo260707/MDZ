@@ -1999,6 +1999,7 @@
     const compareCountPlus = q('compareCountPlus');
     const compareCountValue = q('compareCountValue');
     if (!overlay || !patternCanvas || !nameEl) return;
+    const lang = getLang();
 
     const pctx = patternCanvas.getContext('2d');
     const pctxA = patternCanvasA ? patternCanvasA.getContext('2d') : null;
@@ -2011,9 +2012,9 @@
 
     function compareModeMessage(count) {
       if (lang === 'en') {
-        return `Compare mode is on: select ${count} models to view them side by side, or press the button again to exit.`;
+        return `Compare mode is on: select ${count} models (2 or more) to view them side by side, or press the button again to exit.`;
       }
-      return `Modo comparación activado: selecciona ${count} modelos para verlos lado a lado, o presiona el botón nuevamente para salir.`;
+      return `Modo comparación activado: selecciona ${count} modelos o más para verlos lado a lado, o presiona el botón nuevamente para salir.`;
     }
 
     function blockedConnectedMessage() {
