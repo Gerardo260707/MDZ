@@ -360,6 +360,17 @@
     });
   }
 
+
+  function getPerceivedLightness(hex) {
+    if (typeof hex !== 'string') return -1;
+    const clean = hex.trim().replace('#', '');
+    if (!/^[0-9A-Fa-f]{6}$/.test(clean)) return -1;
+    const r = parseInt(clean.slice(0, 2), 16);
+    const g = parseInt(clean.slice(2, 4), 16);
+    const b = parseInt(clean.slice(4, 6), 16);
+    return (0.2126 * r) + (0.7152 * g) + (0.0722 * b);
+  }
+
   function getCustomizerPalette() {
     const fallback = [
   { id: 'A10', hex: '#5860F9', name: 'A10' },
@@ -441,7 +452,12 @@
         hex: c.hex.trim().toUpperCase(),
         name: (c.name || c.id).trim()
       }))
-      .filter((c) => /^#[0-9A-F]{6}$/.test(c.hex) && c.id.length > 0);
+      .filter((c) => /^#[0-9A-F]{6}$/.test(c.hex) && c.id.length > 0)
+      .sort((a, b) => {
+        const lightnessDiff = getPerceivedLightness(b.hex) - getPerceivedLightness(a.hex);
+        if (lightnessDiff !== 0) return lightnessDiff;
+        return a.id.localeCompare(b.id, 'es', { numeric: true, sensitivity: 'base' });
+      });
   }
 
 
