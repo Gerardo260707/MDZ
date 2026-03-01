@@ -3,7 +3,7 @@ window.CUSTOMIZER_PDF_TEMPLATE = {
   logo: { src: '', x: 70, y: 48, width: 200, height: 70 },
   title: { x: 70, y: 150, text: 'Mosaicos Dzununcán' },
   model: { x: 70, y: 188 },
-  contact: { x: 70, y: 218, text: 'ventas@mosaicosdzununcan.com · (999) 406-9083 · (999) 286-6163' },
+  contact: { x: 70, y: 218, text: 'ventas@mosaicosdzununcan.com · Tienda: (999) 217 9326 · Fábrica: (999) 249 5158' },
   pattern: { x: 70, y: 260, width: 900, height: 600 },
   colorsTitle: { x: 70, y: 910, text: 'Colores usados' },
   colors: { startX: 70, startY: 958, rowGap: 48, colGap: 450, columns: 2 }

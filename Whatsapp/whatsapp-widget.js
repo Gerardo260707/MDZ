@@ -40,7 +40,7 @@
     panel.querySelector('#waFloatCancel').addEventListener('click', ()=> panel.classList.remove('open'));
     panel.querySelector('#waFloatSend').addEventListener('click', ()=>{
       const msg = (panel.querySelector('#waFloatMessage').value || '').trim() || 'Hola, me gustaría información y una cotización.';
-      window.location.assign(`https://wa.me/529992495158?text=${encodeURIComponent(msg)}`);
+      window.location.assign(`https://wa.me/529992179326?text=${encodeURIComponent(msg)}`);
     });
   }
 
