@@ -592,7 +592,7 @@ $isBorderSelection = in_array($selectedCategory, ['cenefa', 'esquina', 'cenefa_e
 $isSingleBorderEntry = ($pickerMode === 'single' && $isBorderSelection);
 $showCenterEditor = !$isSingleBorderEntry;
 $showCenterSearch = ($searchMode === 'tapete') || !$isSingleBorderEntry;
-$showCenefaSearch = ($searchMode !== 'tapete') && ($pickerMode === 'dual' || ($pickerMode === 'single' && $selectedCategory === 'cenefa'));
+$showCenefaSearch = ($searchMode !== 'tapete') && ($pickerMode === 'dual' || ($pickerMode === 'single' && in_array($entryCategory, ['centro', 'cenefa'], true)));
 $showSearch = $showCenterSearch || $showCenefaSearch;
 $disableSearch = false;
 $showCenefaExtra = (bool)$selectedCenefa;

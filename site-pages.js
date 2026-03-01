@@ -977,6 +977,13 @@
     const selectedCenefaOuter = models.find((m) => String(m.id) === String(selection.cenefaOuterId || '')) || null;
     const selectedEsquinaOuter = models.find((m) => String(m.id) === String(selection.esquinaOuterId || '')) || null;
 
+    let src = '';
+    let centerSrc = '';
+    let cenefaSrc = '';
+    let esquinaSrc = '';
+    let cenefaOuterSrc = '';
+    let esquinaOuterSrc = '';
+
 
     if (searchMode === 'tapete') {
       centerInput && centerInput.addEventListener('input', renderTapeteSelector);
@@ -1065,7 +1072,7 @@
       centerInput.dispatchEvent(new Event('input'));
     }
 
-    if ((pickerMode === 'dual' || (pickerMode === 'single' && forcedSingleCategory === 'cenefa')) && cenefaInput && !searchDisabled) {
+    if (cenefaInput && !searchDisabled) {
       const connectedCenefaIds = new Set();
       Object.keys(manualConnections || {}).forEach((folder) => {
         const match = models.find((m) => (m.categoria || '').toLowerCase() === 'cenefa' && (m.carpeta_modelo || '').toString().toLowerCase() === folder);
@@ -1096,12 +1103,12 @@
     }
     }
 
-    const src = normalizeAssetSrc(big.dataset.image || '');
-    const centerSrc = normalizeAssetSrc(big.dataset.centerImage || '');
-    const cenefaSrc = normalizeAssetSrc(big.dataset.cenefaImage || '');
-    const esquinaSrc = normalizeAssetSrc(big.dataset.esquinaImage || '');
-    const cenefaOuterSrc = normalizeAssetSrc(big.dataset.cenefaOuterImage || '');
-    const esquinaOuterSrc = normalizeAssetSrc(big.dataset.esquinaOuterImage || '');
+    src = normalizeAssetSrc(big.dataset.image || '');
+    centerSrc = normalizeAssetSrc(big.dataset.centerImage || '');
+    cenefaSrc = normalizeAssetSrc(big.dataset.cenefaImage || '');
+    esquinaSrc = normalizeAssetSrc(big.dataset.esquinaImage || '');
+    cenefaOuterSrc = normalizeAssetSrc(big.dataset.cenefaOuterImage || '');
+    esquinaOuterSrc = normalizeAssetSrc(big.dataset.esquinaOuterImage || '');
     const cenefaAltRotate = String(big.dataset.cenefaAltRotate || '').trim() === '1';
     const cenefaOuterAltRotate = String(big.dataset.cenefaOuterAltRotate || '').trim() === '1';
     const editTarget = (big.dataset.editTarget || '').toLowerCase();
