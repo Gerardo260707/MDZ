@@ -9,7 +9,7 @@ $labels = [
   'decorated_cta' => $lang === 'en' ? 'View decorated' : 'Ver decorados',
   'customize_cta' => $lang === 'en' ? 'Go to simulator' : 'Ir al simulador',
   'specials_cta' => $lang === 'en' ? 'View specials' : 'Ver especiales',
-  'decorated_direct_link' => $lang === 'en' ? 'Go directly to border designs (cenefas)' : 'Ir directo a diseños de cenefas',
+  'decorated_direct_link' => $lang === 'en' ? 'View borders' : 'Ver cenefas',
 ];
 ?>
 <!doctype html>
