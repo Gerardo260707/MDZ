@@ -1022,7 +1022,7 @@
 
       if (cenefaSrc || esquinaSrc || cenefaOuterSrc || esquinaOuterSrc) {
         const hasOuter = Boolean(cenefaOuterSrc || esquinaOuterSrc);
-        const cols = hasOuter ? 14 : 12;
+        const cols = hasOuter ? 15 : 12;
         const rows = hasOuter ? 10 : 8;
         const tw = w / cols;
         const th = h / rows;
@@ -1749,7 +1749,7 @@
       const esquinaOuterImg = asTileSource(esquinaOuterRaw);
 
       const hasOuter = Boolean(cenefaOuterImg || esquinaOuterImg);
-      const cols = hasOuter ? 14 : 12;
+      const cols = hasOuter ? 15 : 12;
       const rows = hasOuter ? 10 : 8;
       const tw = canvas.width / cols;
       const th = canvas.height / rows;
@@ -1861,28 +1861,21 @@
       pctx.clearRect(0, 0, w, h);
 
       const hasOuter = Boolean(cenefaOuterImg || esquinaOuterImg);
-      const cols = hasOuter ? 10 : 8;
-      const rows = hasOuter ? 8 : 6;
+      const cols = hasOuter ? 12 : 8;
+      const rows = hasOuter ? 9 : 6;
       const tw = w / cols;
       const th = h / rows;
-      const square = Math.min(tw, th);
-      const gridOffsetX = hasOuter ? (w - square * cols) / 2 : 0;
-      const gridOffsetY = hasOuter ? (h - square * rows) / 2 : 0;
       pctx.fillStyle = '#fff';
       pctx.fillRect(0, 0, w, h);
 
       function d(src, r, c, angle) {
         if (!src) return;
         const bleed = 1.35;
-        const drawW = hasOuter ? square : tw;
-        const drawH = hasOuter ? square : th;
-        const cx = hasOuter ? (gridOffsetX + c * square + square / 2) : (c * tw + tw / 2);
-        const cy = hasOuter ? (gridOffsetY + r * square + square / 2) : (r * th + th / 2);
         pctx.save();
         pctx.imageSmoothingEnabled = false;
-        pctx.translate(cx, cy);
+        pctx.translate(c * tw + tw / 2, r * th + th / 2);
         pctx.rotate(angle || 0);
-        pctx.drawImage(src, -(drawW / 2 + bleed), -(drawH / 2 + bleed), drawW + bleed * 2, drawH + bleed * 2);
+        pctx.drawImage(src, -(tw / 2 + bleed), -(th / 2 + bleed), tw + bleed * 2, th + bleed * 2);
         pctx.restore();
       }
 
