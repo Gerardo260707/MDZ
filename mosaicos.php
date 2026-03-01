@@ -349,6 +349,7 @@ $itemsCentros = array_values(array_filter($items, static fn($m) => strtolower((s
 $itemsCenefas = array_values(array_filter($items, static fn($m) => strtolower((string)($m['categoria'] ?? '')) === 'cenefa'));
 usort($itemsCentros, static fn($a, $b) => strcasecmp((string)($a['nombre'] ?? ''), (string)($b['nombre'] ?? '')));
 usort($itemsCenefas, static fn($a, $b) => strcasecmp((string)($a['nombre'] ?? ''), (string)($b['nombre'] ?? '')));
+
 $itemsCenefasSimples = [];
 $itemsCenefasDobles = [];
 foreach ($itemsCenefas as $cen) {
@@ -358,6 +359,44 @@ foreach ($itemsCenefas as $cen) {
     if ($isDouble) $itemsCenefasDobles[] = $cen;
     else $itemsCenefasSimples[] = $cen;
 }
+
+$expandirGrupoCenefa = static function(array $cenefasBase) use ($conexionesPrimary, $conexionesOuter, $byFolder): array {
+    $res = [];
+    $seen = [];
+    foreach ($cenefasBase as $cen) {
+        $cenefaFolder = carpeta_modelo_de_item($cen);
+        $toAdd = [$cen];
+
+        $innerCornerFolder = (string)($conexionesPrimary[$cenefaFolder] ?? '');
+        if ($innerCornerFolder !== '' && isset($byFolder[$innerCornerFolder]['esquina'])) {
+            $toAdd[] = $byFolder[$innerCornerFolder]['esquina'];
+        }
+
+        $outer = (array)($conexionesOuter[$cenefaFolder] ?? []);
+        $outerC = strtolower(trim((string)($outer['cenefa'] ?? '')));
+        $outerE = strtolower(trim((string)($outer['esquina'] ?? '')));
+        if ($outerC !== '') {
+            if (isset($byFolder[$outerC]['cenefa_exterior'])) $toAdd[] = $byFolder[$outerC]['cenefa_exterior'];
+            elseif (isset($byFolder[$outerC]['cenefa'])) $toAdd[] = $byFolder[$outerC]['cenefa'];
+        }
+        if ($outerE !== '') {
+            if (isset($byFolder[$outerE]['esquina_exterior'])) $toAdd[] = $byFolder[$outerE]['esquina_exterior'];
+            elseif (isset($byFolder[$outerE]['esquina'])) $toAdd[] = $byFolder[$outerE]['esquina'];
+        }
+
+        foreach ($toAdd as $item) {
+            $k = (string)($item['id'] ?? '') . '|' . strtolower((string)($item['categoria'] ?? ''));
+            if ($k !== '|' && isset($seen[$k])) continue;
+            $seen[$k] = true;
+            $res[] = $item;
+        }
+    }
+    usort($res, static fn($a, $b) => strcasecmp((string)($a['nombre'] ?? ''), (string)($b['nombre'] ?? '')));
+    return $res;
+};
+
+$itemsCenefasSimples = $expandirGrupoCenefa($itemsCenefasSimples);
+$itemsCenefasDobles = $expandirGrupoCenefa($itemsCenefasDobles);
 
 $sectionsDecorados = [
     [

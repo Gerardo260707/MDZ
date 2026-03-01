@@ -162,11 +162,11 @@
     if (!toggleBtn || !comparator || !leftCanvas || !rightCanvas || !previewCanvas || !sharedPalette || !colors.length) return;
 
     const lang = getLang();
-    toggleBtn.textContent = lang === 'en' ? 'Color comparator' : 'Comparador de colores';
+    toggleBtn.textContent = lang === 'en' ? 'Compare colors' : 'Comparar colores';
 
-    const gridSize = 12;
-    const leftState = { cells: new Array(gridSize * gridSize).fill((colors[0] || { hex: '#000000' }).hex) };
-    const rightState = { cells: new Array(gridSize * gridSize).fill((colors[1] || colors[0] || { hex: '#000000' }).hex) };
+    const gridSize = 6;
+    const leftState = { cells: new Array(gridSize * gridSize).fill('#FFFFFF') };
+    const rightState = { cells: new Array(gridSize * gridSize).fill('#FFFFFF') };
     let selectedColor = colors[0] || { id: 'X', hex: '#000000' };
 
     function drawEditor(canvas, state) {
@@ -177,13 +177,11 @@
       const cellW = w / gridSize;
       const cellH = h / gridSize;
       ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
       for (let r = 0; r < gridSize; r++) {
         for (let c = 0; c < gridSize; c++) {
           const idx = r * gridSize + c;
-          const baseA = '#f4f4f4';
-          const baseB = '#dfdfdf';
-          ctx.fillStyle = ((r + c) % 2 === 0) ? baseA : baseB;
-          ctx.fillRect(c * cellW, r * cellH, cellW, cellH);
           ctx.fillStyle = state.cells[idx] || '#ffffff';
           ctx.fillRect(c * cellW + 1, r * cellH + 1, cellW - 2, cellH - 2);
         }
@@ -206,26 +204,18 @@
       if (!ctx) return;
       const w = previewCanvas.width;
       const h = previewCanvas.height;
-      const cols = 10;
-      const rows = 6;
+      const cols = 6;
+      const rows = 4;
       const tileW = w / cols;
       const tileH = h / rows;
-      const cellW = tileW / gridSize;
-      const cellH = tileH / gridSize;
       ctx.clearRect(0, 0, w, h);
       for (let tr = 0; tr < rows; tr++) {
         for (let tc = 0; tc < cols; tc++) {
           const useLeft = ((tr + tc) % 2 === 0);
-          const state = useLeft ? leftState : rightState;
           const ox = tc * tileW;
           const oy = tr * tileH;
-          for (let r = 0; r < gridSize; r++) {
-            for (let c = 0; c < gridSize; c++) {
-              const idx = r * gridSize + c;
-              ctx.fillStyle = state.cells[idx] || '#ffffff';
-              ctx.fillRect(ox + c * cellW, oy + r * cellH, cellW + 0.3, cellH + 0.3);
-            }
-          }
+          const sourceCanvas = useLeft ? leftCanvas : rightCanvas;
+          ctx.drawImage(sourceCanvas, ox, oy, tileW, tileH);
         }
       }
       ctx.strokeStyle = 'rgba(0,0,0,.22)';
@@ -282,7 +272,7 @@
       else comparator.setAttribute('hidden', 'hidden');
       toggleBtn.textContent = opening
         ? (lang === 'en' ? 'Hide comparator' : 'Ocultar comparador')
-        : (lang === 'en' ? 'Color comparator' : 'Comparador de colores');
+        : (lang === 'en' ? 'Compare colors' : 'Comparar colores');
     });
 
     buildPalette(sharedPalette);

@@ -33,21 +33,21 @@ $lang = (($_GET['lang'] ?? 'es') === 'en') ? 'en' : 'es';
     <section>
       <h2 data-i18n="colors_title">Paleta de colores</h2>
       <p data-i18n="colors_desc">Consulta todos los colores disponibles para personalizar tus diseños.</p>
-      <button id="toggleColorComparator" class="action cta-pill" type="button">Comparador de colores</button>
+      <button id="toggleColorComparator" class="action cta-pill" type="button">Comparar colores</button>
       <div id="colorComparator" class="color-comparator" hidden>
         <div class="color-comparator-canvases">
           <section class="color-compare-editor" data-editor="left">
             <h3>Modelo A</h3>
-            <canvas id="compareCanvasLeft" width="320" height="320" aria-label="Comparador lienzo izquierdo"></canvas>
+            <canvas id="compareCanvasLeft" width="360" height="360" aria-label="Comparador lienzo izquierdo"></canvas>
             </section>
           <section class="color-compare-editor" data-editor="right">
             <h3>Modelo B</h3>
-            <canvas id="compareCanvasRight" width="320" height="320" aria-label="Comparador lienzo derecho"></canvas>
+            <canvas id="compareCanvasRight" width="360" height="360" aria-label="Comparador lienzo derecho"></canvas>
           </section>
         </div>
         <section class="color-compare-preview-wrap">
           <h3>Vista grande (ajedrez)</h3>
-          <canvas id="comparePreviewCanvas" width="760" height="420" aria-label="Vista grande de comparación"></canvas>
+          <canvas id="comparePreviewCanvas" width="1200" height="800" aria-label="Vista grande de comparación"></canvas>
           <div id="comparePaletteShared" class="palette compare-palette"></div>
         </section>
       </div>
