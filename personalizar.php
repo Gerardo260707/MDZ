@@ -619,7 +619,8 @@ $showEsquinaOuterExtra = (bool)$selectedEsquinaOuter;
     <section class="panel">
       <div class="custom-wrap" id="customWrap" data-has-model="<?= $editable ? '1' : '0' ?>">
         <div>
-          <p data-i18n="custom_step1">1. Selecciona un color.</p>
+          <p data-i18n="custom_step1">Selecciona un color, luego dar click sobre la imagen.</p>
+          <p class="note" data-i18n="custom_color_policy">La cantidad de colores debe ser igual a los que tiene la imagen de línea. Si desea sumar más colores aumentará el costo por pieza. El máximo es de 6 colores por modelo.</p>
           <?php if ($showCenterEditor): ?>
           <div class="vector-editor" id="vectorEditor"></div>
           <?php endif; ?>
