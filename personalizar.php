@@ -73,6 +73,7 @@ function carga_conexiones_cenefa_esquina(string $csvPath): array {
             'esquina' => $esquina,
             'cenefa_exterior' => $cenefaOuter,
             'esquina_exterior' => $esquinaOuter,
+            'cenefa_rotacion_alterna' => $cenefaAltRotate || !empty($cenefa['cenefa_rotacion_alterna']),
         ];
     }
     fclose($h);
@@ -252,6 +253,8 @@ function carga_tapetes_csv(string $csvPath, array $models): array {
         $esquinaQ = trim((string)($row[3] ?? ''));
         $cenefaOuterQ = trim((string)($row[4] ?? ''));
         $esquinaOuterQ = trim((string)($row[5] ?? ''));
+        $cenefaAltRotateRaw = trim((string)($row[6] ?? ''));
+        $cenefaAltRotate = in_array(strtolower($cenefaAltRotateRaw), ['1','true','si','sí','yes'], true);
         if ($name === '' || str_starts_with($name, '#')) continue;
 
         $centro = find_model($models, $centroQ);
@@ -267,6 +270,7 @@ function carga_tapetes_csv(string $csvPath, array $models): array {
             'esquina' => $esquina,
             'cenefa_exterior' => $cenefaOuter,
             'esquina_exterior' => $esquinaOuter,
+            'cenefa_rotacion_alterna' => $cenefaAltRotate || !empty($cenefa['cenefa_rotacion_alterna']),
         ];
     }
     fclose($h);
@@ -388,6 +392,8 @@ $cenefaImgParam = trim((string)($_GET['cenefa_img'] ?? ''));
 $esquinaImgParam = trim((string)($_GET['esquina_img'] ?? ''));
 $cenefaOuterImgParam = trim((string)($_GET['cenefa_outer_img'] ?? ''));
 $esquinaOuterImgParam = trim((string)($_GET['esquina_outer_img'] ?? ''));
+$cenefaAltRotateParam = trim((string)($_GET['cenefa_alt_rotate'] ?? ''));
+$cenefaOuterAltRotateParam = trim((string)($_GET['cenefa_outer_alt_rotate'] ?? ''));
 if (!$selectedCenter && $centerImgParam !== '') {
     $selectedCenter = [
         'id' => 0,
@@ -396,7 +402,7 @@ if (!$selectedCenter && $centerImgParam !== '') {
         'categoria' => 'centro',
         'identificador' => '',
         'carpeta_modelo' => '',
-        'cenefa_rotacion_alterna' => 0,
+        'cenefa_rotacion_alterna' => in_array(strtolower($cenefaAltRotateParam), ['1','true','si','sí','yes'], true) ? 1 : 0,
     ];
 }
 if (!$selectedCenefa && $cenefaImgParam !== '') {
@@ -431,7 +437,7 @@ if (!$selectedCenefaOuter && $cenefaOuterImgParam !== '') {
         'categoria' => 'cenefa_exterior',
         'identificador' => '',
         'carpeta_modelo' => '',
-        'cenefa_rotacion_alterna' => 0,
+        'cenefa_rotacion_alterna' => in_array(strtolower($cenefaOuterAltRotateParam), ['1','true','si','sí','yes'], true) ? 1 : 0,
     ];
 }
 if (!$selectedEsquinaOuter && $esquinaOuterImgParam !== '') {
@@ -444,6 +450,13 @@ if (!$selectedEsquinaOuter && $esquinaOuterImgParam !== '') {
         'carpeta_modelo' => '',
         'cenefa_rotacion_alterna' => 0,
     ];
+}
+
+if ($selectedCenefa && $cenefaAltRotateParam !== '') {
+    $selectedCenefa['cenefa_rotacion_alterna'] = in_array(strtolower($cenefaAltRotateParam), ['1','true','si','sí','yes'], true) ? 1 : 0;
+}
+if ($selectedCenefaOuter && $cenefaOuterAltRotateParam !== '') {
+    $selectedCenefaOuter['cenefa_rotacion_alterna'] = in_array(strtolower($cenefaOuterAltRotateParam), ['1','true','si','sí','yes'], true) ? 1 : 0;
 }
 
 if ($selectedCenefa && trim((string)($selectedCenefa['imagen'] ?? '')) === '' && $cenefaImgParam !== '') {

@@ -2010,6 +2010,7 @@
       const esquinaSrc = normalizeAssetSrc(canvas.dataset.esquinaImage || '');
       const cenefaOuterSrc = normalizeAssetSrc(canvas.dataset.cenefaOuterImage || '');
       const esquinaOuterSrc = normalizeAssetSrc(canvas.dataset.esquinaOuterImage || '');
+      const cenefaAltRotate = String(canvas.dataset.cenefaAltRotate || '').trim() === '1';
 
       const [centerRaw, cenefaRaw, esquinaRaw, cenefaOuterRaw, esquinaOuterRaw] = await Promise.all([
         loadImageSafeTapete(centerSrc),
@@ -2032,7 +2033,7 @@
       pctx.fillStyle = '#fff';
       pctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      function drawBorderRing(ring, borderSource, cornerSrc) {
+      function drawBorderRing(ring, borderSource, cornerSrc, alternate180 = false) {
         if (!borderSource && !cornerSrc) return;
         const left = ring;
         const right = cols - 1 - ring;
@@ -2040,14 +2041,18 @@
         const bottom = rows - 1 - ring;
         for (let c = left + 1; c < right; c++) {
           if (borderSource) {
-            drawTile(pctx, borderSource, top, c, tw, th, 0);
-            drawTile(pctx, borderSource, bottom, c, tw, th, Math.PI);
+            const idx = c - (left + 1);
+            const flip = (alternate180 && (idx % 2 === 1)) ? Math.PI : 0;
+            drawTile(pctx, borderSource, top, c, tw, th, 0 + flip);
+            drawTile(pctx, borderSource, bottom, c, tw, th, Math.PI + flip);
           }
         }
         for (let r = top + 1; r < bottom; r++) {
           if (borderSource) {
-            drawTile(pctx, borderSource, r, left, tw, th, -Math.PI / 2);
-            drawTile(pctx, borderSource, r, right, tw, th, Math.PI / 2);
+            const idx = r - (top + 1);
+            const flip = (alternate180 && (idx % 2 === 1)) ? Math.PI : 0;
+            drawTile(pctx, borderSource, r, left, tw, th, -Math.PI / 2 + flip);
+            drawTile(pctx, borderSource, r, right, tw, th, Math.PI / 2 + flip);
           }
         }
         const corner = cornerSrc || borderSource;
@@ -2060,8 +2065,8 @@
       }
 
       const centerMap = [[0, Math.PI / 2], [3 * Math.PI / 2, Math.PI]];
-      drawBorderRing(0, cenefaOuterImg, esquinaOuterImg);
-      drawBorderRing(hasOuter ? 1 : 0, cenefaImg, esquinaImg);
+      drawBorderRing(0, cenefaOuterImg, esquinaOuterImg, false);
+      drawBorderRing(hasOuter ? 1 : 0, cenefaImg, esquinaImg, cenefaAltRotate);
       const ringCount = hasOuter ? 2 : 1;
       if (centerImg) {
         for (let r = ringCount; r < rows - ringCount; r++) {

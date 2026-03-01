@@ -110,7 +110,7 @@ function carga_tapetes_csv(string $csvPath, array $models): array {
         if (!is_dir($dir)) mkdir($dir, 0775, true);
         $h = fopen($csvPath, 'w');
         if ($h !== false) {
-            fputcsv($h, ['Nombre_Tapete', 'Centro', 'Cenefa', 'Esquina']);
+            fputcsv($h, ['Nombre_Tapete', 'Centro', 'Cenefa', 'Esquina', 'Cenefa_Exterior', 'Esquina_Exterior', 'Cenefa_Rotacion_Alterna']);
             fclose($h);
         }
         return [];
@@ -132,6 +132,8 @@ function carga_tapetes_csv(string $csvPath, array $models): array {
         $esquinaQ = trim((string)($row[3] ?? ''));
         $cenefaOuterQ = trim((string)($row[4] ?? ''));
         $esquinaOuterQ = trim((string)($row[5] ?? ''));
+        $cenefaAltRotateRaw = trim((string)($row[6] ?? ''));
+        $cenefaAltRotate = in_array(strtolower($cenefaAltRotateRaw), ['1','true','si','sí','yes'], true);
         if ($name === '' || str_starts_with($name, '#')) continue;
 
         $centro = find_model($models, $centroQ);
@@ -147,6 +149,7 @@ function carga_tapetes_csv(string $csvPath, array $models): array {
             'esquina' => $esquina,
             'cenefa_exterior' => $cenefaOuter,
             'esquina_exterior' => $esquinaOuter,
+            'cenefa_rotacion_alterna' => $cenefaAltRotate || !empty($cenefa['cenefa_rotacion_alterna']),
         ];
     }
     fclose($h);
@@ -202,6 +205,7 @@ $tapetes = carga_tapetes_csv(__DIR__ . '/config/tapetes.csv', $models);
               width="1200" height="800"
               data-center-image="<?= htmlspecialchars($tapete['centro']['imagen'] ?? '', ENT_QUOTES) ?>"
               data-cenefa-image="<?= htmlspecialchars($tapete['cenefa']['imagen'] ?? '', ENT_QUOTES) ?>"
+              data-cenefa-alt-rotate="<?= !empty($tapete['cenefa_rotacion_alterna']) ? '1' : '' ?>"
               data-esquina-image="<?= htmlspecialchars($tapete['esquina']['imagen'] ?? '', ENT_QUOTES) ?>"
               data-cenefa-outer-image="<?= htmlspecialchars($tapete['cenefa_exterior']['imagen'] ?? '', ENT_QUOTES) ?>"
               data-esquina-outer-image="<?= htmlspecialchars($tapete['esquina_exterior']['imagen'] ?? '', ENT_QUOTES) ?>"></canvas>
@@ -221,6 +225,7 @@ $tapetes = carga_tapetes_csv(__DIR__ . '/config/tapetes.csv', $models);
                   'esquina_img' => (string)($tapete['esquina']['imagen'] ?? ''),
                   'center_name' => (string)($tapete['centro']['nombre'] ?? ''),
                   'cenefa_name' => (string)($tapete['cenefa']['nombre'] ?? ''),
+                  'cenefa_alt_rotate' => !empty($tapete['cenefa_rotacion_alterna']) ? '1' : '',
                   'esquina_name' => (string)($tapete['esquina']['nombre'] ?? ''),
                   'cenefa_outer_img' => (string)($tapete['cenefa_exterior']['imagen'] ?? ''),
                   'esquina_outer_img' => (string)($tapete['esquina_exterior']['imagen'] ?? ''),
