@@ -1,6 +1,14 @@
 (function(){
   function isMobile(){
-    return window.matchMedia('(max-width: 900px)').matches;
+    const ua = String(navigator.userAgent || '').toLowerCase();
+    const uaMobile = /android|webos|iphone|ipod|blackberry|iemobile|opera mini|mobile|windows phone|silk/i.test(ua);
+    const uaDataMobile = !!(navigator.userAgentData && navigator.userAgentData.mobile);
+    const coarsePointer = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    const touchPoints = Number(navigator.maxTouchPoints || 0);
+    const platform = String(navigator.platform || '').toLowerCase();
+    const isiPadLike = platform === 'macintel' && touchPoints > 1;
+    const knownMobilePlatform = /iphone|ipod|ipad|android/.test(platform);
+    return uaMobile || uaDataMobile || isiPadLike || (knownMobilePlatform && coarsePointer) || (coarsePointer && touchPoints > 1);
   }
 
   function init(){
