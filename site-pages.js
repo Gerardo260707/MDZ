@@ -371,6 +371,53 @@
     return (0.2126 * r) + (0.7152 * g) + (0.0722 * b);
   }
 
+
+  function hexToHsl(hex) {
+    if (typeof hex !== 'string') return { h: 0, s: 0, l: 0 };
+    const clean = hex.trim().replace('#', '');
+    if (!/^[0-9A-Fa-f]{6}$/.test(clean)) return { h: 0, s: 0, l: 0 };
+    let r = parseInt(clean.slice(0, 2), 16) / 255;
+    let g = parseInt(clean.slice(2, 4), 16) / 255;
+    let b = parseInt(clean.slice(4, 6), 16) / 255;
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const delta = max - min;
+    let h = 0;
+    const l = (max + min) / 2;
+    const s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+
+    if (delta !== 0) {
+      if (max === r) h = ((g - b) / delta) % 6;
+      else if (max === g) h = ((b - r) / delta) + 2;
+      else h = ((r - g) / delta) + 4;
+      h *= 60;
+      if (h < 0) h += 360;
+    }
+
+    return { h, s, l };
+  }
+
+  function getColorFamily(hex) {
+    const { h, s, l } = hexToHsl(hex);
+
+    if (s < 0.08) {
+      if (l > 0.9) return 'blanco';
+      if (l < 0.18) return 'negro';
+      return 'gris';
+    }
+
+    if (h >= 15 && h <= 45 && l < 0.55) return 'cafe';
+    if (h < 15 || h >= 345) return 'rojo';
+    if (h >= 15 && h < 45) return 'naranja';
+    if (h >= 45 && h < 75) return 'amarillo';
+    if (h >= 75 && h < 165) return 'verde';
+    if (h >= 165 && h < 200) return 'turquesa';
+    if (h >= 200 && h < 255) return 'azul';
+    if (h >= 255 && h < 300) return 'morado';
+    return 'rosa';
+  }
+
   function getCustomizerPalette() {
     const fallback = [
   { id: 'A10', hex: '#5860F9', name: 'A10' },
@@ -445,7 +492,7 @@
     ];
 
     const source = Array.isArray(window.CUSTOMIZER_COLORS) ? window.CUSTOMIZER_COLORS : fallback;
-    return source
+    const palette = source
       .filter((c) => c && typeof c.id === 'string' && typeof c.hex === 'string')
       .map((c) => ({
         id: c.id.trim(),
@@ -453,11 +500,33 @@
         name: (c.name || c.id).trim()
       }))
       .filter((c) => /^#[0-9A-F]{6}$/.test(c.hex) && c.id.length > 0)
+      .map((c) => ({ ...c, family: getColorFamily(c.hex), lightness: getPerceivedLightness(c.hex) }));
+
+    const familyLightness = new Map();
+    palette.forEach((c) => {
+      const bucket = familyLightness.get(c.family) || { total: 0, count: 0 };
+      bucket.total += c.lightness;
+      bucket.count += 1;
+      familyLightness.set(c.family, bucket);
+    });
+
+    const familyRank = Array.from(familyLightness.entries())
+      .map(([family, agg]) => ({ family, avg: agg.count ? agg.total / agg.count : 0 }))
+      .sort((a, b) => b.avg - a.avg || a.family.localeCompare(b.family, 'es', { sensitivity: 'base' }))
+      .reduce((acc, item, idx) => {
+        acc.set(item.family, idx);
+        return acc;
+      }, new Map());
+
+    return palette
       .sort((a, b) => {
-        const lightnessDiff = getPerceivedLightness(b.hex) - getPerceivedLightness(a.hex);
+        const famDiff = (familyRank.get(a.family) || 0) - (familyRank.get(b.family) || 0);
+        if (famDiff !== 0) return famDiff;
+        const lightnessDiff = b.lightness - a.lightness;
         if (lightnessDiff !== 0) return lightnessDiff;
         return a.id.localeCompare(b.id, 'es', { numeric: true, sensitivity: 'base' });
-      });
+      })
+      .map(({ family, lightness, ...rest }) => rest);
   }
 
 
