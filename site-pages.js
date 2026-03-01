@@ -217,8 +217,10 @@
       const article = document.createElement('article');
       article.className = `slide ${index === 0 ? 'active' : ''}`;
       article.dataset.index = String(index);
+      const hasPromoText = String(slide.title || '').trim() || String(slide.subtitle || '').trim();
       if (slide.image) {
-        article.innerHTML = `<img class="slide-media" src="${slide.image}" alt="${slide.title || (lang === 'en' ? 'Promotion' : 'Promoción')}" loading="lazy" /><div class="promo"><strong>${slide.title || ''}</strong><span>${slide.subtitle || ''}</span></div>`;
+        const promoMarkup = hasPromoText ? `<div class="promo"><strong>${slide.title || ''}</strong><span>${slide.subtitle || ''}</span></div>` : '';
+        article.innerHTML = `<img class="slide-media" src="${slide.image}" alt="${slide.title || (lang === 'en' ? 'Promotion' : 'Promoción')}" loading="lazy" />${promoMarkup}`;
       } else {
         article.style.setProperty('--slide-bg', slide.background);
         article.innerHTML = `<div class="promo"><strong>${slide.title || ''}</strong><span>${slide.subtitle || ''}</span></div>`;
@@ -2400,7 +2402,7 @@
     }
 
     function ensureCanvasSize() {
-      ensureCanvasSizeFor(patternCanvas, 800, 560);
+      ensureCanvasSizeFor(patternCanvas, 800, 600);
     }
 
     function ensureCompareCanvasSize() {
