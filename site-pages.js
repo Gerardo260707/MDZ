@@ -2081,10 +2081,6 @@
     const compareSlots = Array.from(document.querySelectorAll('.compare-slot'));
     const compareToggleBtn = q('compareModelsBtn');
     const compareModeNotice = q('compareModeNotice');
-    const compareCountControl = q('compareCountControl');
-    const compareCountMinus = q('compareCountMinus');
-    const compareCountPlus = q('compareCountPlus');
-    const compareCountValue = q('compareCountValue');
     if (!overlay || !patternCanvas || !nameEl) return;
     const lang = getLang();
 
@@ -2095,20 +2091,15 @@
     let compareCloseTimer = null;
     let compareMode = false;
     let comparePicked = [];
-    let compareRequired = 2;
+    const compareRequired = 2;
 
     function isMobileCompareMode() {
       return window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
     }
 
-    function compareModeMessage(count) {
-      const mobile = isMobileCompareMode();
-      if (lang === 'en') {
-        if (mobile) return 'Compare mode is on: select 2 models to view them side by side, or press the button again to exit.';
-        return `Compare mode is on: select ${count} models or more to view them side by side, or press the button again to exit.`;
-      }
-      if (mobile) return 'Modo comparación activado: selecciona 2 modelos para verlos lado a lado, o presiona el botón nuevamente para salir.';
-      return `Modo comparación activado: selecciona ${count} modelos o más para verlos lado a lado, o presiona el botón nuevamente para salir.`;
+    function compareModeMessage() {
+      if (lang === 'en') return 'Compare mode is on: select 2 models to view them side by side, or press the button again to exit.';
+      return 'Modo comparación activado: selecciona 2 modelos para verlos lado a lado, o presiona el botón nuevamente para salir.';
     }
 
     function blockedConnectedMessage() {
@@ -2118,17 +2109,11 @@
     }
 
     function syncCompareCountUI() {
-      const mobile = isMobileCompareMode();
-      if (mobile) compareRequired = 2;
-      if (compareCountValue) compareCountValue.textContent = String(compareRequired);
-      if (compareCountMinus) compareCountMinus.disabled = mobile || compareRequired <= 2;
-      if (compareCountPlus) compareCountPlus.disabled = mobile || compareRequired >= 4;
-      if (compareCountControl) compareCountControl.hidden = !compareMode || mobile;
+      // Comparación fija en 2 modelos.
     }
 
     function setCompareMode(enabled) {
       compareMode = Boolean(enabled && compareToggleBtn && compareOverlay && patternCanvasA && patternCanvasB && nameElA && nameElB);
-      if (compareMode) compareRequired = 2;
       if (compareToggleBtn) {
         compareToggleBtn.classList.toggle('active', compareMode);
         compareToggleBtn.setAttribute('aria-pressed', compareMode ? 'true' : 'false');
@@ -2136,7 +2121,7 @@
       syncCompareCountUI();
       if (compareModeNotice) {
         compareModeNotice.hidden = !compareMode;
-        if (compareMode) compareModeNotice.textContent = compareModeMessage(compareRequired);
+        if (compareMode) compareModeNotice.textContent = compareModeMessage();
       }
       if (!compareMode) clearCompareSelection();
     }
@@ -2385,7 +2370,7 @@
             comparePicked = comparePicked.filter((n) => n !== img);
             img.classList.remove('compare-picked');
             closeCompare();
-            if (compareModeNotice) compareModeNotice.textContent = compareModeMessage(compareRequired);
+            if (compareModeNotice) compareModeNotice.textContent = compareModeMessage();
             return;
           }
 
@@ -2405,7 +2390,7 @@
           }
           comparePicked.push(img);
           img.classList.add('compare-picked');
-          if (compareModeNotice) compareModeNotice.textContent = compareModeMessage(compareRequired);
+          if (compareModeNotice) compareModeNotice.textContent = compareModeMessage();
           if (comparePicked.length === compareRequired) openCompare();
           return;
         }
@@ -2423,30 +2408,10 @@
     window.addEventListener('resize', () => {
       if (!compareMode) return;
       syncCompareCountUI();
-      if (compareModeNotice) compareModeNotice.textContent = compareModeMessage(compareRequired);
+      if (compareModeNotice) compareModeNotice.textContent = compareModeMessage();
       if (comparePicked.length >= compareRequired) openCompare();
       else closeCompare();
     });
-    if (compareCountMinus) {
-      compareCountMinus.addEventListener('click', () => {
-        compareRequired = Math.max(2, compareRequired - 1);
-        syncCompareCountUI();
-        comparePicked = [];
-        document.querySelectorAll('.mosaic-preview-trigger.compare-picked').forEach((node) => node.classList.remove('compare-picked'));
-        closeCompare();
-        if (compareModeNotice) compareModeNotice.textContent = compareModeMessage(compareRequired);
-      });
-    }
-    if (compareCountPlus) {
-      compareCountPlus.addEventListener('click', () => {
-        compareRequired = Math.min(4, compareRequired + 1);
-        syncCompareCountUI();
-        comparePicked = [];
-        document.querySelectorAll('.mosaic-preview-trigger.compare-picked').forEach((node) => node.classList.remove('compare-picked'));
-        closeCompare();
-        if (compareModeNotice) compareModeNotice.textContent = compareModeMessage(compareRequired);
-      });
-    }
 
     overlay.addEventListener('click', (e) => {
       if (e.target.closest('[data-overlay-close="true"]')) close();
