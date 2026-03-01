@@ -795,9 +795,6 @@
     }
 
     function getUsedColorIdsFromDiff() {
-      if (!sourceImageData || !currentImageData) return [];
-      const src = sourceImageData.data;
-      const cur = currentImageData.data;
       const used = new Set();
       const colorByRgb = new Map();
       colors.forEach((c) => {
@@ -805,14 +802,27 @@
         colorByRgb.set(`${rgb.r},${rgb.g},${rgb.b}`, c.id);
       });
 
-      for (let i = 0; i < cur.length; i += 4) {
-        if (cur[i + 3] < 10) continue;
-        const same = cur[i] === src[i] && cur[i + 1] === src[i + 1] && cur[i + 2] === src[i + 2] && cur[i + 3] === src[i + 3];
-        if (same) continue;
-        const key = `${cur[i]},${cur[i + 1]},${cur[i + 2]}`;
-        const colorId = colorByRgb.get(key);
-        if (colorId) used.add(colorId);
+      function collectDiffIds(sourceData, currentData) {
+        if (!sourceData || !currentData || !sourceData.data || !currentData.data) return;
+        const src = sourceData.data;
+        const cur = currentData.data;
+        const n = Math.min(src.length, cur.length);
+        for (let i = 0; i < n; i += 4) {
+          if (cur[i + 3] < 10) continue;
+          const same = cur[i] === src[i] && cur[i + 1] === src[i + 1] && cur[i + 2] === src[i + 2] && cur[i + 3] === src[i + 3];
+          if (same) continue;
+          const key = `${cur[i]},${cur[i + 1]},${cur[i + 2]}`;
+          const colorId = colorByRgb.get(key);
+          if (colorId) used.add(colorId);
+        }
       }
+
+      collectDiffIds(sourceImageData, currentImageData);
+      if (cenefaEditor) collectDiffIds(cenefaEditor.source, cenefaEditor.current);
+      if (esquinaEditor) collectDiffIds(esquinaEditor.source, esquinaEditor.current);
+      if (cenefaOuterEditor) collectDiffIds(cenefaOuterEditor.source, cenefaOuterEditor.current);
+      if (esquinaOuterEditor) collectDiffIds(esquinaOuterEditor.source, esquinaOuterEditor.current);
+
       return Array.from(used);
     }
 

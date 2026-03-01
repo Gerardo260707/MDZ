@@ -611,8 +611,13 @@ Los colores presentados en esta muestra digital pueden no representar con fideli
               ?>
               <article class="mosaic-card">
                 <img class="mosaic-preview-trigger" src="<?= htmlspecialchars($mainSrc, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-model-name="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-category="<?= htmlspecialchars($cat, ENT_QUOTES) ?>" data-cenefa-src="<?= htmlspecialchars($cenefaSrcV, ENT_QUOTES) ?>" data-esquina-src="<?= htmlspecialchars($esquinaSrcV, ENT_QUOTES) ?>" data-cenefa-outer-src="<?= htmlspecialchars($cenefaOuterSrcV, ENT_QUOTES) ?>" data-esquina-outer-src="<?= htmlspecialchars($esquinaOuterSrcV, ENT_QUOTES) ?>" />
-                <?php $catLabel = $m['categoria'] !== '' ? strtoupper((string)$m['categoria']) : 'SIN CATEGORÍA'; ?>
-                <p class="code"><?= htmlspecialchars($catLabel, ENT_QUOTES) ?> · <?= htmlspecialchars($m['identificador'], ENT_QUOTES) ?></p>
+                <?php
+                  $catRaw = strtolower(trim((string)($m['categoria'] ?? '')));
+                  $catLabel = $catRaw !== ''
+                    ? ucfirst(str_replace('_', ' ', $catRaw))
+                    : 'Sin categoría';
+                ?>
+                <p class="code"><?= htmlspecialchars($catLabel, ENT_QUOTES) ?></p>
                 <p class="name"><?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?></p>
                 <?php if ($showCustomizeBtn): ?>
                 <a class="action cta-pill" href="<?= htmlspecialchars($customizeUrl, ENT_QUOTES) ?>" data-i18n="btn_customize">Personalizar</a>
