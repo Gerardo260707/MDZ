@@ -155,8 +155,13 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .compare-toggle.active{box-shadow:0 0 0 3px rgba(139,90,60,.28),0 10px 24px rgba(110,67,43,.35) !important;transform:translateY(-1px)}
 .mosaic-preview-trigger.compare-picked{outline:3px solid #7b2f2f;outline-offset:2px;box-shadow:0 10px 22px rgba(123,47,47,.35)}
 .compare-mode-notice{margin:14px 2px 2px;padding:10px 12px;border-radius:10px;border:1px solid #d8b89e;background:#f5ebe3;color:#5f3926;font-size:14px;line-height:1.45}
+.compare-count-control{margin-top:12px;display:inline-flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #d8c7b6;border-radius:999px;background:#fff}
+.compare-count-label{font-size:13px;color:#5b412f;font-weight:700}
+.compare-count-btn{width:28px;height:28px;border-radius:999px;border:1px solid #b89277;background:#f5ebe3;color:#5f3926;font-size:18px;line-height:1;cursor:pointer}
+.compare-count-btn:disabled{opacity:.5;cursor:not-allowed}
+.compare-count-value{min-width:20px;text-align:center;font-size:16px;color:#4d301f}
 .model-overlay-compare .model-overlay-compare-wrap{position:relative;width:min(96vw,1600px);margin:2.5vh auto 0}
-.model-overlay-compare .model-overlay-compare-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.model-overlay-compare .model-overlay-compare-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
 .model-overlay-compare .model-overlay-card{width:100%;max-height:88vh;aspect-ratio:4/3;margin:0}
 @media (max-width:900px){.model-overlay-compare .model-overlay-compare-grid{grid-template-columns:1fr}.model-overlay-compare .model-overlay-card{max-height:44vh}}
 

@@ -470,6 +470,12 @@ Los colores presentados en esta muestra digital pueden no representar con fideli
           <button type="button" id="compareModelsBtn" class="action cta-pill compare-toggle" aria-pressed="false" data-i18n="compare_models_toggle">Comparar modelos</button>
           <button type="button" id="quoteToggleBtn" class="action cta-pill secondary" aria-expanded="false" data-i18n="quote_toggle">Solicitar cotización</button>
         </div>
+        <div id="compareCountControl" class="compare-count-control" hidden>
+          <span class="compare-count-label" data-i18n="compare_models_count_label">Modelos a comparar</span>
+          <button type="button" id="compareCountMinus" class="compare-count-btn" aria-label="Disminuir">−</button>
+          <strong id="compareCountValue" class="compare-count-value">2</strong>
+          <button type="button" id="compareCountPlus" class="compare-count-btn" aria-label="Aumentar">+</button>
+        </div>
         <p id="compareModeNotice" class="compare-mode-notice" data-i18n="compare_mode_enabled_notice" hidden>Modo comparación activado: selecciona 2 modelos para verlos lado a lado, o presiona el botón nuevamente para salir.</p>
         <div id="quoteContainer" class="inline-quote-container" aria-hidden="true">
           <h3 data-i18n="quote_title">Solicite una Cotización</h3>
@@ -621,7 +627,8 @@ Los colores presentados en esta muestra digital pueden no representar con fideli
                 $showCustomizeBtn = !$isBorderCat || $cat === 'cenefa';
               ?>
               <article class="mosaic-card">
-                <img class="mosaic-preview-trigger" src="<?= htmlspecialchars($mainSrc, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-model-name="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-category="<?= htmlspecialchars($cat, ENT_QUOTES) ?>" data-cenefa-src="<?= htmlspecialchars($cenefaSrcV, ENT_QUOTES) ?>" data-esquina-src="<?= htmlspecialchars($esquinaSrcV, ENT_QUOTES) ?>" data-cenefa-outer-src="<?= htmlspecialchars($cenefaOuterSrcV, ENT_QUOTES) ?>" data-esquina-outer-src="<?= htmlspecialchars($esquinaOuterSrcV, ENT_QUOTES) ?>" />
+                <?php $compareGroup = $innerCenefaFolder !== '' ? $innerCenefaFolder : ''; ?>
+                <img class="mosaic-preview-trigger" src="<?= htmlspecialchars($mainSrc, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-model-name="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-category="<?= htmlspecialchars($cat, ENT_QUOTES) ?>" data-compare-group="<?= htmlspecialchars($compareGroup, ENT_QUOTES) ?>" data-cenefa-src="<?= htmlspecialchars($cenefaSrcV, ENT_QUOTES) ?>" data-esquina-src="<?= htmlspecialchars($esquinaSrcV, ENT_QUOTES) ?>" data-cenefa-outer-src="<?= htmlspecialchars($cenefaOuterSrcV, ENT_QUOTES) ?>" data-esquina-outer-src="<?= htmlspecialchars($esquinaOuterSrcV, ENT_QUOTES) ?>" />
                 <?php
                   $catRaw = strtolower(trim((string)($m['categoria'] ?? '')));
                   $catLabel = $catRaw !== ''
@@ -657,13 +664,21 @@ Los colores presentados en esta muestra digital pueden no representar con fideli
     <div class="model-overlay-compare-wrap" role="dialog" aria-modal="true" aria-label="Comparación de modelos">
       <button type="button" class="model-overlay-close" data-compare-overlay-close="true" aria-label="Cerrar comparación">×</button>
       <div class="model-overlay-compare-grid">
-        <div class="model-overlay-card">
+        <div class="model-overlay-card compare-slot" data-compare-slot="0">
           <canvas id="modelOverlayPatternA" class="model-overlay-pattern" width="1200" height="900" aria-hidden="true"></canvas>
           <div class="model-overlay-footer"><strong id="modelOverlayNameA">MODELO A</strong></div>
         </div>
-        <div class="model-overlay-card">
+        <div class="model-overlay-card compare-slot" data-compare-slot="1">
           <canvas id="modelOverlayPatternB" class="model-overlay-pattern" width="1200" height="900" aria-hidden="true"></canvas>
           <div class="model-overlay-footer"><strong id="modelOverlayNameB">MODELO B</strong></div>
+        </div>
+        <div class="model-overlay-card compare-slot" data-compare-slot="2" hidden>
+          <canvas id="modelOverlayPatternC" class="model-overlay-pattern" width="1200" height="900" aria-hidden="true"></canvas>
+          <div class="model-overlay-footer"><strong id="modelOverlayNameC">MODELO C</strong></div>
+        </div>
+        <div class="model-overlay-card compare-slot" data-compare-slot="3" hidden>
+          <canvas id="modelOverlayPatternD" class="model-overlay-pattern" width="1200" height="900" aria-hidden="true"></canvas>
+          <div class="model-overlay-footer"><strong id="modelOverlayNameD">MODELO D</strong></div>
         </div>
       </div>
     </div>

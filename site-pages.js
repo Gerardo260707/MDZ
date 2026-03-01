@@ -1985,10 +1985,19 @@
     const compareOverlay = q('modelCompareOverlay');
     const patternCanvasA = q('modelOverlayPatternA');
     const patternCanvasB = q('modelOverlayPatternB');
+    const patternCanvasC = q('modelOverlayPatternC');
+    const patternCanvasD = q('modelOverlayPatternD');
     const nameElA = q('modelOverlayNameA');
     const nameElB = q('modelOverlayNameB');
+    const nameElC = q('modelOverlayNameC');
+    const nameElD = q('modelOverlayNameD');
+    const compareSlots = Array.from(document.querySelectorAll('.compare-slot'));
     const compareToggleBtn = q('compareModelsBtn');
     const compareModeNotice = q('compareModeNotice');
+    const compareCountControl = q('compareCountControl');
+    const compareCountMinus = q('compareCountMinus');
+    const compareCountPlus = q('compareCountPlus');
+    const compareCountValue = q('compareCountValue');
     if (!overlay || !patternCanvas || !nameEl) return;
 
     const pctx = patternCanvas.getContext('2d');
@@ -1998,14 +2007,40 @@
     let compareCloseTimer = null;
     let compareMode = false;
     let comparePicked = [];
+    let compareRequired = 2;
+
+    function compareModeMessage(count) {
+      if (lang === 'en') {
+        return `Compare mode is on: select ${count} models to view them side by side, or press the button again to exit.`;
+      }
+      return `Modo comparación activado: selecciona ${count} modelos para verlos lado a lado, o presiona el botón nuevamente para salir.`;
+    }
+
+    function blockedConnectedMessage() {
+      return lang === 'en'
+        ? 'You cannot compare connected models (for example, border/corner/exterior from the same set). Choose a model from a different set.'
+        : 'No puedes comparar modelos conectados (por ejemplo, cenefa/esquina/exterior del mismo juego). Elige un modelo de otro juego.';
+    }
+
+    function syncCompareCountUI() {
+      if (compareCountValue) compareCountValue.textContent = String(compareRequired);
+      if (compareCountMinus) compareCountMinus.disabled = compareRequired <= 2;
+      if (compareCountPlus) compareCountPlus.disabled = compareRequired >= 4;
+    }
 
     function setCompareMode(enabled) {
       compareMode = Boolean(enabled && compareToggleBtn && compareOverlay && patternCanvasA && patternCanvasB && nameElA && nameElB);
+      if (compareMode) compareRequired = 2;
       if (compareToggleBtn) {
         compareToggleBtn.classList.toggle('active', compareMode);
         compareToggleBtn.setAttribute('aria-pressed', compareMode ? 'true' : 'false');
       }
-      if (compareModeNotice) compareModeNotice.hidden = !compareMode;
+      syncCompareCountUI();
+      if (compareCountControl) compareCountControl.hidden = !compareMode;
+      if (compareModeNotice) {
+        compareModeNotice.hidden = !compareMode;
+        if (compareMode) compareModeNotice.textContent = compareModeMessage(compareRequired);
+      }
       if (!compareMode) clearCompareSelection();
     }
 
@@ -2034,6 +2069,8 @@
     function ensureCompareCanvasSize() {
       ensureCanvasSizeFor(patternCanvasA, 560, 420);
       ensureCanvasSizeFor(patternCanvasB, 560, 420);
+      ensureCanvasSizeFor(patternCanvasC, 560, 420);
+      ensureCanvasSizeFor(patternCanvasD, 560, 420);
     }
 
     function drawRotatedPatternOn(ctx, canvas, img) {
@@ -2198,17 +2235,28 @@
     };
 
     const openCompare = async () => {
-      if (!compareOverlay || comparePicked.length < 2 || !pctxA || !pctxB || !patternCanvasA || !patternCanvasB || !nameElA || !nameElB) return;
+      const canvases = [patternCanvasA, patternCanvasB, patternCanvasC, patternCanvasD];
+      const ctxs = [pctxA, pctxB, patternCanvasC ? patternCanvasC.getContext('2d') : null, patternCanvasD ? patternCanvasD.getContext('2d') : null];
+      const labels = [nameElA, nameElB, nameElC, nameElD];
+      if (!compareOverlay || comparePicked.length < compareRequired) return;
       clearTimeout(compareCloseTimer);
       ensureCompareCanvasSize();
-      const payloadA = payloadFromImg(comparePicked[0]);
-      const payloadB = payloadFromImg(comparePicked[1]);
-      await Promise.all([
-        renderOverlayPayload(pctxA, patternCanvasA, payloadA),
-        renderOverlayPayload(pctxB, patternCanvasB, payloadB)
-      ]);
-      nameElA.textContent = `MODELO A: ${(payloadA.modelName || 'Modelo').toUpperCase()}`;
-      nameElB.textContent = `MODELO B: ${(payloadB.modelName || 'Modelo').toUpperCase()}`;
+
+      const selected = comparePicked.slice(0, compareRequired);
+      const payloads = selected.map((img) => payloadFromImg(img));
+
+      const tasks = payloads.map((payload, idx) => renderOverlayPayload(ctxs[idx], canvases[idx], payload));
+      await Promise.all(tasks);
+
+      payloads.forEach((payload, idx) => {
+        if (labels[idx]) labels[idx].textContent = `MODELO ${String.fromCharCode(65 + idx)}: ${(payload.modelName || 'Modelo').toUpperCase()}`;
+      });
+
+      compareSlots.forEach((slot, idx) => {
+        if (!slot) return;
+        slot.hidden = idx >= compareRequired;
+      });
+
       compareOverlay.classList.remove('closing');
       compareOverlay.classList.add('open');
       compareOverlay.setAttribute('aria-hidden', 'false');
@@ -2234,15 +2282,28 @@
             comparePicked = comparePicked.filter((n) => n !== img);
             img.classList.remove('compare-picked');
             closeCompare();
+            if (compareModeNotice) compareModeNotice.textContent = compareModeMessage(compareRequired);
             return;
           }
-          if (comparePicked.length >= 2) {
+
+          const candidateGroup = String(img.dataset.compareGroup || '').trim();
+          const hasConnected = Boolean(candidateGroup) && comparePicked.some((picked) => String(picked.dataset.compareGroup || '').trim() === candidateGroup);
+          if (hasConnected) {
+            if (compareModeNotice) {
+              compareModeNotice.hidden = false;
+              compareModeNotice.textContent = blockedConnectedMessage();
+            }
+            return;
+          }
+
+          if (comparePicked.length >= compareRequired) {
             const shifted = comparePicked.shift();
             if (shifted) shifted.classList.remove('compare-picked');
           }
           comparePicked.push(img);
           img.classList.add('compare-picked');
-          if (comparePicked.length === 2) openCompare();
+          if (compareModeNotice) compareModeNotice.textContent = compareModeMessage(compareRequired);
+          if (comparePicked.length === compareRequired) openCompare();
           return;
         }
 
@@ -2254,6 +2315,26 @@
       compareToggleBtn.addEventListener('click', () => {
         const next = !compareMode;
         setCompareMode(next);
+      });
+    }
+    if (compareCountMinus) {
+      compareCountMinus.addEventListener('click', () => {
+        compareRequired = Math.max(2, compareRequired - 1);
+        syncCompareCountUI();
+        comparePicked = [];
+        document.querySelectorAll('.mosaic-preview-trigger.compare-picked').forEach((node) => node.classList.remove('compare-picked'));
+        closeCompare();
+        if (compareModeNotice) compareModeNotice.textContent = compareModeMessage(compareRequired);
+      });
+    }
+    if (compareCountPlus) {
+      compareCountPlus.addEventListener('click', () => {
+        compareRequired = Math.min(4, compareRequired + 1);
+        syncCompareCountUI();
+        comparePicked = [];
+        document.querySelectorAll('.mosaic-preview-trigger.compare-picked').forEach((node) => node.classList.remove('compare-picked'));
+        closeCompare();
+        if (compareModeNotice) compareModeNotice.textContent = compareModeMessage(compareRequired);
       });
     }
 
