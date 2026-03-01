@@ -1,5 +1,5 @@
 :root {
-  --bg: #ececec;
+  --bg: linear-gradient(180deg,#fff9f1 0%, #f8efe1 45%, #f5eadb 100%);
   --card: #ffffff;
   --accent: #f16800;
   --text: #111;
@@ -7,8 +7,8 @@
   --mosaic-strip-image: url('assets/strip-mosaicos-linea.svg');
 }
 * { box-sizing: border-box; }
-body { margin:0; font-family: Arial, Helvetica, sans-serif; background:var(--bg); color:var(--text); }
-.site { width: min(96vw, 1680px); margin: 10px auto; background: var(--card); border: 1px solid #d8d8d8; }
+body { margin:0; font-family: Arial, Helvetica, sans-serif; background:var(--bg); color:var(--text); background-attachment:fixed; }
+.site { width: min(96vw, 1680px); margin: 10px auto; background: var(--card); border: 1px solid #e5d8c7; box-shadow:0 10px 30px rgba(124,84,36,.10); }
 .top { padding: 20px 28px 10px; }
 .brand-row { display:flex; align-items:center; justify-content:space-between; gap:20px; }
 .logo { display:flex; align-items:center; }
@@ -69,6 +69,13 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .content-lead{font-size:16px;color:#5a4637;margin-bottom:10px}
 .content-panel .content-list{margin:14px 0 0;padding-left:0;display:grid;gap:12px;color:#2f2f2f;line-height:1.6;list-style:none}
 .content-panel .content-list li{background:#fffdf9;border:1px solid #eadfce;border-radius:12px;padding:14px 16px;list-style-position:inside}
+
+.content-accordion{display:grid;gap:10px;margin-top:14px}
+.content-item{border:1px solid #e4d7c4;border-radius:10px;background:#fffaf3;overflow:hidden}
+.content-item summary{list-style:none;cursor:pointer;padding:12px 14px;background:linear-gradient(90deg,#f8e6ce 0%,#f4d8b7 100%);color:#473322;font-size:17px}
+.content-item summary::-webkit-details-marker{display:none}
+.content-item[open] summary{background:linear-gradient(90deg,#f6dfbe 0%,#efcfa9 100%)}
+.content-item p{padding:12px 14px;color:#3b3b3b}
 
 .category-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:14px}
 .category-card img{width:100%;height:130px;object-fit:cover;border:1px solid #ccc}
