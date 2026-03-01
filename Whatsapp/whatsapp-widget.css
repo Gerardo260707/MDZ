@@ -1,4 +1,4 @@
-.wa-float-btn{position:fixed;left:14px;bottom:14px;width:56px;height:56px;border-radius:50%;border:0;background:#25d366;box-shadow:0 10px 20px rgba(0,0,0,.24);z-index:1500;display:none;align-items:center;justify-content:center;padding:0;cursor:pointer}
+.wa-float-btn{position:fixed;left:14px;bottom:14px;width:56px;height:56px;border-radius:50%;border:0;background:#25d366;box-shadow:0 10px 20px rgba(0,0,0,.24);z-index:1500;display:none;align-items:center;justify-content:center;padding:0;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
 .wa-float-btn img{width:30px;height:30px;display:block}
 .wa-float-btn span{font-size:28px;line-height:1;color:#fff}
 .wa-float-btn.show{display:flex}
@@ -10,3 +10,5 @@
 .wa-cancel{background:#efefef;color:#333}
 .wa-send{background:#25d366;color:#fff}
 @media (min-width: 901px){.wa-float-btn,.wa-float-panel{display:none !important}}
+
+.wa-float-btn:active{cursor:grabbing}
