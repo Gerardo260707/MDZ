@@ -73,7 +73,6 @@ function carga_conexiones_cenefa_esquina(string $csvPath): array {
             'esquina' => $esquina,
             'cenefa_exterior' => $cenefaOuter,
             'esquina_exterior' => $esquinaOuter,
-            'cenefa_rotacion_alterna' => $cenefaAltRotate || !empty($cenefa['cenefa_rotacion_alterna']),
         ];
     }
     fclose($h);
@@ -270,7 +269,6 @@ function carga_tapetes_csv(string $csvPath, array $models): array {
             'esquina' => $esquina,
             'cenefa_exterior' => $cenefaOuter,
             'esquina_exterior' => $esquinaOuter,
-            'cenefa_rotacion_alterna' => $cenefaAltRotate || !empty($cenefa['cenefa_rotacion_alterna']),
         ];
     }
     fclose($h);
