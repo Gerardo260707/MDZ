@@ -51,6 +51,7 @@ $lang = (($_GET['lang'] ?? 'es') === 'en') ? 'en' : 'es';
         </div>
         <div class="custom-controls compare-controls" aria-label="Controles comparador de color">
           <button type="button" id="compareUndo" class="action control-btn" title="Regresar color" aria-label="Regresar color">↶</button>
+          <button type="button" id="compareRedo" class="action control-btn" title="Adelante color" aria-label="Adelante color">↷</button>
           <button type="button" id="compareHome" class="action control-btn" title="Color original" aria-label="Color original">⌂</button>
         </div>
         <div id="comparePaletteShared" class="palette compare-palette"></div>

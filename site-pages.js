@@ -162,8 +162,9 @@
     const rightLabel = q('compareLabelRight');
     const sharedPalette = q('comparePaletteShared');
     const compareUndoBtn = q('compareUndo');
+    const compareRedoBtn = q('compareRedo');
     const compareHomeBtn = q('compareHome');
-    if (!toggleBtn || !comparator || !leftCanvas || !rightCanvas || !patternCanvas || !leftLabel || !rightLabel || !sharedPalette || !compareUndoBtn || !compareHomeBtn || !colors.length) return;
+    if (!toggleBtn || !comparator || !leftCanvas || !rightCanvas || !patternCanvas || !leftLabel || !rightLabel || !sharedPalette || !compareUndoBtn || !compareRedoBtn || !compareHomeBtn || !colors.length) return;
 
     const lang = getLang();
     // Siempre iniciar oculto; solo mostrar al presionar el botón.
@@ -177,6 +178,7 @@
     let rightColorName = lang === 'en' ? 'Color 2' : 'Color 2';
 
     const compareHistory = [];
+    const compareFuture = [];
 
     function snapshotCompareState() {
       return { leftColor, rightColor, leftColorName, rightColorName };
@@ -193,12 +195,15 @@
       paintSolid(rightCanvas, rightColor);
       paintPattern();
       compareUndoBtn.disabled = compareHistory.length === 0;
+      compareRedoBtn.disabled = compareFuture.length === 0;
     }
 
     function pushCompareState() {
       compareHistory.push(snapshotCompareState());
       if (compareHistory.length > 80) compareHistory.shift();
+      compareFuture.length = 0;
       compareUndoBtn.disabled = compareHistory.length === 0;
+      compareRedoBtn.disabled = compareFuture.length === 0;
     }
 
     function paintSolid(canvas, hex) {
@@ -291,8 +296,16 @@
 
     compareUndoBtn.addEventListener('click', () => {
       if (!compareHistory.length) return;
+      compareFuture.push(snapshotCompareState());
       const previous = compareHistory.pop();
       applyCompareState(previous);
+    });
+
+    compareRedoBtn.addEventListener('click', () => {
+      if (!compareFuture.length) return;
+      compareHistory.push(snapshotCompareState());
+      const next = compareFuture.pop();
+      applyCompareState(next);
     });
 
     compareHomeBtn.addEventListener('click', () => {
@@ -320,6 +333,7 @@
     paintSolid(rightCanvas, rightColor);
     paintPattern();
     compareUndoBtn.disabled = true;
+    compareRedoBtn.disabled = true;
   }
 
   function initCategories() {
