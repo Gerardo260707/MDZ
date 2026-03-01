@@ -470,6 +470,7 @@ Los colores presentados en esta muestra digital pueden no representar con fideli
           <button type="button" id="compareModelsBtn" class="action cta-pill compare-toggle" aria-pressed="false" data-i18n="compare_models_toggle">Comparar modelos</button>
           <button type="button" id="quoteToggleBtn" class="action cta-pill secondary" aria-expanded="false" data-i18n="quote_toggle">Solicitar cotización</button>
         </div>
+        <p id="compareModeNotice" class="compare-mode-notice" data-i18n="compare_mode_enabled_notice" hidden>Modo comparación activado: selecciona 2 modelos para verlos lado a lado, o presiona el botón nuevamente para salir.</p>
         <div id="quoteContainer" class="inline-quote-container" aria-hidden="true">
           <h3 data-i18n="quote_title">Solicite una Cotización</h3>
           <p data-i18n="quote_desc">Llene el siguiente formulario, comente los productos que desea y a la brevedad uno de nuestros agentes de venta se comunicará con usted.</p>

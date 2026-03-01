@@ -1988,6 +1988,7 @@
     const nameElA = q('modelOverlayNameA');
     const nameElB = q('modelOverlayNameB');
     const compareToggleBtn = q('compareModelsBtn');
+    const compareModeNotice = q('compareModeNotice');
     if (!overlay || !patternCanvas || !nameEl) return;
 
     const pctx = patternCanvas.getContext('2d');
@@ -2004,6 +2005,7 @@
         compareToggleBtn.classList.toggle('active', compareMode);
         compareToggleBtn.setAttribute('aria-pressed', compareMode ? 'true' : 'false');
       }
+      if (compareModeNotice) compareModeNotice.hidden = !compareMode;
       if (!compareMode) clearCompareSelection();
     }
 

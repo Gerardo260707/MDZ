@@ -151,9 +151,10 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .model-overlay-pattern{width:100%;height:100%;display:block;background:#f0f0f0;object-fit:contain}
 .model-overlay-footer{height:46px;background:#000;color:#d7ecff;display:flex;align-items:center;padding:0 20px;font-size:12px;letter-spacing:.8px}
 
-.compare-toggle{background:linear-gradient(90deg,#8053b0 0%,#56307f 100%) !important}
-.compare-toggle.active{box-shadow:0 0 0 3px rgba(128,83,176,.28),0 10px 24px rgba(86,48,127,.35) !important;transform:translateY(-1px)}
+.compare-toggle{background:linear-gradient(90deg,#8b5a3c 0%,#6e432b 100%) !important}
+.compare-toggle.active{box-shadow:0 0 0 3px rgba(139,90,60,.28),0 10px 24px rgba(110,67,43,.35) !important;transform:translateY(-1px)}
 .mosaic-preview-trigger.compare-picked{outline:3px solid #7b2f2f;outline-offset:2px;box-shadow:0 10px 22px rgba(123,47,47,.35)}
+.compare-mode-notice{margin:14px 2px 2px;padding:10px 12px;border-radius:10px;border:1px solid #d8b89e;background:#f5ebe3;color:#5f3926;font-size:14px;line-height:1.45}
 .model-overlay-compare .model-overlay-compare-wrap{position:relative;width:min(96vw,1600px);margin:2.5vh auto 0}
 .model-overlay-compare .model-overlay-compare-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .model-overlay-compare .model-overlay-card{width:100%;max-height:88vh;aspect-ratio:4/3;margin:0}
