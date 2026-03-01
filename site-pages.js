@@ -1388,29 +1388,9 @@
         rctx.strokeRect(tpl.pattern.x, tpl.pattern.y, tpl.pattern.width, tpl.pattern.height);
         rctx.drawImage(patternCanvas, tpl.pattern.x, tpl.pattern.y, tpl.pattern.width, tpl.pattern.height);
 
-        rctx.fillStyle = '#111';
-        rctx.font = '700 28px Arial';
-        rctx.fillText(tpl.colorsTitle.text, tpl.colorsTitle.x, tpl.colorsTitle.y);
-
         const selectedIds = getUsedColorIdsFromDiff();
         const hasChanges = selectedIds.length > 0;
         const byId = new Map(colors.map((c) => [c.id, c]));
-
-        rctx.font = '20px Arial';
-        selectedIds.forEach((id, idx) => {
-          const item = byId.get(id);
-          if (!item) return;
-          const col = idx % tpl.colors.columns;
-          const row = Math.floor(idx / tpl.colors.columns);
-          const x = tpl.colors.startX + col * tpl.colors.colGap;
-          const y = tpl.colors.startY + row * tpl.colors.rowGap;
-          rctx.fillStyle = item.hex;
-          rctx.fillRect(x, y - 16, 28, 28);
-          rctx.strokeStyle = '#333';
-          rctx.strokeRect(x, y - 16, 28, 28);
-          rctx.fillStyle = '#222';
-          rctx.fillText(`${item.id} · ${item.name} (${item.hex})`, x + 40, y + 4);
-        });
 
         function modelNameBySrc(imageSrc, fallbackLabel) {
           if (!imageSrc) return fallbackLabel;
@@ -1472,30 +1452,62 @@
           return true;
         });
 
+        const sectionY = tpl.pattern.y + tpl.pattern.height + 48;
+        const leftX = 70;
+        const rightX = 680;
+
+        rctx.fillStyle = '#111';
+        rctx.font = '700 28px Arial';
+        rctx.fillText(lang === 'en' ? 'Used models' : 'Modelos usados', leftX, sectionY);
+        rctx.fillText(tpl.colorsTitle.text, rightX, sectionY);
+
         if (dedupThumbs.length) {
-          const thumbStartX = tpl.colors.startX + (tpl.colors.colGap * tpl.colors.columns) + 20;
-          const thumbStartY = tpl.colors.startY - 50;
-          const thumbW = 150;
-          const thumbH = 150;
-          const gapY = 36;
-          rctx.fillStyle = '#111';
-          rctx.font = '700 24px Arial';
-          rctx.fillText(lang === 'en' ? 'Customized models' : 'Modelos personalizados', thumbStartX, thumbStartY - 18);
+          const thumbW = 120;
+          const thumbH = 120;
+          const perRow = 2;
+          const gapX = 170;
+          const gapY = 48;
           rctx.font = '18px Arial';
           dedupThumbs.forEach((entry, idx) => {
-            const y = thumbStartY + idx * (thumbH + gapY);
+            const col = idx % perRow;
+            const row = Math.floor(idx / perRow);
+            const x = leftX + col * gapX;
+            const y = sectionY + 24 + row * (thumbH + gapY);
             rctx.strokeStyle = '#bbb';
-            rctx.strokeRect(thumbStartX, y, thumbW, thumbH);
-            rctx.drawImage(entry.canvas, thumbStartX, y, thumbW, thumbH);
+            rctx.strokeRect(x, y, thumbW, thumbH);
+            rctx.drawImage(entry.canvas, x, y, thumbW, thumbH);
             rctx.fillStyle = '#222';
-            rctx.fillText(entry.label, thumbStartX + thumbW + 18, y + 84);
+            const label = String(entry.label || '').slice(0, 22);
+            rctx.fillText(label, x, y + thumbH + 24);
           });
         }
 
+        rctx.font = '20px Arial';
+        selectedIds.forEach((id, idx) => {
+          const item = byId.get(id);
+          if (!item) return;
+          const col = idx % 1;
+          const row = Math.floor(idx / 1);
+          const x = rightX + col * 420;
+          const y = sectionY + 48 + row * 42;
+          rctx.fillStyle = item.hex;
+          rctx.fillRect(x, y - 16, 28, 28);
+          rctx.strokeStyle = '#333';
+          rctx.strokeRect(x, y - 16, 28, 28);
+          rctx.fillStyle = '#222';
+          rctx.fillText(`${item.id} · ${item.name} (${item.hex})`, x + 40, y + 4);
+        });
+
         const jpg = reportCanvas.toDataURL('image/jpeg', 0.92);
         const blob = buildPdfFromJpeg(jpg, tpl.page.widthPt, tpl.page.heightPt, reportCanvas.width, reportCanvas.height);
-        const safeName = modelName.replace(/[^a-z0-9\-_]+/gi, '_').replace(/^_+|_+$/g, '') || 'modelo';
-        const fileName = hasChanges ? `${safeName}_personalizado.pdf` : `${safeName}.pdf`;
+        const status = hasChanges ? (lang === 'en' ? 'customized' : 'personalizado') : (lang === 'en' ? 'original' : 'sin_cambios');
+        const isTapeteFlow = searchMode === 'tapete';
+        const nameParts = dedupThumbs.map((d) => (d.label || '').replace(/[^a-z0-9\-_]+/gi, '_').replace(/^_+|_+$/g, '')).filter(Boolean);
+        const baseRaw = isTapeteFlow
+          ? `tapete_${modelName}`
+          : (nameParts.slice(0, 3).join('_') || modelName || 'modelo');
+        const safeName = String(baseRaw).replace(/[^a-z0-9\-_]+/gi, '_').replace(/^_+|_+$/g, '').slice(0, 90) || 'modelo';
+        const fileName = `${safeName}_${status}.pdf`;
 
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
