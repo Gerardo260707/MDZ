@@ -897,6 +897,19 @@
       if (redoBtn) redoBtn.disabled = redoStack.length === 0;
     }
 
+    function hasCenterPaintEdits() {
+      if (!sourceImageData || !currentImageData || !sourceImageData.data || !currentImageData.data) return false;
+      const src = sourceImageData.data;
+      const cur = currentImageData.data;
+      const n = Math.min(src.length, cur.length);
+      for (let i = 0; i < n; i += 4) {
+        if (cur[i + 3] < 10) continue;
+        const same = cur[i] === src[i] && cur[i + 1] === src[i + 1] && cur[i + 2] === src[i + 2] && cur[i + 3] === src[i + 3];
+        if (!same) return true;
+      }
+      return false;
+    }
+
     function getUsedColorIdsFromDiff() {
       const used = new Set();
       const colorByRgb = new Map();
@@ -1131,7 +1144,8 @@
         const th = h / rows;
 
         const hasCenterModel = Boolean(centerSrc);
-        const centerSource = (hasCenterModel || (!hasCenterModel && (cenefaSrc || esquinaSrc || cenefaOuterSrc || esquinaOuterSrc))) ? tile : null;
+        const hasCenterPaint = hasCenterPaintEdits();
+        const centerSource = (hasCenterModel || hasCenterPaint) ? tile : null;
         const cenefaSource = asTileSource((editTarget === 'cenefa') ? tile : (cenefaEditedCanvas || cenefaImg || tile));
         const cornerSource = asTileSource((editTarget === 'esquina') ? tile : (esquinaEditedCanvas || esquinaImg || cenefaSource));
         const cenefaOuterSource = asTileSource((editTarget === 'cenefa_exterior') ? tile : (cenefaOuterEditedCanvas || cenefaOuterImg || cenefaSource));
@@ -1568,7 +1582,7 @@
           const mainCanvas = thumbCanvasFromEditor({ current: currentImageData }, 600) || await thumbCanvasFromSrc(src, editCanvas || null);
           if (mainCanvas) modelThumbs.push({ key: src, label: mainLabel || (editTarget || category || 'Modelo').toUpperCase(), canvas: mainCanvas });
         }
-        if (!centerSrc && (cenefaSrc || esquinaSrc || cenefaOuterSrc || esquinaOuterSrc) && currentImageData) {
+        if (!centerSrc && (cenefaSrc || esquinaSrc || cenefaOuterSrc || esquinaOuterSrc) && currentImageData && hasCenterPaintEdits()) {
           const centerSolidCanvas = thumbCanvasFromEditor({ current: currentImageData }, 600);
           if (centerSolidCanvas) {
             const primaryColor = selectedIds.length ? byId.get(selectedIds[0]) : null;
