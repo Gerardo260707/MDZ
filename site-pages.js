@@ -157,92 +157,27 @@
     const comparator = q('colorComparator');
     const leftCanvas = q('compareCanvasLeft');
     const rightCanvas = q('compareCanvasRight');
-    const previewCanvas = q('comparePreviewCanvas');
     const sharedPalette = q('comparePaletteShared');
-    if (!toggleBtn || !comparator || !leftCanvas || !rightCanvas || !previewCanvas || !sharedPalette || !colors.length) return;
+    if (!toggleBtn || !comparator || !leftCanvas || !rightCanvas || !sharedPalette || !colors.length) return;
 
     const lang = getLang();
     toggleBtn.textContent = lang === 'en' ? 'Compare colors' : 'Comparar colores';
 
-    const gridSize = 6;
-    const leftState = { cells: new Array(gridSize * gridSize).fill('#FFFFFF') };
-    const rightState = { cells: new Array(gridSize * gridSize).fill('#FFFFFF') };
     let selectedColor = colors[0] || { id: 'X', hex: '#000000' };
+    let leftColor = '#FFFFFF';
+    let rightColor = '#FFFFFF';
 
-    function drawEditor(canvas, state) {
+    function paintSolid(canvas, hex) {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      const w = canvas.width;
-      const h = canvas.height;
-      const cellW = w / gridSize;
-      const cellH = h / gridSize;
-      ctx.clearRect(0, 0, w, h);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, w, h);
-      for (let r = 0; r < gridSize; r++) {
-        for (let c = 0; c < gridSize; c++) {
-          const idx = r * gridSize + c;
-          ctx.fillStyle = state.cells[idx] || '#ffffff';
-          ctx.fillRect(c * cellW + 1, r * cellH + 1, cellW - 2, cellH - 2);
-        }
-      }
-      ctx.strokeStyle = 'rgba(0,0,0,.18)';
-      for (let i = 0; i <= gridSize; i++) {
-        ctx.beginPath();
-        ctx.moveTo(i * cellW, 0);
-        ctx.lineTo(i * cellW, h);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(0, i * cellH);
-        ctx.lineTo(w, i * cellH);
-        ctx.stroke();
-      }
-    }
-
-    function drawPreview() {
-      const ctx = previewCanvas.getContext('2d');
-      if (!ctx) return;
-      const w = previewCanvas.width;
-      const h = previewCanvas.height;
-      const cols = 6;
-      const rows = 4;
-      const tileW = w / cols;
-      const tileH = h / rows;
-      ctx.clearRect(0, 0, w, h);
-      for (let tr = 0; tr < rows; tr++) {
-        for (let tc = 0; tc < cols; tc++) {
-          const useLeft = ((tr + tc) % 2 === 0);
-          const ox = tc * tileW;
-          const oy = tr * tileH;
-          const sourceCanvas = useLeft ? leftCanvas : rightCanvas;
-          ctx.drawImage(sourceCanvas, ox, oy, tileW, tileH);
-        }
-      }
-      ctx.strokeStyle = 'rgba(0,0,0,.22)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = hex || '#ffffff';
+      ctx.fillRect(2, 2, canvas.width - 4, canvas.height - 4);
+      ctx.strokeStyle = 'rgba(0,0,0,.2)';
       ctx.lineWidth = 2;
-      for (let tr = 0; tr <= rows; tr++) {
-        ctx.beginPath();
-        ctx.moveTo(0, tr * tileH);
-        ctx.lineTo(w, tr * tileH);
-        ctx.stroke();
-      }
-      for (let tc = 0; tc <= cols; tc++) {
-        ctx.beginPath();
-        ctx.moveTo(tc * tileW, 0);
-        ctx.lineTo(tc * tileW, h);
-        ctx.stroke();
-      }
-    }
-
-    function paintCell(canvas, state, ev) {
-      const rect = canvas.getBoundingClientRect();
-      const x = ((ev.clientX - rect.left) / rect.width) * canvas.width;
-      const y = ((ev.clientY - rect.top) / rect.height) * canvas.height;
-      const c = Math.max(0, Math.min(gridSize - 1, Math.floor(x / (canvas.width / gridSize))));
-      const r = Math.max(0, Math.min(gridSize - 1, Math.floor(y / (canvas.height / gridSize))));
-      state.cells[r * gridSize + c] = selectedColor.hex;
-      drawEditor(canvas, state);
-      drawPreview();
+      ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
     }
 
     function buildPalette(el) {
@@ -263,8 +198,14 @@
       });
     }
 
-    leftCanvas.addEventListener('click', (ev) => paintCell(leftCanvas, leftState, ev));
-    rightCanvas.addEventListener('click', (ev) => paintCell(rightCanvas, rightState, ev));
+    leftCanvas.addEventListener('click', () => {
+      leftColor = selectedColor.hex;
+      paintSolid(leftCanvas, leftColor);
+    });
+    rightCanvas.addEventListener('click', () => {
+      rightColor = selectedColor.hex;
+      paintSolid(rightCanvas, rightColor);
+    });
 
     toggleBtn.addEventListener('click', () => {
       const opening = comparator.hasAttribute('hidden');
@@ -276,9 +217,8 @@
     });
 
     buildPalette(sharedPalette);
-    drawEditor(leftCanvas, leftState);
-    drawEditor(rightCanvas, rightState);
-    drawPreview();
+    paintSolid(leftCanvas, leftColor);
+    paintSolid(rightCanvas, rightColor);
   }
 
   function initCategories() {
