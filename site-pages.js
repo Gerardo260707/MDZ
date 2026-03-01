@@ -1930,8 +1930,8 @@
       const esquinaOuterImg = asTileSource(esquinaOuterRaw);
 
       const hasOuter = Boolean(cenefaOuterImg || esquinaOuterImg);
-      const cols = hasOuter ? 15 : 12;
-      const rows = hasOuter ? 10 : 8;
+      const cols = 12;
+      const rows = 8;
       const tw = canvas.width / cols;
       const th = canvas.height / rows;
       pctx.fillStyle = '#fff';
