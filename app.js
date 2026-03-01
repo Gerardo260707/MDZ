@@ -2,7 +2,7 @@
   const DICT = {
     es: {
       nav_home: 'Inicio', nav_mosaics: 'Mosaicos', nav_gallery: 'Galería', nav_maintenance: 'Mantenimiento', nav_installation: 'Instalación', nav_contact: 'Contacto',
-      home_intro: '',
+      home_intro: 'Mosaicos Dzununcán elabora mosaicos de pasta con manufactura tradicional mexicana, ofreciendo piezas y ladrillos de alta calidad y gran durabilidad. Diseñamos colecciones innovadoras, vanguardistas y también personalizadas para cada proyecto. Aquí encontrará lo que imaginó para sus muros y pisos: ¡bienvenidos!',
       home_note: '',
       home_footer: '',
       cat_title: 'Mosaicos Hidráulicos', cat_subtitle: 'Generales de los ladrillos', cat_desc: 'Fabricamos artesanalmente cada mosaico de pasta en diferentes medidas y categorías.',
@@ -16,7 +16,7 @@
     },
     en: {
       nav_home: 'Home', nav_mosaics: 'Tiles', nav_gallery: 'Gallery', nav_maintenance: 'Maintenance', nav_installation: 'Installation', nav_contact: 'Contact',
-      home_intro: '',
+      home_intro: 'Mosaicos Dzununcán crafts cement tiles with traditional Mexican techniques, delivering high-quality, long-lasting tiles and bricks. We create innovative, avant-garde collections and custom designs for each project. Here you will find exactly what you imagined for your walls and floors—welcome!',
       home_note: '',
       home_footer: '',
       cat_title: 'Hydraulic Cement Tiles', cat_subtitle: 'General tile categories', cat_desc: 'We handcraft each cement tile in different sizes and categories.',

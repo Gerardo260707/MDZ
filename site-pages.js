@@ -95,9 +95,27 @@
 
     const lang = getLang();
     const FEATURE_CARDS = [
-      { file: '', label: tByLang(lang, 'Mosaicos', 'Tiles'), href: 'mosaicos.html', button: tByLang(lang, 'Ver modelos » clic aquí', 'View designs » click here') },
-      { file: '', label: tByLang(lang, 'Tapetes', 'Rugs'), href: 'tapetes.php', button: tByLang(lang, 'Personalizar', 'Customize') },
-      { file: '', label: tByLang(lang, 'Colores', 'Colors'), href: 'colores.php', button: tByLang(lang, 'Ver colores', 'View colors') }
+      {
+        file: '',
+        label: tByLang(lang, 'Mosaicos', 'Tiles'),
+        href: 'mosaicos.html',
+        button: tByLang(lang, 'Ver modelos » clic aquí', 'View designs » click here'),
+        description: tByLang(lang, 'Ladrillos estampados y modelos especiales.', 'Stamped tiles and special models.')
+      },
+      {
+        file: '',
+        label: tByLang(lang, 'Tapetes', 'Rugs'),
+        href: 'tapetes.php',
+        button: tByLang(lang, 'Personalizar', 'Customize'),
+        description: tByLang(lang, 'Diversos diseños para pisos y muros.', 'Diverse designs for floors and walls.')
+      },
+      {
+        file: '',
+        label: tByLang(lang, 'Colores', 'Colors'),
+        href: 'colores.php',
+        button: tByLang(lang, 'Ver colores', 'View colors'),
+        description: tByLang(lang, 'Conozca nuestra gama de colores y ladrillos lisos.', 'Discover our full color palette and solid tiles.')
+      }
     ];
 
     FEATURE_CARDS.forEach((card, idx) => {
@@ -107,7 +125,7 @@
       cardUrl.searchParams.set('lang', lang);
       a.href = cardUrl.pathname + cardUrl.search + cardUrl.hash;
       const imgSrc = (Array.isArray(window.HOME_FEATURE_IMAGES) && window.HOME_FEATURE_IMAGES[idx]) ? window.HOME_FEATURE_IMAGES[idx] : (card.file ? `assets/cuadros/${card.file}` : 'assets/placeholder-tile.svg');
-      a.innerHTML = `<img src="${imgSrc}" alt="${card.label}" onerror="this.src='assets/placeholder-tile.svg'" /><span>${card.label}</span>`;
+      a.innerHTML = `<img src="${imgSrc}" alt="${card.label}" onerror="this.src='assets/placeholder-tile.svg'" /><span class="tile-card-title">${card.label}</span><small class="tile-card-description">${card.description}</small>`;
       cardsContainer.appendChild(a);
     });
 

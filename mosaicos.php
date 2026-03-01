@@ -413,6 +413,7 @@ Para ver su patrón, de clic sobre la imagen.
 
 Los colores presentados en esta muestra digital pueden no representar con fidelidad sus tonalidades reales. Es necesario compararlo con la paleta de colores en alguna de nuestras salas de exhibición.",
         'items' => $itemsCentros,
+        'anchor' => 'decorados-section',
     ],
     [
         'title' => $lang === 'en' ? 'Borders' : 'Cenefas',
@@ -420,11 +421,13 @@ Los colores presentados en esta muestra digital pueden no representar con fideli
             ? 'Ornamental border designs that add artistry and durability to floors and walls. Click on the image to display the complete layout.'
             : 'Diseños de ornamentación que dan bellesa, aportan arte y durabilidad a sus pisos y muros. Da clic sobre la imagen para desplegar el tapete.',
         'items' => $itemsCenefasSimples,
+        'anchor' => 'cenefas-section',
     ],
     [
         'title' => $lang === 'en' ? 'Double Borders' : 'Cenefas Dobles',
         'description' => '',
         'items' => $itemsCenefasDobles,
+        'anchor' => 'cenefas-dobles-section',
     ],
 ];
 ?>
@@ -494,7 +497,7 @@ Los colores presentados en esta muestra digital pueden no representar con fideli
     <section id="catalogo-decorados" class="panel decorated-layout">
       <div class="mosaic-grid-wrap">
         <?php foreach ($sectionsDecorados as $section): ?>
-          <div class="decorated-section-block">
+          <div class="decorated-section-block" id="<?= htmlspecialchars((string)($section['anchor'] ?? ''), ENT_QUOTES) ?>">
             <h3><?= htmlspecialchars((string)$section['title'], ENT_QUOTES) ?></h3>
             <?php if (trim((string)($section['description'] ?? '')) !== ''): ?>
               <p class="decorated-section-text"><?= nl2br(htmlspecialchars((string)$section['description'], ENT_QUOTES)) ?></p>

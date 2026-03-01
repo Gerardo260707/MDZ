@@ -9,6 +9,7 @@ $labels = [
   'decorated_cta' => $lang === 'en' ? 'View decorated' : 'Ver decorados',
   'customize_cta' => $lang === 'en' ? 'Go to simulator' : 'Ir al simulador',
   'specials_cta' => $lang === 'en' ? 'View specials' : 'Ver especiales',
+  'decorated_direct_link' => $lang === 'en' ? 'Go directly to border designs (cenefas)' : 'Ir directo a diseños de cenefas',
 ];
 ?>
 <!doctype html>
@@ -50,6 +51,7 @@ $labels = [
           <img src="assets/mosaicos-menu/decorados.jpg" alt="<?= htmlspecialchars($labels['decorated'], ENT_QUOTES) ?>" onerror="this.src='assets/placeholder-tile.svg'" />
           <h3><?= htmlspecialchars($labels['decorated'], ENT_QUOTES) ?></h3>
           <a class="cta-pill" href="mosaicos.php?lang=<?= $lang ?>"><?= htmlspecialchars($labels['decorated_cta'], ENT_QUOTES) ?></a>
+          <a class="mosaic-direct-link" href="mosaicos.php?lang=<?= $lang ?>#cenefas-section"><?= htmlspecialchars($labels['decorated_direct_link'], ENT_QUOTES) ?></a>
         </article>
         <article class="category-card">
           <img src="assets/mosaicos-menu/personalizar.jpg" alt="<?= htmlspecialchars($labels['customize'], ENT_QUOTES) ?>" onerror="this.src='assets/placeholder-tile.svg'" />

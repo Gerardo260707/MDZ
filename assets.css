@@ -33,8 +33,10 @@ p { margin:0; font-size:15px; line-height:1.5; color:#333; }
 .tile-card { color:inherit; text-align:center; text-decoration:none; display:flex; }
 .tile-card img { width:110px; height:110px; object-fit:cover; border:1px solid #bbb; display:block; margin:0 auto 4px; }
 .tile-card span { font-size: 13px; color:#444; }
+.tile-card-title{font-size:20px;font-weight:700;color:#1d1d1d}
+.tile-card-description{display:block;font-size:13px;line-height:1.45;color:#5b4a3a;max-width:230px}
 
-.tile-card{display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px 6px;transition:transform .18s ease, box-shadow .18s ease}
+.tile-card{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 10px 8px;transition:transform .18s ease, box-shadow .18s ease}
 .tile-card:hover{transform:scale(1.05)}
 .tapetes-cta-wrap{padding:20px 28px}
 
@@ -129,8 +131,11 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .inline-quote-container.open{display:block}
 .mosaic-options-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
 
-.mosaic-options-grid .category-card{display:grid;gap:10px;align-content:start}
+.mosaic-options-grid .category-card{display:grid;gap:12px;align-content:start;text-align:center}
 .mosaic-options-grid .category-card img{width:100%;height:auto;aspect-ratio:16/7;object-fit:cover;object-position:center;border:1px solid #ccc;display:block}
+.mosaic-options-grid .cta-pill{width:100%;display:flex;align-items:center;justify-content:center;text-align:center}
+.mosaic-direct-link{display:block;font-size:13px;color:#7a3f20;text-decoration:underline;font-weight:700}
+.mosaic-direct-link:hover{color:#51260f}
 
 .cta-pill{display:inline-block;padding:10px 14px !important;border-radius:999px !important;background:linear-gradient(90deg,#f39845 0%,#f16800 100%) !important;color:#fff !important;font-weight:700;letter-spacing:.2px;text-decoration:none !important;box-shadow:0 8px 18px rgba(241,104,0,.28);transition:transform .16s ease,box-shadow .16s ease;border:0}
 .cta-pill:hover{transform:translateY(-1px) scale(1.03);box-shadow:0 12px 24px rgba(241,104,0,.32)}
@@ -171,6 +176,7 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .quote-form input,.quote-form textarea{width:100%;border:1px solid #cfcfcf;border-radius:5px;padding:10px;font-size:14px;font-family:Arial,Helvetica,sans-serif;background:#fff}
 .quote-submit{justify-self:end;padding:8px 20px}
 .home-sales-layout h1{margin-top:0}
+.home-intro-lead{max-width:1000px;font-size:18px;line-height:1.7;color:#3f2f24;background:linear-gradient(180deg,#fff 0%,#f9f2e8 100%);border:1px solid #ead7c3;border-radius:12px;padding:16px 18px;box-shadow:0 10px 24px rgba(120,72,27,.08)}
 .custom-controls{display:flex;gap:6px;margin-top:8px}
 .control-btn{padding:7px 10px;min-width:38px;font-size:16px;line-height:1;border-radius:6px}
 .control-btn:disabled{opacity:.45;cursor:not-allowed}
