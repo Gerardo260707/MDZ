@@ -2038,6 +2038,45 @@
     });
   }
 
+
+  function initGalleryPage() {
+    const overlay = q('galleryOverlay');
+    const imgEl = q('galleryOverlayImg');
+    const titleEl = q('galleryOverlayTitle');
+    const captionEl = q('galleryOverlayCaption');
+    if (!overlay || !imgEl || !titleEl || !captionEl) return;
+
+    function openGallery(src, title, caption) {
+      imgEl.src = src || '';
+      imgEl.alt = title || 'Imagen';
+      titleEl.textContent = title || '';
+      captionEl.textContent = caption || '';
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeGallery() {
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      setTimeout(() => { imgEl.src = ''; }, 120);
+    }
+
+    document.querySelectorAll('.gallery-thumb-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        openGallery(btn.dataset.gallerySrc || '', btn.dataset.galleryTitle || '', btn.dataset.galleryCaption || '');
+      });
+    });
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target.closest('[data-gallery-close="1"]')) closeGallery();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && overlay.classList.contains('open')) closeGallery();
+    });
+  }
+
   function initDarkFooter() {
     const main = document.querySelector('main.site');
     if (!main || document.getElementById('siteDarkFooter')) return;
@@ -2073,6 +2112,7 @@
     initDecoratedOverlay();
     initTapetesPage();
     initMosaicosActions();
+    initGalleryPage();
     initQuoteValidation();
     initDarkFooter();
   });
