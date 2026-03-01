@@ -479,33 +479,55 @@ foreach ($items as $it) {
                 $targetName = (string)($targetModel['nombre'] ?? ($m['nombre'] ?? 'Modelo'));
                 $targetId = (string)($targetModel['id'] ?? '');
 
-                $customizeParams = [
-                    'picker' => 'single',
-                    'lang' => $lang,
-                    'img' => $targetImg,
-                    'name' => $targetName,
-                    'cat' => $targetCategory,
-                ];
-                if ($targetId !== '' && $targetId !== '0') $customizeParams['id'] = $targetId;
-                if (is_array($cenefaModel)) {
-                    if (!empty($cenefaModel['id'])) $customizeParams['cenefa_id'] = (string)$cenefaModel['id'];
-                    $customizeParams['cenefa_img'] = imagen_con_version((string)($cenefaModel['imagen'] ?? ''));
-                    $customizeParams['cenefa_name'] = (string)($cenefaModel['nombre'] ?? '');
-                }
-                if (is_array($esquinaModel)) {
-                    if (!empty($esquinaModel['id'])) $customizeParams['esquina_id'] = (string)$esquinaModel['id'];
-                    $customizeParams['esquina_img'] = imagen_con_version((string)($esquinaModel['imagen'] ?? ''));
-                    $customizeParams['esquina_name'] = (string)($esquinaModel['nombre'] ?? '');
-                }
-                if (is_array($cenefaOuterModel)) {
-                    if (!empty($cenefaOuterModel['id'])) $customizeParams['cenefa_outer_id'] = (string)$cenefaOuterModel['id'];
-                    $customizeParams['cenefa_outer_img'] = imagen_con_version((string)($cenefaOuterModel['imagen'] ?? ''));
-                    $customizeParams['cenefa_outer_name'] = (string)($cenefaOuterModel['nombre'] ?? '');
-                }
-                if (is_array($esquinaOuterModel)) {
-                    if (!empty($esquinaOuterModel['id'])) $customizeParams['esquina_outer_id'] = (string)$esquinaOuterModel['id'];
-                    $customizeParams['esquina_outer_img'] = imagen_con_version((string)($esquinaOuterModel['imagen'] ?? ''));
-                    $customizeParams['esquina_outer_name'] = (string)($esquinaOuterModel['nombre'] ?? '');
+                $isBorderCategory = in_array($cat, ['cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior'], true);
+                if ($isBorderCategory) {
+                    // Para modelos conectados (cenefa/esquina y exteriores), usar siempre la lógica dual basada en conexiones.
+                    $customizeParams = [
+                        'lang' => $lang,
+                        'picker' => 'dual',
+                    ];
+                    if (is_array($cenefaModel) && !empty($cenefaModel['id'])) $customizeParams['cenefa_id'] = (string)$cenefaModel['id'];
+                    if (is_array($esquinaModel) && !empty($esquinaModel['id'])) $customizeParams['esquina_id'] = (string)$esquinaModel['id'];
+                    if (is_array($cenefaOuterModel) && !empty($cenefaOuterModel['id'])) $customizeParams['cenefa_outer_id'] = (string)$cenefaOuterModel['id'];
+                    if (is_array($esquinaOuterModel) && !empty($esquinaOuterModel['id'])) $customizeParams['esquina_outer_id'] = (string)$esquinaOuterModel['id'];
+
+                    if (is_array($cenefaOuterModel)) {
+                        $customizeParams['cenefa_outer_img'] = imagen_con_version((string)($cenefaOuterModel['imagen'] ?? ''));
+                        $customizeParams['cenefa_outer_name'] = (string)($cenefaOuterModel['nombre'] ?? '');
+                    }
+                    if (is_array($esquinaOuterModel)) {
+                        $customizeParams['esquina_outer_img'] = imagen_con_version((string)($esquinaOuterModel['imagen'] ?? ''));
+                        $customizeParams['esquina_outer_name'] = (string)($esquinaOuterModel['nombre'] ?? '');
+                    }
+                } else {
+                    $customizeParams = [
+                        'picker' => 'single',
+                        'lang' => $lang,
+                        'img' => $targetImg,
+                        'name' => $targetName,
+                        'cat' => $targetCategory,
+                    ];
+                    if ($targetId !== '' && $targetId !== '0') $customizeParams['id'] = $targetId;
+                    if (is_array($cenefaModel)) {
+                        if (!empty($cenefaModel['id'])) $customizeParams['cenefa_id'] = (string)$cenefaModel['id'];
+                        $customizeParams['cenefa_img'] = imagen_con_version((string)($cenefaModel['imagen'] ?? ''));
+                        $customizeParams['cenefa_name'] = (string)($cenefaModel['nombre'] ?? '');
+                    }
+                    if (is_array($esquinaModel)) {
+                        if (!empty($esquinaModel['id'])) $customizeParams['esquina_id'] = (string)$esquinaModel['id'];
+                        $customizeParams['esquina_img'] = imagen_con_version((string)($esquinaModel['imagen'] ?? ''));
+                        $customizeParams['esquina_name'] = (string)($esquinaModel['nombre'] ?? '');
+                    }
+                    if (is_array($cenefaOuterModel)) {
+                        if (!empty($cenefaOuterModel['id'])) $customizeParams['cenefa_outer_id'] = (string)$cenefaOuterModel['id'];
+                        $customizeParams['cenefa_outer_img'] = imagen_con_version((string)($cenefaOuterModel['imagen'] ?? ''));
+                        $customizeParams['cenefa_outer_name'] = (string)($cenefaOuterModel['nombre'] ?? '');
+                    }
+                    if (is_array($esquinaOuterModel)) {
+                        if (!empty($esquinaOuterModel['id'])) $customizeParams['esquina_outer_id'] = (string)$esquinaOuterModel['id'];
+                        $customizeParams['esquina_outer_img'] = imagen_con_version((string)($esquinaOuterModel['imagen'] ?? ''));
+                        $customizeParams['esquina_outer_name'] = (string)($esquinaOuterModel['nombre'] ?? '');
+                    }
                 }
                 $customizeUrl = 'personalizar.php?' . http_build_query(array_filter($customizeParams, static fn($v) => $v !== ''));
               ?>
