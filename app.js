@@ -97,16 +97,25 @@
 
 
   function ensureSiteFavicon() {
-    const href = '/assets/logo/favicon.png';
-    let icon = document.querySelector('link[rel="icon"], link[data-site-favicon]');
-    if (!icon) {
-      icon = document.createElement('link');
-      icon.rel = 'icon';
-      icon.type = 'image/png';
-      icon.setAttribute('data-site-favicon', '1');
-      document.head.appendChild(icon);
-    }
-    icon.setAttribute('href', href);
+    const faviconDefs = [
+      { rel: 'icon', type: 'image/x-icon', href: '/assets/favicon/favicon.ico' },
+      { rel: 'shortcut icon', type: 'image/x-icon', href: '/assets/favicon/favicon.ico' },
+      { rel: 'icon', type: 'image/svg+xml', href: '/assets/favicon/favicon.svg' },
+      { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/assets/favicon/favicon-32x32.png' },
+      { rel: 'apple-touch-icon', sizes: '180x180', href: '/assets/favicon/apple-touch-icon.png' }
+    ];
+
+    document.querySelectorAll('link[data-site-favicon="1"]').forEach((el) => el.remove());
+
+    faviconDefs.forEach((def) => {
+      const link = document.createElement('link');
+      link.setAttribute('data-site-favicon', '1');
+      link.rel = def.rel;
+      link.href = def.href;
+      if (def.type) link.type = def.type;
+      if (def.sizes) link.sizes = def.sizes;
+      document.head.appendChild(link);
+    });
   }
 
   window.siteI18n = { getLang, applyLang };
