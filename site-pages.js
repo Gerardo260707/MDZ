@@ -78,22 +78,74 @@
     return lang === 'en' ? en : es;
   }
 
+  function resolveLangSlideValue(slide, key, lang) {
+    if (!slide || typeof slide !== 'object') return '';
+    const langKey = `${key}_${lang}`;
+    const altLangKey = `${key}_${lang === 'en' ? 'es' : 'en'}`;
+    const direct = slide[key];
+    const langVal = slide[langKey];
+    const altVal = slide[altLangKey];
+
+    if (typeof langVal === 'string' && langVal.trim()) return langVal;
+    if (direct && typeof direct === 'object') {
+      const fromObj = direct[lang] || direct[lang.toUpperCase()] || direct[lang === 'en' ? 'ing' : 'esp'];
+      if (typeof fromObj === 'string' && fromObj.trim()) return fromObj;
+    }
+    if (typeof direct === 'string' && direct.trim()) return direct;
+    if (typeof altVal === 'string' && altVal.trim()) return altVal;
+    if (direct && typeof direct === 'object') {
+      const fallbackObj = direct[lang === 'en' ? 'es' : 'en'] || direct.ES || direct.EN;
+      if (typeof fallbackObj === 'string' && fallbackObj.trim()) return fallbackObj;
+    }
+    return '';
+  }
+
   function initHome() {
     const slidesContainer = q('slides');
     const dotsContainer = q('dots');
     const cardsContainer = q('featureCards');
-    if (!slidesContainer || !dotsContainer || !cardsContainer) return;
+    const hero = document.querySelector('.hero');
+    if (!slidesContainer || !dotsContainer || !cardsContainer || !hero) return;
 
     const fallbackSlides = [
-      { title: '¡50% DE DESCUENTO!', subtitle: 'EN PISOS DECORADOS 20x20 COLLAGE', background: 'repeating-linear-gradient(45deg,#5e7f99 0 32px,#e5dcc1 32px 64px,#8f2a2a 64px 96px,#f4f4f0 96px 128px,#2b8481 128px 160px,#be7a5c 160px 192px)' },
-      { title: 'ENVÍOS A TODO MÉXICO', subtitle: 'COMPRA DESDE CUALQUIER ESTADO', background: 'repeating-linear-gradient(135deg,#295e85 0 26px,#f0deb9 26px 52px,#943636 52px 78px,#f8f7f2 78px 104px,#488780 104px 130px,#d27f5f 130px 156px)' },
-      { title: 'NUEVOS DISEÑOS', subtitle: 'COLECCIONES PERSONALIZADAS', background: 'repeating-linear-gradient(25deg,#33608f 0 25px,#ebdbb8 25px 50px,#7d1f1f 50px 75px,#f4f2e9 75px 100px,#3c8f88 100px 125px,#ca8867 125px 150px)' }
+      {
+        title_es: '¡50% DE DESCUENTO!',
+        subtitle_es: 'EN PISOS DECORADOS 20x20 COLLAGE',
+        title_en: '50% OFF!',
+        subtitle_en: 'ON 20x20 DECORATED FLOOR TILES COLLAGE',
+        background: 'repeating-linear-gradient(45deg,#5e7f99 0 32px,#e5dcc1 32px 64px,#8f2a2a 64px 96px,#f4f4f0 96px 128px,#2b8481 128px 160px,#be7a5c 160px 192px)'
+      },
+      {
+        title_es: 'ENVÍOS A TODO MÉXICO',
+        subtitle_es: 'COMPRA DESDE CUALQUIER ESTADO',
+        title_en: 'NATIONWIDE SHIPPING',
+        subtitle_en: 'ORDER FROM ANY STATE',
+        background: 'repeating-linear-gradient(135deg,#295e85 0 26px,#f0deb9 26px 52px,#943636 52px 78px,#f8f7f2 78px 104px,#488780 104px 130px,#d27f5f 130px 156px)'
+      },
+      {
+        title_es: 'NUEVOS DISEÑOS',
+        subtitle_es: 'COLECCIONES PERSONALIZADAS',
+        title_en: 'NEW DESIGNS',
+        subtitle_en: 'CUSTOM COLLECTIONS',
+        background: 'repeating-linear-gradient(25deg,#33608f 0 25px,#ebdbb8 25px 50px,#7d1f1f 50px 75px,#f4f2e9 75px 100px,#3c8f88 100px 125px,#ca8867 125px 150px)'
+      }
     ];
     const dynamicSlides = Array.isArray(window.HOME_CAROUSEL_ASSETS) ? window.HOME_CAROUSEL_ASSETS : [];
     const manualSlides = Array.isArray(window.HOME_CAROUSEL) ? window.HOME_CAROUSEL : [];
-    const CAROUSEL_SLIDES = dynamicSlides.length ? dynamicSlides : (manualSlides.length ? manualSlides : fallbackSlides);
+    const RAW_SLIDES = dynamicSlides.length ? dynamicSlides : (manualSlides.length ? manualSlides : fallbackSlides);
 
     const lang = getLang();
+    const CAROUSEL_SLIDES = RAW_SLIDES.map((slide) => {
+      if (typeof slide === 'string') return { image: slide, title: '', subtitle: '' };
+      if (!slide || typeof slide !== 'object') return { image: '', title: '', subtitle: '' };
+      return {
+        ...slide,
+        image: resolveLangSlideValue(slide, 'image', lang),
+        title: resolveLangSlideValue(slide, 'title', lang),
+        subtitle: resolveLangSlideValue(slide, 'subtitle', lang)
+      };
+    });
+
     const FEATURE_CARDS = [
       {
         file: '',
@@ -130,11 +182,14 @@
     });
 
     let activeIndex = 0;
+    let autoAdvanceTimer = 0;
+
     const slideEls = CAROUSEL_SLIDES.map((slide, index) => {
       const article = document.createElement('article');
       article.className = `slide ${index === 0 ? 'active' : ''}`;
+      article.dataset.index = String(index);
       if (slide.image) {
-        article.innerHTML = `<img class="slide-media" src="${slide.image}" alt="${slide.title || 'Promoción'}" loading="lazy" /><div class="promo"><strong>${slide.title || ''}</strong><span>${slide.subtitle || ''}</span></div>`;
+        article.innerHTML = `<img class="slide-media" src="${slide.image}" alt="${slide.title || (lang === 'en' ? 'Promotion' : 'Promoción')}" loading="lazy" /><div class="promo"><strong>${slide.title || ''}</strong><span>${slide.subtitle || ''}</span></div>`;
       } else {
         article.style.setProperty('--slide-bg', slide.background);
         article.innerHTML = `<div class="promo"><strong>${slide.title || ''}</strong><span>${slide.subtitle || ''}</span></div>`;
@@ -143,21 +198,84 @@
 
       const dot = document.createElement('button');
       dot.className = index === 0 ? 'active' : '';
+      dot.setAttribute('aria-label', lang === 'en' ? `Go to slide ${index + 1}` : `Ir a la imagen ${index + 1}`);
       dot.addEventListener('click', () => showSlide(index));
       dotsContainer.appendChild(dot);
       return article;
     });
 
     const dotEls = [...dotsContainer.children];
-    function showSlide(index) {
-      activeIndex = index;
-      slideEls.forEach((el, i) => el.classList.toggle('active', i === index));
-      dotEls.forEach((el, i) => el.classList.toggle('active', i === index));
-    }
-    setInterval(() => showSlide((activeIndex + 1) % CAROUSEL_SLIDES.length), 4500);
-  }
 
-  
+    function updateHeroHeight() {
+      const activeSlide = slideEls[activeIndex];
+      if (!activeSlide) return;
+      const activeImage = activeSlide.querySelector('.slide-media');
+      const containerWidth = hero.clientWidth || slidesContainer.clientWidth || 1;
+      const vhCap = window.innerHeight ? (window.innerHeight * (window.innerWidth <= 700 ? 0.55 : 0.68)) : 560;
+      const minH = window.innerWidth <= 700 ? 170 : 240;
+      let targetHeight = Math.max(minH, Math.min(vhCap, containerWidth * (7 / 16)));
+
+      if (activeImage && activeImage.naturalWidth > 0 && activeImage.naturalHeight > 0) {
+        const ratio = activeImage.naturalWidth / activeImage.naturalHeight;
+        const safeRatio = Number.isFinite(ratio) && ratio > 0 ? ratio : (16 / 7);
+        targetHeight = Math.max(minH, Math.min(vhCap, containerWidth / safeRatio));
+      }
+      hero.style.height = `${Math.round(targetHeight)}px`;
+    }
+
+    function showSlide(index) {
+      if (!slideEls.length) return;
+      activeIndex = (index + slideEls.length) % slideEls.length;
+      slideEls.forEach((el, i) => el.classList.toggle('active', i === activeIndex));
+      dotEls.forEach((el, i) => el.classList.toggle('active', i === activeIndex));
+      updateHeroHeight();
+    }
+
+    function restartAutoAdvance() {
+      if (!slideEls.length || slideEls.length === 1) return;
+      if (autoAdvanceTimer) clearInterval(autoAdvanceTimer);
+      autoAdvanceTimer = setInterval(() => showSlide(activeIndex + 1), 4500);
+    }
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    const swipeThreshold = 36;
+
+    slidesContainer.addEventListener('touchstart', (event) => {
+      const point = event.changedTouches && event.changedTouches[0];
+      if (!point) return;
+      touchStartX = point.clientX;
+      touchStartY = point.clientY;
+    }, { passive: true });
+
+    slidesContainer.addEventListener('touchend', (event) => {
+      const point = event.changedTouches && event.changedTouches[0];
+      if (!point) return;
+      const deltaX = point.clientX - touchStartX;
+      const deltaY = point.clientY - touchStartY;
+      if (Math.abs(deltaX) > swipeThreshold && Math.abs(deltaX) > Math.abs(deltaY)) {
+        showSlide(activeIndex + (deltaX < 0 ? 1 : -1));
+        restartAutoAdvance();
+      }
+    }, { passive: true });
+
+    CAROUSEL_SLIDES.forEach((slide, i) => {
+      if (!slide || !slide.image) return;
+      const img = slideEls[i] && slideEls[i].querySelector('.slide-media');
+      if (!img) return;
+      if (img.complete) {
+        if (i === 0) updateHeroHeight();
+      } else {
+        img.addEventListener('load', () => {
+          if (i === activeIndex) updateHeroHeight();
+        });
+      }
+    });
+
+    window.addEventListener('resize', updateHeroHeight);
+    showSlide(0);
+    restartAutoAdvance();
+  }
 
   function initColorsPage() {
     const grid = q('colorsGrid');
