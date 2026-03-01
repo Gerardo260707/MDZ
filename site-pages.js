@@ -1487,7 +1487,7 @@
         const isTapeteFlow = searchMode === 'tapete';
         const nameParts = dedupThumbs.map((d) => (d.label || '').replace(/[^a-z0-9\-_]+/gi, '_').replace(/^_+|_+$/g, '')).filter(Boolean);
         const baseRaw = isTapeteFlow
-          ? `tapete_${modelName}`
+          ? `${modelName}`
           : (nameParts.slice(0, 3).join('_') || modelName || 'modelo');
         const safeName = String(baseRaw).replace(/[^a-z0-9\-_]+/gi, '_').replace(/^_+|_+$/g, '').slice(0, 90) || 'modelo';
         const fileName = `${safeName}_${status}.pdf`;
