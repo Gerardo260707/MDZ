@@ -344,6 +344,41 @@ foreach ($items as $it) {
         $byFolder[$folder][strtolower((string)($it['categoria'] ?? ''))] = $it;
     }
 }
+
+$itemsCentros = array_values(array_filter($items, static fn($m) => strtolower((string)($m['categoria'] ?? '')) === 'centro'));
+$itemsCenefas = array_values(array_filter($items, static fn($m) => strtolower((string)($m['categoria'] ?? '')) === 'cenefa'));
+usort($itemsCentros, static fn($a, $b) => strcasecmp((string)($a['nombre'] ?? ''), (string)($b['nombre'] ?? '')));
+usort($itemsCenefas, static fn($a, $b) => strcasecmp((string)($a['nombre'] ?? ''), (string)($b['nombre'] ?? '')));
+$itemsCenefasSimples = [];
+$itemsCenefasDobles = [];
+foreach ($itemsCenefas as $cen) {
+    $f = carpeta_modelo_de_item($cen);
+    $out = (array)($conexionesOuter[$f] ?? []);
+    $isDouble = trim((string)($out['cenefa'] ?? '')) !== '' || trim((string)($out['esquina'] ?? '')) !== '';
+    if ($isDouble) $itemsCenefasDobles[] = $cen;
+    else $itemsCenefasSimples[] = $cen;
+}
+
+$sectionsDecorados = [
+    [
+        'title' => 'Mosaicos Decorados',
+        'description' => "Los mosaicos hidráulicos decorados tienen la característica de generar un patrón lineal y enlaces con diferentes ángulos con la finalidad de dar unión y continuidad al dibujo.
+Para ver su patrón, de clic sobre la imagen.
+
+Los colores presentados en esta muestra digital pueden no representar con fidelidad sus tonalidades reales. Es necesario compararlo con la paleta de colores en alguna de nuestras salas de exhibición.",
+        'items' => $itemsCentros,
+    ],
+    [
+        'title' => 'Cenefas',
+        'description' => 'Diseños de ornamentación que dan bellesa, aportan arte y durabilidad a sus pisos y muros. Da clic sobre la imagen para desplegar el tapete.',
+        'items' => $itemsCenefasSimples,
+    ],
+    [
+        'title' => 'Cenefas Dobles',
+        'description' => '',
+        'items' => $itemsCenefasDobles,
+    ],
+];
 ?>
 <!doctype html>
 <html lang="<?= $lang ?>">
@@ -402,9 +437,15 @@ foreach ($items as $it) {
 
     <section id="catalogo-decorados" class="panel decorated-layout">
       <div class="mosaic-grid-wrap">
-        <div class="mosaic-grid mosaic-grid-small">
-          <?php if (!empty($items)): ?>
-            <?php foreach ($items as $m): ?>
+        <?php foreach ($sectionsDecorados as $section): ?>
+          <div class="decorated-section-block">
+            <h3><?= htmlspecialchars((string)$section['title'], ENT_QUOTES) ?></h3>
+            <?php if (trim((string)($section['description'] ?? '')) !== ''): ?>
+              <p class="decorated-section-text"><?= nl2br(htmlspecialchars((string)$section['description'], ENT_QUOTES)) ?></p>
+            <?php endif; ?>
+            <div class="mosaic-grid mosaic-grid-small">
+            <?php if (!empty($section['items'])): ?>
+              <?php foreach ($section['items'] as $m): ?>
               <?php
                 $folder = carpeta_modelo_de_item($m);
                 $cat = strtolower((string)($m['categoria'] ?? ''));
@@ -466,11 +507,9 @@ foreach ($items as $it) {
                 $targetModel = $m;
                 $targetCategory = $cat;
                 if ($cat === 'cenefa') {
-                    // Al personalizar una cenefa, siempre abrir el simulador con esa misma cenefa.
                     $targetModel = $m;
                     $targetCategory = 'cenefa';
                 } elseif (in_array($cat, ['esquina', 'cenefa_exterior', 'esquina_exterior'], true) && is_array($cenefaModel)) {
-                    // Para piezas conectadas, redirigir al contexto de la cenefa conectada.
                     $targetModel = $cenefaModel;
                     $targetCategory = 'cenefa';
                 }
@@ -481,7 +520,6 @@ foreach ($items as $it) {
 
                 $isBorderCategory = in_array($cat, ['cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior'], true);
                 if ($isBorderCategory) {
-                    // Para modelos conectados (cenefa/esquina y exteriores), usar siempre la lógica dual basada en conexiones.
                     $customizeParams = [
                         'lang' => $lang,
                         'picker' => 'dual',
@@ -490,7 +528,6 @@ foreach ($items as $it) {
                     if (is_array($esquinaModel) && !empty($esquinaModel['id'])) $customizeParams['esquina_id'] = (string)$esquinaModel['id'];
                     if (is_array($cenefaOuterModel) && !empty($cenefaOuterModel['id'])) $customizeParams['cenefa_outer_id'] = (string)$cenefaOuterModel['id'];
                     if (is_array($esquinaOuterModel) && !empty($esquinaOuterModel['id'])) $customizeParams['esquina_outer_id'] = (string)$esquinaOuterModel['id'];
-
                     if (is_array($cenefaOuterModel)) {
                         $customizeParams['cenefa_outer_img'] = imagen_con_version((string)($cenefaOuterModel['imagen'] ?? ''));
                         $customizeParams['cenefa_outer_name'] = (string)($cenefaOuterModel['nombre'] ?? '');
@@ -531,7 +568,6 @@ foreach ($items as $it) {
                 }
                 $customizeUrl = 'personalizar.php?' . http_build_query(array_filter($customizeParams, static fn($v) => $v !== ''));
                 $isBorderCat = in_array($cat, ['cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior'], true);
-                // En mosaicos decorados, el botón de personalizar para conexiones de borde se muestra únicamente en la cenefa.
                 $showCustomizeBtn = !$isBorderCat || $cat === 'cenefa';
               ?>
               <article class="mosaic-card">
@@ -543,11 +579,13 @@ foreach ($items as $it) {
                 <a class="action cta-pill" href="<?= htmlspecialchars($customizeUrl, ENT_QUOTES) ?>" data-i18n="btn_customize">Personalizar</a>
                 <?php endif; ?>
               </article>
-            <?php endforeach; ?>
-          <?php else: ?>
-            <p class="empty-msg">Aún no hay modelos cargados en <strong>Tapiz/</strong>. Agrega carpetas con PNG y ejecuta <code>python3 scripts/import_tapiz.py</code>.</p>
-          <?php endif; ?>
-        </div>
+              <?php endforeach; ?>
+            <?php else: ?>
+              <p class="empty-msg">Sin modelos en esta sección.</p>
+            <?php endif; ?>
+            </div>
+          </div>
+        <?php endforeach; ?>
       </div>
     </section>
   </main>

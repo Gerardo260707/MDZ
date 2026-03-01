@@ -158,16 +158,16 @@
     const leftCanvas = q('compareCanvasLeft');
     const rightCanvas = q('compareCanvasRight');
     const previewCanvas = q('comparePreviewCanvas');
-    const leftPalette = q('comparePaletteLeft');
-    const rightPalette = q('comparePaletteRight');
-    if (!toggleBtn || !comparator || !leftCanvas || !rightCanvas || !previewCanvas || !leftPalette || !rightPalette || !colors.length) return;
+    const sharedPalette = q('comparePaletteShared');
+    if (!toggleBtn || !comparator || !leftCanvas || !rightCanvas || !previewCanvas || !sharedPalette || !colors.length) return;
 
     const lang = getLang();
     toggleBtn.textContent = lang === 'en' ? 'Color comparator' : 'Comparador de colores';
 
     const gridSize = 12;
-    const leftState = { selected: colors[0] || { hex: '#000000' }, cells: new Array(gridSize * gridSize).fill((colors[0] || { hex: '#000000' }).hex) };
-    const rightState = { selected: colors[1] || colors[0] || { hex: '#000000' }, cells: new Array(gridSize * gridSize).fill((colors[1] || colors[0] || { hex: '#000000' }).hex) };
+    const leftState = { cells: new Array(gridSize * gridSize).fill((colors[0] || { hex: '#000000' }).hex) };
+    const rightState = { cells: new Array(gridSize * gridSize).fill((colors[1] || colors[0] || { hex: '#000000' }).hex) };
+    let selectedColor = colors[0] || { id: 'X', hex: '#000000' };
 
     function drawEditor(canvas, state) {
       const ctx = canvas.getContext('2d');
@@ -250,12 +250,12 @@
       const y = ((ev.clientY - rect.top) / rect.height) * canvas.height;
       const c = Math.max(0, Math.min(gridSize - 1, Math.floor(x / (canvas.width / gridSize))));
       const r = Math.max(0, Math.min(gridSize - 1, Math.floor(y / (canvas.height / gridSize))));
-      state.cells[r * gridSize + c] = state.selected.hex;
+      state.cells[r * gridSize + c] = selectedColor.hex;
       drawEditor(canvas, state);
       drawPreview();
     }
 
-    function buildPalette(el, state, canvas) {
+    function buildPalette(el) {
       el.innerHTML = '';
       colors.forEach((col) => {
         const btn = document.createElement('button');
@@ -264,10 +264,10 @@
         btn.style.background = col.hex;
         btn.title = `${col.id} · ${col.hex}`;
         btn.setAttribute('aria-label', `${col.id} ${col.hex}`);
-        if (state.selected && state.selected.id === col.id) btn.classList.add('active');
+        if (selectedColor && selectedColor.id === col.id) btn.classList.add('active');
         btn.addEventListener('click', () => {
-          state.selected = col;
-          buildPalette(el, state, canvas);
+          selectedColor = col;
+          buildPalette(el);
         });
         el.appendChild(btn);
       });
@@ -285,8 +285,7 @@
         : (lang === 'en' ? 'Color comparator' : 'Comparador de colores');
     });
 
-    buildPalette(leftPalette, leftState, leftCanvas);
-    buildPalette(rightPalette, rightState, rightCanvas);
+    buildPalette(sharedPalette);
     drawEditor(leftCanvas, leftState);
     drawEditor(rightCanvas, rightState);
     drawPreview();

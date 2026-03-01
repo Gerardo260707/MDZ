@@ -39,17 +39,16 @@ $lang = (($_GET['lang'] ?? 'es') === 'en') ? 'en' : 'es';
           <section class="color-compare-editor" data-editor="left">
             <h3>Modelo A</h3>
             <canvas id="compareCanvasLeft" width="320" height="320" aria-label="Comparador lienzo izquierdo"></canvas>
-            <div id="comparePaletteLeft" class="palette compare-palette"></div>
-          </section>
+            </section>
           <section class="color-compare-editor" data-editor="right">
             <h3>Modelo B</h3>
             <canvas id="compareCanvasRight" width="320" height="320" aria-label="Comparador lienzo derecho"></canvas>
-            <div id="comparePaletteRight" class="palette compare-palette"></div>
           </section>
         </div>
         <section class="color-compare-preview-wrap">
           <h3>Vista grande (ajedrez)</h3>
-          <canvas id="comparePreviewCanvas" width="1200" height="700" aria-label="Vista grande de comparación"></canvas>
+          <canvas id="comparePreviewCanvas" width="760" height="420" aria-label="Vista grande de comparación"></canvas>
+          <div id="comparePaletteShared" class="palette compare-palette"></div>
         </section>
       </div>
       <div id="colorsGrid" class="colors-grid"></div>
