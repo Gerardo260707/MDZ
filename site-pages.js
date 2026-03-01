@@ -152,6 +152,144 @@
       card.innerHTML = `<div class="swatch" style="background:${c.hex}"></div><strong>${c.id}</strong><span>${c.hex}</span>`;
       grid.appendChild(card);
     });
+
+    const toggleBtn = q('toggleColorComparator');
+    const comparator = q('colorComparator');
+    const leftCanvas = q('compareCanvasLeft');
+    const rightCanvas = q('compareCanvasRight');
+    const previewCanvas = q('comparePreviewCanvas');
+    const leftPalette = q('comparePaletteLeft');
+    const rightPalette = q('comparePaletteRight');
+    if (!toggleBtn || !comparator || !leftCanvas || !rightCanvas || !previewCanvas || !leftPalette || !rightPalette || !colors.length) return;
+
+    const lang = getLang();
+    toggleBtn.textContent = lang === 'en' ? 'Color comparator' : 'Comparador de colores';
+
+    const gridSize = 12;
+    const leftState = { selected: colors[0] || { hex: '#000000' }, cells: new Array(gridSize * gridSize).fill((colors[0] || { hex: '#000000' }).hex) };
+    const rightState = { selected: colors[1] || colors[0] || { hex: '#000000' }, cells: new Array(gridSize * gridSize).fill((colors[1] || colors[0] || { hex: '#000000' }).hex) };
+
+    function drawEditor(canvas, state) {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      const w = canvas.width;
+      const h = canvas.height;
+      const cellW = w / gridSize;
+      const cellH = h / gridSize;
+      ctx.clearRect(0, 0, w, h);
+      for (let r = 0; r < gridSize; r++) {
+        for (let c = 0; c < gridSize; c++) {
+          const idx = r * gridSize + c;
+          const baseA = '#f4f4f4';
+          const baseB = '#dfdfdf';
+          ctx.fillStyle = ((r + c) % 2 === 0) ? baseA : baseB;
+          ctx.fillRect(c * cellW, r * cellH, cellW, cellH);
+          ctx.fillStyle = state.cells[idx] || '#ffffff';
+          ctx.fillRect(c * cellW + 1, r * cellH + 1, cellW - 2, cellH - 2);
+        }
+      }
+      ctx.strokeStyle = 'rgba(0,0,0,.18)';
+      for (let i = 0; i <= gridSize; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * cellW, 0);
+        ctx.lineTo(i * cellW, h);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i * cellH);
+        ctx.lineTo(w, i * cellH);
+        ctx.stroke();
+      }
+    }
+
+    function drawPreview() {
+      const ctx = previewCanvas.getContext('2d');
+      if (!ctx) return;
+      const w = previewCanvas.width;
+      const h = previewCanvas.height;
+      const cols = 10;
+      const rows = 6;
+      const tileW = w / cols;
+      const tileH = h / rows;
+      const cellW = tileW / gridSize;
+      const cellH = tileH / gridSize;
+      ctx.clearRect(0, 0, w, h);
+      for (let tr = 0; tr < rows; tr++) {
+        for (let tc = 0; tc < cols; tc++) {
+          const useLeft = ((tr + tc) % 2 === 0);
+          const state = useLeft ? leftState : rightState;
+          const ox = tc * tileW;
+          const oy = tr * tileH;
+          for (let r = 0; r < gridSize; r++) {
+            for (let c = 0; c < gridSize; c++) {
+              const idx = r * gridSize + c;
+              ctx.fillStyle = state.cells[idx] || '#ffffff';
+              ctx.fillRect(ox + c * cellW, oy + r * cellH, cellW + 0.3, cellH + 0.3);
+            }
+          }
+        }
+      }
+      ctx.strokeStyle = 'rgba(0,0,0,.22)';
+      ctx.lineWidth = 2;
+      for (let tr = 0; tr <= rows; tr++) {
+        ctx.beginPath();
+        ctx.moveTo(0, tr * tileH);
+        ctx.lineTo(w, tr * tileH);
+        ctx.stroke();
+      }
+      for (let tc = 0; tc <= cols; tc++) {
+        ctx.beginPath();
+        ctx.moveTo(tc * tileW, 0);
+        ctx.lineTo(tc * tileW, h);
+        ctx.stroke();
+      }
+    }
+
+    function paintCell(canvas, state, ev) {
+      const rect = canvas.getBoundingClientRect();
+      const x = ((ev.clientX - rect.left) / rect.width) * canvas.width;
+      const y = ((ev.clientY - rect.top) / rect.height) * canvas.height;
+      const c = Math.max(0, Math.min(gridSize - 1, Math.floor(x / (canvas.width / gridSize))));
+      const r = Math.max(0, Math.min(gridSize - 1, Math.floor(y / (canvas.height / gridSize))));
+      state.cells[r * gridSize + c] = state.selected.hex;
+      drawEditor(canvas, state);
+      drawPreview();
+    }
+
+    function buildPalette(el, state, canvas) {
+      el.innerHTML = '';
+      colors.forEach((col) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'sw';
+        btn.style.background = col.hex;
+        btn.title = `${col.id} · ${col.hex}`;
+        btn.setAttribute('aria-label', `${col.id} ${col.hex}`);
+        if (state.selected && state.selected.id === col.id) btn.classList.add('active');
+        btn.addEventListener('click', () => {
+          state.selected = col;
+          buildPalette(el, state, canvas);
+        });
+        el.appendChild(btn);
+      });
+    }
+
+    leftCanvas.addEventListener('click', (ev) => paintCell(leftCanvas, leftState, ev));
+    rightCanvas.addEventListener('click', (ev) => paintCell(rightCanvas, rightState, ev));
+
+    toggleBtn.addEventListener('click', () => {
+      const opening = comparator.hasAttribute('hidden');
+      if (opening) comparator.removeAttribute('hidden');
+      else comparator.setAttribute('hidden', 'hidden');
+      toggleBtn.textContent = opening
+        ? (lang === 'en' ? 'Hide comparator' : 'Ocultar comparador')
+        : (lang === 'en' ? 'Color comparator' : 'Comparador de colores');
+    });
+
+    buildPalette(leftPalette, leftState, leftCanvas);
+    buildPalette(rightPalette, rightState, rightCanvas);
+    drawEditor(leftCanvas, leftState);
+    drawEditor(rightCanvas, rightState);
+    drawPreview();
   }
 
   function initCategories() {
