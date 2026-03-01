@@ -1299,12 +1299,14 @@
       dl.addEventListener('click', async () => {
         const tpl = getPdfTemplate();
         const reportCanvas = document.createElement('canvas');
-        reportCanvas.width = tpl.page.canvasWidth;
-        reportCanvas.height = tpl.page.canvasHeight;
+        const exportScale = 2;
+        reportCanvas.width = tpl.page.canvasWidth * exportScale;
+        reportCanvas.height = tpl.page.canvasHeight * exportScale;
         const rctx = reportCanvas.getContext('2d');
+        rctx.setTransform(exportScale, 0, 0, exportScale, 0, 0);
 
         rctx.fillStyle = '#ffffff';
-        rctx.fillRect(0, 0, reportCanvas.width, reportCanvas.height);
+        rctx.fillRect(0, 0, tpl.page.canvasWidth, tpl.page.canvasHeight);
 
         if (tpl.logo && tpl.logo.src) {
           const logo = new Image();
@@ -1328,7 +1330,32 @@
 
         rctx.strokeStyle = '#bbb';
         rctx.strokeRect(tpl.pattern.x, tpl.pattern.y, tpl.pattern.width, tpl.pattern.height);
-        rctx.drawImage(patternCanvas, tpl.pattern.x, tpl.pattern.y, tpl.pattern.width, tpl.pattern.height);
+
+        let exportPatternCanvas = patternCanvas;
+        const patternW0 = patternCanvas.width;
+        const patternH0 = patternCanvas.height;
+        try {
+          if (typeof drawPattern === 'function' && patternW0 > 0 && patternH0 > 0) {
+            patternCanvas.width = patternW0 * 2;
+            patternCanvas.height = patternH0 * 2;
+            drawPattern();
+            exportPatternCanvas = document.createElement('canvas');
+            exportPatternCanvas.width = patternCanvas.width;
+            exportPatternCanvas.height = patternCanvas.height;
+            exportPatternCanvas.getContext('2d').drawImage(patternCanvas, 0, 0);
+            patternCanvas.width = patternW0;
+            patternCanvas.height = patternH0;
+            drawPattern();
+          }
+        } catch (e) {
+          patternCanvas.width = patternW0;
+          patternCanvas.height = patternH0;
+          if (typeof drawPattern === 'function') drawPattern();
+          exportPatternCanvas = patternCanvas;
+        }
+
+        rctx.imageSmoothingEnabled = true;
+        rctx.drawImage(exportPatternCanvas, tpl.pattern.x, tpl.pattern.y, tpl.pattern.width, tpl.pattern.height);
 
         const selectedIds = getUsedColorIdsFromDiff();
         const hasChanges = selectedIds.length > 0;
@@ -1340,13 +1367,27 @@
           return found && found.nombre ? found.nombre : fallbackLabel;
         }
 
+        function thumbCanvasFromEditor(editorState, size = 600) {
+          if (!editorState || !editorState.current) return null;
+          const c = document.createElement('canvas');
+          c.width = size;
+          c.height = size;
+          const cx = c.getContext('2d');
+          const srcCanvas = document.createElement('canvas');
+          srcCanvas.width = editorState.current.width;
+          srcCanvas.height = editorState.current.height;
+          srcCanvas.getContext('2d').putImageData(editorState.current, 0, 0);
+          drawImageCover(cx, srcCanvas, c.width, c.height);
+          return c;
+        }
+
         async function thumbCanvasFromSrc(imageSrc, fallbackCanvas) {
           if (fallbackCanvas) return fallbackCanvas;
           const img = await loadImageSafe(imageSrc);
           if (!img) return null;
           const c = document.createElement('canvas');
-          c.width = 300;
-          c.height = 300;
+          c.width = 600;
+          c.height = 600;
           const cx = c.getContext('2d');
           drawImageCover(cx, img, c.width, c.height);
           return c;
@@ -1362,7 +1403,7 @@
           ? selectedModelNameEl.textContent.trim()
           : modelName;
         if (src) {
-          const mainCanvas = await thumbCanvasFromSrc(src, editCanvas || null);
+          const mainCanvas = thumbCanvasFromEditor({ current: currentImageData }, 600) || await thumbCanvasFromSrc(src, editCanvas || null);
           if (mainCanvas) modelThumbs.push({ key: src, label: mainLabel || (editTarget || category || 'Modelo').toUpperCase(), canvas: mainCanvas });
         }
         if (centerSrc && centerSrc !== src) {
@@ -1370,19 +1411,19 @@
           if (centerCanvas) modelThumbs.push({ key: centerSrc, label: modelNameBySrc(centerSrc, 'Centro'), canvas: centerCanvas });
         }
         if (cenefaSrc && cenefaSrc !== src) {
-          const cenefaCanvas = await thumbCanvasFromSrc(cenefaSrc, cCanvas || null);
+          const cenefaCanvas = thumbCanvasFromEditor(cenefaEditor, 600) || await thumbCanvasFromSrc(cenefaSrc, cCanvas || null);
           if (cenefaCanvas) modelThumbs.push({ key: cenefaSrc, label: modelNameBySrc(cenefaSrc, 'Cenefa'), canvas: cenefaCanvas });
         }
         if (esquinaSrc && esquinaSrc !== src) {
-          const esquinaCanvas = await thumbCanvasFromSrc(esquinaSrc, eCanvas || null);
+          const esquinaCanvas = thumbCanvasFromEditor(esquinaEditor, 600) || await thumbCanvasFromSrc(esquinaSrc, eCanvas || null);
           if (esquinaCanvas) modelThumbs.push({ key: esquinaSrc, label: modelNameBySrc(esquinaSrc, 'Esquina'), canvas: esquinaCanvas });
         }
         if (cenefaOuterSrc && cenefaOuterSrc !== src) {
-          const cenefaOuterCanvas = await thumbCanvasFromSrc(cenefaOuterSrc, coCanvas || null);
+          const cenefaOuterCanvas = thumbCanvasFromEditor(cenefaOuterEditor, 600) || await thumbCanvasFromSrc(cenefaOuterSrc, coCanvas || null);
           if (cenefaOuterCanvas) modelThumbs.push({ key: cenefaOuterSrc, label: modelNameBySrc(cenefaOuterSrc, lang === 'en' ? 'Outer border' : 'Cenefa exterior'), canvas: cenefaOuterCanvas });
         }
         if (esquinaOuterSrc && esquinaOuterSrc !== src) {
-          const esquinaOuterCanvas = await thumbCanvasFromSrc(esquinaOuterSrc, eoCanvas || null);
+          const esquinaOuterCanvas = thumbCanvasFromEditor(esquinaOuterEditor, 600) || await thumbCanvasFromSrc(esquinaOuterSrc, eoCanvas || null);
           if (esquinaOuterCanvas) modelThumbs.push({ key: esquinaOuterSrc, label: modelNameBySrc(esquinaOuterSrc, lang === 'en' ? 'Outer corner' : 'Esquina exterior'), canvas: esquinaOuterCanvas });
         }
 
@@ -1440,7 +1481,7 @@
           rctx.fillText(`${item.id} · ${item.name} (${item.hex})`, x + 40, y + 4);
         });
 
-        const jpg = reportCanvas.toDataURL('image/jpeg', 0.92);
+        const jpg = reportCanvas.toDataURL('image/jpeg', 0.98);
         const blob = buildPdfFromJpeg(jpg, tpl.page.widthPt, tpl.page.heightPt, reportCanvas.width, reportCanvas.height);
         const status = hasChanges ? (lang === 'en' ? 'customized' : 'personalizado') : (lang === 'en' ? 'original' : 'sin_cambios');
         const isTapeteFlow = searchMode === 'tapete';
