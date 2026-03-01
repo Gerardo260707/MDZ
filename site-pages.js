@@ -1021,7 +1021,8 @@
         const tw = w / cols;
         const th = h / rows;
 
-        const centerSource = centerSrc ? tile : null;
+        const hasCenterModel = Boolean(centerSrc);
+        const centerSource = (hasCenterModel || (!hasCenterModel && (cenefaSrc || esquinaSrc || cenefaOuterSrc || esquinaOuterSrc))) ? tile : null;
         const cenefaSource = asTileSource((editTarget === 'cenefa') ? tile : (cenefaEditedCanvas || cenefaImg || tile));
         const cornerSource = asTileSource((editTarget === 'esquina') ? tile : (esquinaEditedCanvas || esquinaImg || cenefaSource));
         const cenefaOuterSource = asTileSource((editTarget === 'cenefa_exterior') ? tile : (cenefaOuterEditedCanvas || cenefaOuterImg || cenefaSource));
@@ -1457,6 +1458,16 @@
         if (src) {
           const mainCanvas = thumbCanvasFromEditor({ current: currentImageData }, 600) || await thumbCanvasFromSrc(src, editCanvas || null);
           if (mainCanvas) modelThumbs.push({ key: src, label: mainLabel || (editTarget || category || 'Modelo').toUpperCase(), canvas: mainCanvas });
+        }
+        if (!centerSrc && (cenefaSrc || esquinaSrc || cenefaOuterSrc || esquinaOuterSrc) && currentImageData) {
+          const centerSolidCanvas = thumbCanvasFromEditor({ current: currentImageData }, 600);
+          if (centerSolidCanvas) {
+            const primaryColor = selectedIds.length ? byId.get(selectedIds[0]) : null;
+            const centerLabel = primaryColor
+              ? `${lang === 'en' ? 'Solid center' : 'Centro liso'}: ${primaryColor.name || primaryColor.id}`
+              : (lang === 'en' ? 'Solid center' : 'Centro liso');
+            modelThumbs.push({ key: 'center-solid', label: centerLabel, canvas: centerSolidCanvas });
+          }
         }
         if (centerSrc && centerSrc !== src) {
           const centerCanvas = await thumbCanvasFromSrc(centerSrc, null);
