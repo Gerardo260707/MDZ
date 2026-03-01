@@ -12,21 +12,21 @@
       custom_apply: 'Aplicar color', custom_reset: 'Imagen original', custom_download: 'Descargar PDF', catalog_ready: 'Esta página está lista para mostrar +300 mosaicos desde base de datos.',
       custom_model_search_input: 'Escriba el nombre del modelo', custom_select_center: 'Seleccionar centro', custom_select_cenefa: 'Seleccionar cenefa', custom_select_esquina: 'Seleccionar esquina', colors_title: 'Paleta de colores', colors_desc: 'Consulta todos los colores disponibles para personalizar tus diseños.', custom_step_area: '2. Da clic en una sección del mosaico (PNG) para aplicar el color solo en esa zona.', custom_undo: 'Regresar color', custom_redo: 'Adelante color', custom_home: 'Imagen original',
       custom_panel_title: 'Personalizar Diseño', custom_panel_desc: 'Cambie los colores del mosaico de su elección.', custom_panel_cta: 'Pruebe el simulador de colores ahora', quote_title: 'Solicite una Cotización', quote_desc: 'Llene el siguiente formulario, comente los productos que desea y a la brevedad uno de nuestros agentes de venta se comunicará con usted.', quote_name: 'Nombre', quote_email: 'Email', quote_phone: 'Teléfono', quote_comments: 'Comentarios', quote_send: 'Enviar',
-      contact_title: 'Contacto', lang_label: 'Idioma'
+      contact_title: 'Contacto', lang_label: 'Idioma', quote_toggle: 'Solicitar cotización', compare_preview_title: 'Vista de comparación', contact_intro: 'Ven a conocer nuestras salas de exhibición o si prefieres llamarnos para más información, aquí puedes contactarnos.', contact_location_title: 'Ubicación', contact_showroom_title: 'Sala de Exhibición y Venta', contact_factory_title: 'Fábrica, Venta y Sala de Exhibición', contact_address_label: 'Dirección'
     },
     en: {
-      nav_home: 'Home', nav_mosaics: 'Mosaics', nav_gallery: 'Gallery', nav_maintenance: 'Maintenance', nav_installation: 'Installation', nav_contact: 'Contact',
+      nav_home: 'Home', nav_mosaics: 'Tiles', nav_gallery: 'Gallery', nav_maintenance: 'Maintenance', nav_installation: 'Installation', nav_contact: 'Contact',
       home_intro: 'Each menu item now opens its own independent file. You can edit every page separately and keep everything connected through navigation.',
       home_note: 'The 3 square cards load images from assets/cuadros/.',
       home_footer: 'Base ready to migrate to PHP + database when you share your structure.',
-      cat_title: 'Hydraulic Mosaics', cat_subtitle: 'General brick categories', cat_desc: 'We craft each cement tile manually in different sizes and categories.',
+      cat_title: 'Hydraulic Cement Tiles', cat_subtitle: 'General tile categories', cat_desc: 'We handcraft each cement tile in different sizes and categories.',
       cat_colors: 'Solid Colors', cat_decorated: 'Decorated', cat_specials: 'Specials', cat_customize: 'Customize', cat_btn: 'View models » click here',
-      decorated_title: 'Decorated Mosaics', decorated_desc: 'Choose a model to view details. You can customize colors in the simulator.',
+      decorated_title: 'Decorated Cement Tiles', decorated_desc: 'Choose a design to view details and preview its layout.',
       btn_customize: 'Customize', custom_title: 'Customize Design', custom_step1: '1. Select a color.', custom_step2: '2. Click a mosaic section to change only that area.',
       custom_apply: 'Apply color', custom_reset: 'Original image', custom_download: 'Download PDF', catalog_ready: 'This page is ready to show 300+ mosaics from database.',
       custom_model_search_input: 'Type model name', custom_select_center: 'Select center', custom_select_cenefa: 'Select border', custom_select_esquina: 'Select corner', colors_title: 'Color palette', colors_desc: 'Browse all available colors for customization.', custom_step_area: '2. Click a mosaic section (PNG) to apply color only on that zone.', custom_undo: 'Undo color', custom_redo: 'Redo color', custom_home: 'Original image',
       custom_panel_title: 'Customize Design', custom_panel_desc: 'Change the colors of your selected mosaic.', custom_panel_cta: 'Try the color simulator now', quote_title: 'Request a Quote', quote_desc: 'Fill out the form below, tell us which products you need and one of our sales agents will contact you shortly.', quote_name: 'Name', quote_email: 'Email', quote_phone: 'Phone', quote_comments: 'Comments', quote_send: 'Send',
-      contact_title: 'Contact', lang_label: 'Language'
+      contact_title: 'Contact', lang_label: 'Language', quote_toggle: 'Request a quote', compare_preview_title: 'Comparison preview', contact_intro: 'Visit our showrooms, or call us for more information. You can contact us here.', contact_location_title: 'Location', contact_showroom_title: 'Showroom and Sales', contact_factory_title: 'Factory, Sales and Showroom', contact_address_label: 'Address'
     }
   };
 

@@ -398,22 +398,31 @@ $expandirGrupoCenefa = static function(array $cenefasBase) use ($conexionesPrima
 $itemsCenefasSimples = $expandirGrupoCenefa($itemsCenefasSimples);
 $itemsCenefasDobles = $expandirGrupoCenefa($itemsCenefasDobles);
 
+$lang = (($_GET['lang'] ?? 'es') === 'en') ? 'en' : 'es';
+
 $sectionsDecorados = [
     [
-        'title' => 'Mosaicos Decorados',
-        'description' => "Los mosaicos hidráulicos decorados tienen la característica de generar un patrón lineal y enlaces con diferentes ángulos con la finalidad de dar unión y continuidad al dibujo.
+        'title' => $lang === 'en' ? 'Decorated Cement Tiles' : 'Mosaicos Decorados',
+        'description' => $lang === 'en'
+            ? "Decorated cement tiles create linear layouts and links at different angles to provide continuity across the design.
+Click on an image to preview its full layout.
+
+Colors shown in this digital sample may differ from real tones. Please compare them with our in-person color palette in one of our showrooms."
+            : "Los mosaicos hidráulicos decorados tienen la característica de generar un patrón lineal y enlaces con diferentes ángulos con la finalidad de dar unión y continuidad al dibujo.
 Para ver su patrón, de clic sobre la imagen.
 
 Los colores presentados en esta muestra digital pueden no representar con fidelidad sus tonalidades reales. Es necesario compararlo con la paleta de colores en alguna de nuestras salas de exhibición.",
         'items' => $itemsCentros,
     ],
     [
-        'title' => 'Cenefas',
-        'description' => 'Diseños de ornamentación que dan bellesa, aportan arte y durabilidad a sus pisos y muros. Da clic sobre la imagen para desplegar el tapete.',
+        'title' => $lang === 'en' ? 'Borders' : 'Cenefas',
+        'description' => $lang === 'en'
+            ? 'Ornamental border designs that add artistry and durability to floors and walls. Click on the image to display the complete layout.'
+            : 'Diseños de ornamentación que dan bellesa, aportan arte y durabilidad a sus pisos y muros. Da clic sobre la imagen para desplegar el tapete.',
         'items' => $itemsCenefasSimples,
     ],
     [
-        'title' => 'Cenefas Dobles',
+        'title' => $lang === 'en' ? 'Double Borders' : 'Cenefas Dobles',
         'description' => '',
         'items' => $itemsCenefasDobles,
     ],
@@ -424,7 +433,7 @@ Los colores presentados en esta muestra digital pueden no representar con fideli
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mosaicos Decorados</title>
+  <title><?= $lang === "en" ? "Decorated Cement Tiles" : "Mosaicos Decorados" ?></title>
   <link rel="stylesheet" href="assets.css" />
 </head>
 <body>
@@ -458,7 +467,7 @@ Los colores presentados en esta muestra digital pueden no representar con fideli
         <p data-i18n="custom_panel_desc">Cambie los colores del mosaico de su elección.</p>
         <div class="top-action-buttons">
           <a class="action quote-top-btn cta-pill" data-keep-lang href="personalizar.php" data-i18n="custom_panel_cta">Pruebe el simulador de colores ahora</a>
-          <button type="button" id="quoteToggleBtn" class="action cta-pill secondary" aria-expanded="false">Solicitar cotización</button>
+          <button type="button" id="quoteToggleBtn" class="action cta-pill secondary" aria-expanded="false" data-i18n="quote_toggle">Solicitar cotización</button>
         </div>
         <div id="quoteContainer" class="inline-quote-container" aria-hidden="true">
           <h3 data-i18n="quote_title">Solicite una Cotización</h3>

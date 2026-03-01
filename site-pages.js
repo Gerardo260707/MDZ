@@ -95,7 +95,7 @@
 
     const lang = getLang();
     const FEATURE_CARDS = [
-      { file: '', label: tByLang(lang, 'Mosaicos', 'Mosaics'), href: 'mosaicos.html', button: tByLang(lang, 'Ver modelos » clic aquí', 'View models » click here') },
+      { file: '', label: tByLang(lang, 'Mosaicos', 'Tiles'), href: 'mosaicos.html', button: tByLang(lang, 'Ver modelos » clic aquí', 'View designs » click here') },
       { file: '', label: tByLang(lang, 'Tapetes', 'Rugs'), href: 'tapetes.php', button: tByLang(lang, 'Personalizar', 'Customize') },
       { file: '', label: tByLang(lang, 'Colores', 'Colors'), href: 'colores.php', button: tByLang(lang, 'Ver colores', 'View colors') }
     ];
@@ -348,7 +348,7 @@
     ];
     const dict = {
       es: { cat_colors: 'Lisos', cat_decorated: 'Decorados', cat_specials: 'Especiales', cat_customize: 'Personalizar', btn: 'Ver modelos » clic aquí' },
-      en: { cat_colors: 'Solid Colors', cat_decorated: 'Decorated', cat_specials: 'Specials', cat_customize: 'Customize', btn: 'View models » click here' }
+      en: { cat_colors: 'Solid Colors', cat_decorated: 'Decorated', cat_specials: 'Specials', cat_customize: 'Customize', btn: 'View designs » click here' }
     };
     const t = dict[lang] || dict.es;
     categories.forEach((c) => {

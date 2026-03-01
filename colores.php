@@ -45,14 +45,14 @@ $lang = (($_GET['lang'] ?? 'es') === 'en') ? 'en' : 'es';
             <canvas id="compareCanvasRight" width="200" height="200" aria-label="Comparador lienzo derecho"></canvas>
           </section>
           <section class="color-compare-preview" aria-label="Vista grande de comparación">
-            <h3>Vista de comparación</h3>
+            <h3 data-i18n="compare_preview_title">Vista de comparación</h3>
             <canvas id="compareCanvasPattern" width="600" height="400" aria-label="Patrón intercalado de colores"></canvas>
           </section>
         </div>
         <div class="custom-controls compare-controls" aria-label="Controles comparador de color">
-          <button type="button" id="compareUndo" class="action control-btn" title="Regresar color" aria-label="Regresar color">↶</button>
-          <button type="button" id="compareRedo" class="action control-btn" title="Adelante color" aria-label="Adelante color">↷</button>
-          <button type="button" id="compareHome" class="action control-btn" title="Color original" aria-label="Color original">⌂</button>
+          <button type="button" id="compareUndo" class="action control-btn" title="Regresar color" aria-label="Regresar color" data-i18n-title="custom_undo">↶</button>
+          <button type="button" id="compareRedo" class="action control-btn" title="Adelante color" aria-label="Adelante color" data-i18n-title="custom_redo">↷</button>
+          <button type="button" id="compareHome" class="action control-btn" title="Color original" aria-label="Color original" data-i18n-title="custom_home">⌂</button>
         </div>
         <div id="comparePaletteShared" class="palette compare-palette"></div>
       </div>
