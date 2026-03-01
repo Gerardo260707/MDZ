@@ -508,6 +508,10 @@ foreach ($items as $it) {
                     $customizeParams['esquina_outer_name'] = (string)($esquinaOuterModel['nombre'] ?? '');
                 }
                 $customizeUrl = 'personalizar.php?' . http_build_query(array_filter($customizeParams, static fn($v) => $v !== ''));
+                if (in_array($cat, ['cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior'], true)) {
+                    // Solicitud: para cenefas/esquinas abrir siempre el simulador base.
+                    $customizeUrl = 'personalizar.php?lang=' . rawurlencode($lang);
+                }
               ?>
               <article class="mosaic-card">
                 <img class="mosaic-preview-trigger" src="<?= htmlspecialchars($mainSrc, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-model-name="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-category="<?= htmlspecialchars($cat, ENT_QUOTES) ?>" data-cenefa-src="<?= htmlspecialchars($cenefaSrcV, ENT_QUOTES) ?>" data-esquina-src="<?= htmlspecialchars($esquinaSrcV, ENT_QUOTES) ?>" data-cenefa-outer-src="<?= htmlspecialchars($cenefaOuterSrcV, ENT_QUOTES) ?>" data-esquina-outer-src="<?= htmlspecialchars($esquinaOuterSrcV, ENT_QUOTES) ?>" />
