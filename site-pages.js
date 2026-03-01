@@ -23,6 +23,35 @@
   }
 
 
+
+  const CUSTOMIZER_DRAFTS_KEY = 'mdz_customizer_layer_drafts_v1';
+
+  function baseSrcKey(rawSrc) {
+    const normalized = normalizeAssetSrc(rawSrc || '');
+    return normalized.split('?')[0] || normalized;
+  }
+
+  function readCustomizerDrafts() {
+    try {
+      const raw = window.sessionStorage.getItem(CUSTOMIZER_DRAFTS_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function writeCustomizerDrafts(drafts) {
+    try {
+      const entries = Object.entries(drafts || {});
+      const trimmed = entries.slice(Math.max(0, entries.length - 24));
+      window.sessionStorage.setItem(CUSTOMIZER_DRAFTS_KEY, JSON.stringify(Object.fromEntries(trimmed)));
+    } catch (_) {
+      // ignore storage quota or availability issues
+    }
+  }
+
   function buildImageCandidates(rawSrc) {
     const raw = String(rawSrc || '').trim();
     const base = normalizeAssetSrc(raw);
@@ -802,6 +831,7 @@
     }
 
     function goToSelection(centerModel, cenefaModel, esquinaModel, cenefaOuterModel = null, esquinaOuterModel = null) {
+      persistCurrentDrafts();
       const url = new URL(window.location.href);
       url.searchParams.set('picker', pickerMode);
       if (centerModel) url.searchParams.set('center_id', String(centerModel.id));
@@ -880,6 +910,7 @@
 
 
     function goToTapetePreset(preset) {
+      persistCurrentDrafts();
       if (!preset || typeof preset !== 'object') return;
       const url = new URL(window.location.href);
       url.searchParams.set('picker', 'dual');
@@ -1198,6 +1229,82 @@
     let esquinaEditor = null;
     let cenefaOuterEditor = null;
     let esquinaOuterEditor = null;
+
+
+    function imageDataDiffers(baseData, currentData) {
+      if (!baseData || !currentData || !baseData.data || !currentData.data) return false;
+      if (baseData.width !== currentData.width || baseData.height !== currentData.height) return true;
+      const a = baseData.data;
+      const b = currentData.data;
+      const n = Math.min(a.length, b.length);
+      for (let i = 0; i < n; i += 1) {
+        if (a[i] !== b[i]) return true;
+      }
+      return false;
+    }
+
+    function imageDataToDataUrl(imageData) {
+      if (!imageData) return '';
+      const c = document.createElement('canvas');
+      c.width = imageData.width;
+      c.height = imageData.height;
+      const cx = c.getContext('2d');
+      if (!cx) return '';
+      cx.putImageData(imageData, 0, 0);
+      return c.toDataURL('image/png');
+    }
+
+    function persistLayerDraft(rawSrc, sourceData, currentData) {
+      const key = baseSrcKey(rawSrc);
+      if (!key) return;
+      const drafts = readCustomizerDrafts();
+      if (!currentData || !imageDataDiffers(sourceData, currentData)) {
+        delete drafts[key];
+        writeCustomizerDrafts(drafts);
+        return;
+      }
+      const dataUrl = imageDataToDataUrl(currentData);
+      if (!dataUrl) return;
+      drafts[key] = { dataUrl, width: currentData.width, height: currentData.height, ts: Date.now() };
+      writeCustomizerDrafts(drafts);
+    }
+
+    function persistCurrentDrafts() {
+      persistLayerDraft(src, sourceImageData, currentImageData);
+      persistLayerDraft(cenefaSrc, cenefaEditor && cenefaEditor.source, cenefaEditor && cenefaEditor.current);
+      persistLayerDraft(esquinaSrc, esquinaEditor && esquinaEditor.source, esquinaEditor && esquinaEditor.current);
+      persistLayerDraft(cenefaOuterSrc, cenefaOuterEditor && cenefaOuterEditor.source, cenefaOuterEditor && cenefaOuterEditor.current);
+      persistLayerDraft(esquinaOuterSrc, esquinaOuterEditor && esquinaOuterEditor.source, esquinaOuterEditor && esquinaOuterEditor.current);
+    }
+
+    function getDraftForSrc(rawSrc) {
+      const key = baseSrcKey(rawSrc);
+      if (!key) return null;
+      const drafts = readCustomizerDrafts();
+      const value = drafts[key];
+      if (!value || typeof value !== 'object' || !value.dataUrl) return null;
+      return value;
+    }
+
+    function draftToImageData(draft, width, height) {
+      return new Promise((resolve) => {
+        if (!draft || !draft.dataUrl || !width || !height) return resolve(null);
+        const img = new Image();
+        img.onload = () => {
+          const c = document.createElement('canvas');
+          c.width = width;
+          c.height = height;
+          const cx = c.getContext('2d');
+          if (!cx) return resolve(null);
+          cx.clearRect(0, 0, width, height);
+          cx.drawImage(img, 0, 0, width, height);
+          resolve(cx.getImageData(0, 0, width, height));
+        };
+        img.onerror = () => resolve(null);
+        img.src = draft.dataUrl;
+      });
+    }
+
 
     function snapshotState() {
       return {
@@ -2018,11 +2125,16 @@
         drawPattern();
       }
 
-      loadImageSafe(imageSrc).then((img) => {
+      loadImageSafe(imageSrc).then(async (img) => {
         if (!img) return;
         drawImageCover(cx, img, 300, 300);
         const sourceData = cx.getImageData(0, 0, 300, 300);
-        const currentData = new ImageData(new Uint8ClampedArray(sourceData.data), sourceData.width, sourceData.height);
+        let currentData = new ImageData(new Uint8ClampedArray(sourceData.data), sourceData.width, sourceData.height);
+        const draft = getDraftForSrc(imageSrc);
+        if (draft) {
+          const restored = await draftToImageData(draft, 300, 300);
+          if (restored) currentData = restored;
+        }
         if (type === 'cenefa') cenefaEditor = { canvas: c, ctx: cx, source: cloneImageData(sourceData), current: cloneImageData(currentData) };
         if (type === 'esquina') esquinaEditor = { canvas: c, ctx: cx, source: cloneImageData(sourceData), current: cloneImageData(currentData) };
         if (type === 'cenefa_outer') cenefaOuterEditor = { canvas: c, ctx: cx, source: cloneImageData(sourceData), current: cloneImageData(currentData) };
@@ -2045,9 +2157,21 @@
         drawImageCover(sctx, img, 600, 600);
         sourceImageData = sctx.getImageData(0, 0, 600, 600);
         currentImageData = new ImageData(new Uint8ClampedArray(sourceImageData.data), sourceImageData.width, sourceImageData.height);
-        renderEdit();
-        drawPattern();
-        updateHistoryButtons();
+        const mainDraft = getDraftForSrc(src);
+        if (mainDraft) {
+          draftToImageData(mainDraft, 600, 600).then((restored) => {
+            if (restored) {
+              currentImageData = restored;
+            }
+            renderEdit();
+            drawPattern();
+            updateHistoryButtons();
+          });
+        } else {
+          renderEdit();
+          drawPattern();
+          updateHistoryButtons();
+        }
       };
       img.onerror = () => {
         sctx.fillStyle = '#ddd';
