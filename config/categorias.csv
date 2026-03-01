@@ -1,16 +1,1 @@
-carpeta_modelo,categoria
-# Identificadores válidos de categoria:
-# centro
-# cenefa
-# esquina
-# cenefa_exterior
-# esquina_exterior
-# hexagonales
-# antiderrapante
-# Alcazar,centro
-# Andros,cenefa
-# Esquina_Flor,esquina
-# Andros_Exterior,cenefa_exterior
-# Esquina_Flor_Exterior,esquina_exterior
-# Hex_Estrella,hexagonales
-# Piso_Antiderrapante_01,antiderrapante
+carpeta_modelo,categoria,cenefa_rotacion_alterna

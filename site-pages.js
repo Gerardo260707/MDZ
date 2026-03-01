@@ -951,6 +951,8 @@
     const esquinaSrc = normalizeAssetSrc(big.dataset.esquinaImage || '');
     const cenefaOuterSrc = normalizeAssetSrc(big.dataset.cenefaOuterImage || '');
     const esquinaOuterSrc = normalizeAssetSrc(big.dataset.esquinaOuterImage || '');
+    const cenefaAltRotate = String(big.dataset.cenefaAltRotate || '').trim() === '1';
+    const cenefaOuterAltRotate = String(big.dataset.cenefaOuterAltRotate || '').trim() === '1';
     const editTarget = (big.dataset.editTarget || '').toLowerCase();
     if (!src && !cenefaSrc && !esquinaSrc && !cenefaOuterSrc && !esquinaOuterSrc) {
       if (editor) editor.innerHTML = `<p class="empty-msg">${lang === 'en' ? 'Select a model from the search bar above to start customizing.' : 'Selecciona un modelo en la barra de búsqueda para comenzar a personalizar.'}</p>`;
@@ -1240,18 +1242,22 @@
 
         const centerMap = [[0, Math.PI / 2], [3 * Math.PI / 2, Math.PI]];
 
-        function drawBorderRing(ring, borderSource, cornerSrc) {
+        function drawBorderRing(ring, borderSource, cornerSrc, alternate180 = false) {
           const left = ring;
           const right = cols - 1 - ring;
           const top = ring;
           const bottom = rows - 1 - ring;
           for (let c = left + 1; c < right; c++) {
-            drawTile(pctx, borderSource, top, c, tw, th, 0);
-            drawTile(pctx, borderSource, bottom, c, tw, th, Math.PI);
+            const idx = c - (left + 1);
+            const flip = (alternate180 && (idx % 2 === 1)) ? Math.PI : 0;
+            drawTile(pctx, borderSource, top, c, tw, th, 0 + flip);
+            drawTile(pctx, borderSource, bottom, c, tw, th, Math.PI + flip);
           }
           for (let r = top + 1; r < bottom; r++) {
-            drawTile(pctx, borderSource, r, left, tw, th, -Math.PI / 2);
-            drawTile(pctx, borderSource, r, right, tw, th, Math.PI / 2);
+            const idx = r - (top + 1);
+            const flip = (alternate180 && (idx % 2 === 1)) ? Math.PI : 0;
+            drawTile(pctx, borderSource, r, left, tw, th, -Math.PI / 2 + flip);
+            drawTile(pctx, borderSource, r, right, tw, th, Math.PI / 2 + flip);
           }
           drawTile(pctx, cornerSrc, top, left, tw, th, 0);
           drawTile(pctx, cornerSrc, top, right, tw, th, Math.PI / 2);
@@ -1262,8 +1268,8 @@
         pctx.fillStyle = '#fff';
         pctx.fillRect(0, 0, w, h);
 
-        if (hasOuter) drawBorderRing(0, cenefaOuterSource, cornerOuterSource);
-        drawBorderRing(hasOuter ? 1 : 0, cenefaSource, cornerSource);
+        if (hasOuter) drawBorderRing(0, cenefaOuterSource, cornerOuterSource, cenefaOuterAltRotate);
+        drawBorderRing(hasOuter ? 1 : 0, cenefaSource, cornerSource, cenefaAltRotate);
 
         const ringCount = hasOuter ? 2 : 1;
         if (centerSource) {
@@ -1287,12 +1293,14 @@
         pctx.fillRect(0, 0, w, h);
         const borderSource = tile;
         for (let c = 0; c < cols; c++) {
-          drawTile(pctx, borderSource, 0, c, tw, th, 0);
-          drawTile(pctx, borderSource, rows - 1, c, tw, th, Math.PI);
+          const flip = (cenefaAltRotate && (c % 2 === 1)) ? Math.PI : 0;
+          drawTile(pctx, borderSource, 0, c, tw, th, 0 + flip);
+          drawTile(pctx, borderSource, rows - 1, c, tw, th, Math.PI + flip);
         }
         for (let r = 1; r < rows - 1; r++) {
-          drawTile(pctx, borderSource, r, 0, tw, th, -Math.PI / 2);
-          drawTile(pctx, borderSource, r, cols - 1, tw, th, Math.PI / 2);
+          const flip = (cenefaAltRotate && ((r - 1) % 2 === 1)) ? Math.PI : 0;
+          drawTile(pctx, borderSource, r, 0, tw, th, -Math.PI / 2 + flip);
+          drawTile(pctx, borderSource, r, cols - 1, tw, th, Math.PI / 2 + flip);
         }
         return;
       }
@@ -2193,7 +2201,7 @@
       }
     }
 
-    function drawBorderPatternOn(ctx, canvas, cenefaImg, esquinaImg, cenefaOuterImg, esquinaOuterImg) {
+    function drawBorderPatternOn(ctx, canvas, cenefaImg, esquinaImg, cenefaOuterImg, esquinaOuterImg, cenefaAltRotate = false, cenefaOuterAltRotate = false) {
       if (!ctx || !canvas) return;
       const w = canvas.width;
       const h = canvas.height;
@@ -2218,15 +2226,19 @@
         ctx.restore();
       }
 
-      function drawRing(ring, border, corner) {
+      function drawRing(ring, border, corner, alternate180 = false) {
         const left = ring; const right = cols - 1 - ring; const top = ring; const bottom = rows - 1 - ring;
         for (let c = left + 1; c < right; c++) {
-          d(border, top, c, 0);
-          d(border, bottom, c, Math.PI);
+          const idx = c - (left + 1);
+          const flip = (alternate180 && (idx % 2 === 1)) ? Math.PI : 0;
+          d(border, top, c, 0 + flip);
+          d(border, bottom, c, Math.PI + flip);
         }
         for (let r = top + 1; r < bottom; r++) {
-          d(border, r, left, -Math.PI / 2);
-          d(border, r, right, Math.PI / 2);
+          const idx = r - (top + 1);
+          const flip = (alternate180 && (idx % 2 === 1)) ? Math.PI : 0;
+          d(border, r, left, -Math.PI / 2 + flip);
+          d(border, r, right, Math.PI / 2 + flip);
         }
         const cc = corner || border;
         d(cc, top, left, 0);
@@ -2258,8 +2270,8 @@
       const nCO = normalize(cenefaOuterImg);
       const nEO = normalize(esquinaOuterImg);
 
-      if (hasOuter) drawRing(0, nCO, nEO);
-      drawRing(hasOuter ? 1 : 0, nC, nE);
+      if (hasOuter) drawRing(0, nCO, nEO, cenefaOuterAltRotate);
+      drawRing(hasOuter ? 1 : 0, nC, nE, cenefaAltRotate);
     }
 
     function loadImageSafeOverlay(src) {
@@ -2281,12 +2293,14 @@
         esquinaSrc: img.dataset.esquinaSrc || '',
         cenefaOuterSrc: img.dataset.cenefaOuterSrc || '',
         esquinaOuterSrc: img.dataset.esquinaOuterSrc || '',
+        cenefaAltRotate: String(img.dataset.cenefaAltRotate || '').trim() === '1',
+        cenefaOuterAltRotate: String(img.dataset.cenefaOuterAltRotate || '').trim() === '1',
       };
     }
 
     async function renderOverlayPayload(ctx, canvas, payload) {
       if (!ctx || !canvas || !payload) return;
-      const { src, category, cenefaSrc, esquinaSrc, cenefaOuterSrc, esquinaOuterSrc } = payload;
+      const { src, category, cenefaSrc, esquinaSrc, cenefaOuterSrc, esquinaOuterSrc, cenefaAltRotate, cenefaOuterAltRotate } = payload;
       if (['cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior'].includes(category)) {
         const [cenefaImg, esquinaImg, cenefaOuterImg, esquinaOuterImg] = await Promise.all([
           loadImageSafeOverlay(cenefaSrc || (category === 'cenefa' ? src : '')),
@@ -2294,7 +2308,7 @@
           loadImageSafeOverlay(cenefaOuterSrc || (category === 'cenefa_exterior' ? src : '')),
           loadImageSafeOverlay(esquinaOuterSrc || (category === 'esquina_exterior' ? src : '')),
         ]);
-        drawBorderPatternOn(ctx, canvas, cenefaImg, esquinaImg, cenefaOuterImg, esquinaOuterImg);
+        drawBorderPatternOn(ctx, canvas, cenefaImg, esquinaImg, cenefaOuterImg, esquinaOuterImg, cenefaAltRotate, cenefaOuterAltRotate);
       } else {
         const img = await loadImageSafeOverlay(src);
         if (img) drawRotatedPatternOn(ctx, canvas, img);

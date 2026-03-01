@@ -1,24 +1,30 @@
 <?php
 const VALID_CATEGORIAS = ['centro', 'cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior', 'hexagonales', 'antiderrapante'];
 
-function carga_mapa_categorias_csv(string $csvPath): array {
-    if (!file_exists($csvPath)) return [];
+function carga_meta_categorias_csv(string $csvPath): array {
+    if (!file_exists($csvPath)) return ['categorias' => [], 'cenefa_rotacion_alterna' => []];
     $h = fopen($csvPath, 'r');
-    if ($h === false) return [];
+    if ($h === false) return ['categorias' => [], 'cenefa_rotacion_alterna' => []];
     $header = fgetcsv($h);
-    if (!is_array($header)) {
-        fclose($h);
-        return [];
-    }
-    $map = [];
+    if (!is_array($header)) { fclose($h); return ['categorias' => [], 'cenefa_rotacion_alterna' => []]; }
+    $mapCategorias = [];
+    $mapRotacionAlterna = [];
     while (($row = fgetcsv($h)) !== false) {
         $folder = strtolower(trim((string)($row[0] ?? '')));
         $cat = strtolower(trim((string)($row[1] ?? '')));
+        $flagRaw = trim((string)($row[2] ?? ''));
         if ($folder === '' || str_starts_with($folder, '#')) continue;
-        $map[$folder] = in_array($cat, VALID_CATEGORIAS, true) ? $cat : '';
+        if (!in_array($cat, VALID_CATEGORIAS, true)) $cat = '';
+        $mapCategorias[$folder] = $cat;
+        $mapRotacionAlterna[$folder] = $cat === 'cenefa' && in_array(strtolower($flagRaw), ['1','true','si','sí','yes'], true);
     }
     fclose($h);
-    return $map;
+    return ['categorias' => $mapCategorias, 'cenefa_rotacion_alterna' => $mapRotacionAlterna];
+}
+
+function carga_mapa_categorias_csv(string $csvPath): array {
+    $meta = carga_meta_categorias_csv($csvPath);
+    return (array)($meta['categorias'] ?? []);
 }
 
 function carpeta_modelo_de_item(array $item): string {
@@ -160,6 +166,7 @@ function normaliza_item(array $m): array {
         'categoria' => $categoria,
         'identificador' => $identificador,
         'carpeta_modelo' => (string)($m['carpeta_modelo'] ?? ''),
+        'cenefa_rotacion_alterna' => !empty($m['cenefa_rotacion_alterna']) ? 1 : 0,
     ];
 }
 
@@ -192,12 +199,15 @@ function carga_modelos_tapete(): array {
         }
     }
 
-    $catMap = carga_mapa_categorias_csv(__DIR__ . '/config/categorias.csv');
+    $metaCategorias = carga_meta_categorias_csv(__DIR__ . '/config/categorias.csv');
+    $catMap = (array)($metaCategorias['categorias'] ?? []);
+    $rotMap = (array)($metaCategorias['cenefa_rotacion_alterna'] ?? []);
     if (!empty($catMap)) {
         foreach ($items as &$item) {
             $folder = carpeta_modelo_de_item($item);
             if ($folder !== '' && array_key_exists($folder, $catMap)) {
                 $item['categoria'] = $catMap[$folder];
+                $item['cenefa_rotacion_alterna'] = !empty($rotMap[$folder]) ? 1 : 0;
             }
         }
         unset($item);
@@ -317,12 +327,15 @@ function carga_modelos(): array {
         }
     }
 
-    $catMap = carga_mapa_categorias_csv(__DIR__ . '/config/categorias.csv');
+    $metaCategorias = carga_meta_categorias_csv(__DIR__ . '/config/categorias.csv');
+    $catMap = (array)($metaCategorias['categorias'] ?? []);
+    $rotMap = (array)($metaCategorias['cenefa_rotacion_alterna'] ?? []);
     if (!empty($catMap)) {
         foreach ($items as &$item) {
             $folder = carpeta_modelo_de_item($item);
             if ($folder !== '' && array_key_exists($folder, $catMap)) {
                 $item['categoria'] = $catMap[$folder];
+                $item['cenefa_rotacion_alterna'] = !empty($rotMap[$folder]) ? 1 : 0;
             }
         }
         unset($item);
@@ -383,6 +396,7 @@ if (!$selectedCenter && $centerImgParam !== '') {
         'categoria' => 'centro',
         'identificador' => '',
         'carpeta_modelo' => '',
+        'cenefa_rotacion_alterna' => 0,
     ];
 }
 if (!$selectedCenefa && $cenefaImgParam !== '') {
@@ -393,6 +407,7 @@ if (!$selectedCenefa && $cenefaImgParam !== '') {
         'categoria' => 'cenefa',
         'identificador' => '',
         'carpeta_modelo' => '',
+        'cenefa_rotacion_alterna' => 0,
     ];
 }
 if (!$selectedEsquina && $esquinaImgParam !== '') {
@@ -403,6 +418,7 @@ if (!$selectedEsquina && $esquinaImgParam !== '') {
         'categoria' => 'esquina',
         'identificador' => '',
         'carpeta_modelo' => '',
+        'cenefa_rotacion_alterna' => 0,
     ];
 }
 
@@ -415,6 +431,7 @@ if (!$selectedCenefaOuter && $cenefaOuterImgParam !== '') {
         'categoria' => 'cenefa_exterior',
         'identificador' => '',
         'carpeta_modelo' => '',
+        'cenefa_rotacion_alterna' => 0,
     ];
 }
 if (!$selectedEsquinaOuter && $esquinaOuterImgParam !== '') {
@@ -425,6 +442,7 @@ if (!$selectedEsquinaOuter && $esquinaOuterImgParam !== '') {
         'categoria' => 'esquina_exterior',
         'identificador' => '',
         'carpeta_modelo' => '',
+        'cenefa_rotacion_alterna' => 0,
     ];
 }
 
@@ -549,6 +567,7 @@ if (!$editable && isset($_GET['img']) && (string)$_GET['img'] !== '') {
         'categoria' => strtolower(trim((string)($_GET['cat'] ?? ''))),
         'identificador' => '',
         'carpeta_modelo' => '',
+        'cenefa_rotacion_alterna' => 0,
     ];
 }
 
@@ -662,8 +681,10 @@ $showCenterSelectionHint = (!$selectedCenter && (bool)$selectedCenefa);
                data-edit-target="<?= htmlspecialchars($editTarget, ENT_QUOTES) ?>"
                data-center-image="<?= htmlspecialchars($selectedCenter['imagen'] ?? '', ENT_QUOTES) ?>"
                data-cenefa-image="<?= htmlspecialchars($selectedCenefa['imagen'] ?? '', ENT_QUOTES) ?>"
+               data-cenefa-alt-rotate="<?= !empty($selectedCenefa['cenefa_rotacion_alterna']) ? '1' : '' ?>"
                data-esquina-image="<?= htmlspecialchars($selectedEsquina['imagen'] ?? '', ENT_QUOTES) ?>"
                data-cenefa-outer-image="<?= htmlspecialchars($selectedCenefaOuter['imagen'] ?? '', ENT_QUOTES) ?>"
+               data-cenefa-outer-alt-rotate="<?= !empty($selectedCenefaOuter['cenefa_rotacion_alterna']) ? '1' : '' ?>"
                data-esquina-outer-image="<?= htmlspecialchars($selectedEsquinaOuter['imagen'] ?? '', ENT_QUOTES) ?>"
                data-picker-mode="<?= htmlspecialchars($pickerMode, ENT_QUOTES) ?>"></div>
           <button id="download" class="action" style="margin-top:8px" data-i18n="custom_download">Descargar imagen</button>

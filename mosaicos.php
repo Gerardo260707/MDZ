@@ -1,64 +1,84 @@
 <?php
 const VALID_CATEGORIAS = ['centro', 'cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior', 'hexagonales', 'antiderrapante'];
 
-function carga_mapa_categorias_csv(string $csvPath): array {
+
+function carga_meta_categorias_csv(string $csvPath): array {
     if (!file_exists($csvPath)) {
-        return [];
+        return ['categorias' => [], 'cenefa_rotacion_alterna' => []];
     }
 
     $handle = fopen($csvPath, 'r');
     if ($handle === false) {
-        return [];
+        return ['categorias' => [], 'cenefa_rotacion_alterna' => []];
     }
 
-    $map = [];
     $header = fgetcsv($handle);
     if (!is_array($header)) {
         fclose($handle);
-        return [];
+        return ['categorias' => [], 'cenefa_rotacion_alterna' => []];
     }
+
+    $mapCategorias = [];
+    $mapRotacionAlterna = [];
 
     while (($row = fgetcsv($handle)) !== false) {
         $folder = strtolower(trim((string)($row[0] ?? '')));
         $category = strtolower(trim((string)($row[1] ?? '')));
+        $flagRaw = trim((string)($row[2] ?? ''));
+
         if ($folder === '' || str_starts_with($folder, '#')) {
             continue;
         }
+
         if (!in_array($category, VALID_CATEGORIAS, true)) {
             $category = '';
         }
-        $map[$folder] = $category;
+
+        $isAlterna = $category === 'cenefa' && in_array(strtolower($flagRaw), ['1', 'true', 'si', 'sí', 'yes'], true);
+        $mapCategorias[$folder] = $category;
+        $mapRotacionAlterna[$folder] = $isAlterna;
     }
 
     fclose($handle);
-    return $map;
+    return ['categorias' => $mapCategorias, 'cenefa_rotacion_alterna' => $mapRotacionAlterna];
+}
+
+function carga_mapa_categorias_csv(string $csvPath): array {
+    $meta = carga_meta_categorias_csv($csvPath);
+    return (array)($meta['categorias'] ?? []);
 }
 
 function sincroniza_categorias_csv(array $folders, string $csvPath): array {
-    $existing = carga_mapa_categorias_csv($csvPath);
+    $meta = carga_meta_categorias_csv($csvPath);
+    $existing = (array)($meta['categorias'] ?? []);
+    $existingAlterna = (array)($meta['cenefa_rotacion_alterna'] ?? []);
     $dir = dirname($csvPath);
     if (!is_dir($dir)) {
         mkdir($dir, 0775, true);
     }
 
     $map = [];
+    $mapAlterna = [];
     foreach ($folders as $folder) {
         $key = strtolower(trim((string)$folder));
         if ($key === '') {
             continue;
         }
         $map[$key] = $existing[$key] ?? '';
+        $mapAlterna[$key] = !empty($existingAlterna[$key]);
     }
 
     $handle = fopen($csvPath, 'w');
     if ($handle !== false) {
-        fputcsv($handle, ['carpeta_modelo', 'categoria']);
+        fputcsv($handle, ['carpeta_modelo', 'categoria', 'cenefa_rotacion_alterna']);
         foreach ($folders as $folder) {
             $key = strtolower(trim((string)$folder));
             if ($key === '') {
                 continue;
             }
-            fputcsv($handle, [$folder, $map[$key] ?? '']);
+            $cat = (string)($map[$key] ?? '');
+            $flag = ($cat === 'cenefa' && !empty($mapAlterna[$key])) ? '1' : '';
+            fputcsv($handle, [$folder, $cat, $flag]);
         }
         fclose($handle);
     }
@@ -221,6 +241,7 @@ function normaliza_item(array $m): array {
         'precio' => (float)($m['precio'] ?? 0),
         'categoria' => (string)$categoria,
         'identificador' => (string)$identificador,
+        'cenefa_rotacion_alterna' => !empty($m['cenefa_rotacion_alterna']) ? 1 : 0,
     ];
 }
 
@@ -258,12 +279,15 @@ if (empty($items)) {
 }
 
 $categoriasPath = __DIR__ . '/config/categorias.csv';
-$mapCategoriasGlobal = carga_mapa_categorias_csv($categoriasPath);
+$metaCategoriasGlobal = carga_meta_categorias_csv($categoriasPath);
+$mapCategoriasGlobal = (array)($metaCategoriasGlobal['categorias'] ?? []);
+$mapRotacionAlternaGlobal = (array)($metaCategoriasGlobal['cenefa_rotacion_alterna'] ?? []);
 if (!empty($mapCategoriasGlobal)) {
     foreach ($items as &$item) {
         $folder = carpeta_modelo_de_item($item);
         if ($folder !== '' && array_key_exists($folder, $mapCategoriasGlobal)) {
             $item['categoria'] = $mapCategoriasGlobal[$folder];
+            $item['cenefa_rotacion_alterna'] = !empty($mapRotacionAlternaGlobal[$folder]) ? 1 : 0;
             if (($item['identificador'] ?? '') === '' && (int)($item['id'] ?? 0) > 0) {
                 $item['identificador'] = categoria_prefix($item['categoria']) . '-' . str_pad((string)$item['id'], 4, '0', STR_PAD_LEFT);
             }
@@ -279,7 +303,9 @@ if (empty($items)) {
         sort($folders, SORT_NATURAL | SORT_FLAG_CASE);
 
         $categoriasPath = __DIR__ . '/config/categorias.csv';
+        $metaCategorias = carga_meta_categorias_csv($categoriasPath);
         $mapCategorias = sincroniza_categorias_csv($folders, $categoriasPath);
+        $mapRotacionAlterna = (array)($metaCategorias['cenefa_rotacion_alterna'] ?? []);
 
         $idx = 1;
         $catCounters = ['centro'=>0,'cenefa'=>0,'esquina'=>0,'hexagonales'=>0,'antiderrapante'=>0];
@@ -310,6 +336,7 @@ if (empty($items)) {
                 'precio' => 0,
                 'categoria' => $categoria,
                 'identificador' => '',
+                'cenefa_rotacion_alterna' => !empty($mapRotacionAlterna[strtolower((string)$folder)]) ? 1 : 0,
             ]);
             $idx++;
         }
@@ -624,8 +651,12 @@ Los colores presentados en esta muestra digital pueden no representar con fideli
                 $showCustomizeBtn = !$isBorderCat || $cat === 'cenefa';
               ?>
               <article class="mosaic-card">
-                <?php $compareGroup = $innerCenefaFolder !== '' ? $innerCenefaFolder : ''; ?>
-                <img class="mosaic-preview-trigger" src="<?= htmlspecialchars($mainSrc, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-model-name="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-overlay-model-name="<?= htmlspecialchars($targetName, ENT_QUOTES) ?>" data-category="<?= htmlspecialchars($cat, ENT_QUOTES) ?>" data-compare-group="<?= htmlspecialchars($compareGroup, ENT_QUOTES) ?>" data-cenefa-src="<?= htmlspecialchars($cenefaSrcV, ENT_QUOTES) ?>" data-esquina-src="<?= htmlspecialchars($esquinaSrcV, ENT_QUOTES) ?>" data-cenefa-outer-src="<?= htmlspecialchars($cenefaOuterSrcV, ENT_QUOTES) ?>" data-esquina-outer-src="<?= htmlspecialchars($esquinaOuterSrcV, ENT_QUOTES) ?>" />
+                <?php
+                  $compareGroup = $innerCenefaFolder !== '' ? $innerCenefaFolder : '';
+                  $cenefaAltRotate = (is_array($cenefaModel) && !empty($cenefaModel['cenefa_rotacion_alterna'])) ? '1' : '';
+                  $cenefaOuterAltRotate = (is_array($cenefaOuterModel) && !empty($cenefaOuterModel['cenefa_rotacion_alterna'])) ? '1' : '';
+                ?>
+                <img class="mosaic-preview-trigger" src="<?= htmlspecialchars($mainSrc, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-model-name="<?= htmlspecialchars($m['nombre'], ENT_QUOTES) ?>" data-overlay-model-name="<?= htmlspecialchars($targetName, ENT_QUOTES) ?>" data-category="<?= htmlspecialchars($cat, ENT_QUOTES) ?>" data-compare-group="<?= htmlspecialchars($compareGroup, ENT_QUOTES) ?>" data-cenefa-src="<?= htmlspecialchars($cenefaSrcV, ENT_QUOTES) ?>" data-esquina-src="<?= htmlspecialchars($esquinaSrcV, ENT_QUOTES) ?>" data-cenefa-outer-src="<?= htmlspecialchars($cenefaOuterSrcV, ENT_QUOTES) ?>" data-esquina-outer-src="<?= htmlspecialchars($esquinaOuterSrcV, ENT_QUOTES) ?>" data-cenefa-alt-rotate="<?= htmlspecialchars($cenefaAltRotate, ENT_QUOTES) ?>" data-cenefa-outer-alt-rotate="<?= htmlspecialchars($cenefaOuterAltRotate, ENT_QUOTES) ?>" />
                 <?php
                   $catRaw = strtolower(trim((string)($m['categoria'] ?? '')));
                   $catLabel = $catRaw !== ''
