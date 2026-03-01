@@ -37,11 +37,11 @@ $lang = (($_GET['lang'] ?? 'es') === 'en') ? 'en' : 'es';
       <div id="colorComparator" class="color-comparator" hidden>
         <div class="color-comparator-canvases">
           <section class="color-compare-editor" data-editor="left">
-            <h3>Color 1</h3>
+            <h3 id="compareLabelLeft">Color 1</h3>
             <canvas id="compareCanvasLeft" width="200" height="200" aria-label="Comparador lienzo izquierdo"></canvas>
           </section>
           <section class="color-compare-editor" data-editor="right">
-            <h3>Color 2</h3>
+            <h3 id="compareLabelRight">Color 2</h3>
             <canvas id="compareCanvasRight" width="200" height="200" aria-label="Comparador lienzo derecho"></canvas>
           </section>
           <section class="color-compare-preview" aria-label="Vista grande de comparación">

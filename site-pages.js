@@ -158,17 +158,21 @@
     const leftCanvas = q('compareCanvasLeft');
     const rightCanvas = q('compareCanvasRight');
     const patternCanvas = q('compareCanvasPattern');
+    const leftLabel = q('compareLabelLeft');
+    const rightLabel = q('compareLabelRight');
     const sharedPalette = q('comparePaletteShared');
-    if (!toggleBtn || !comparator || !leftCanvas || !rightCanvas || !patternCanvas || !sharedPalette || !colors.length) return;
+    if (!toggleBtn || !comparator || !leftCanvas || !rightCanvas || !patternCanvas || !leftLabel || !rightLabel || !sharedPalette || !colors.length) return;
 
     const lang = getLang();
     // Siempre iniciar oculto; solo mostrar al presionar el botón.
     comparator.setAttribute('hidden', 'hidden');
     toggleBtn.textContent = lang === 'en' ? 'Compare colors' : 'Comparar colores';
 
-    let selectedColor = colors[0] || { id: 'X', hex: '#000000' };
+    let selectedColor = colors[0] || { id: 'X', hex: '#000000', name: 'X' };
     let leftColor = '#FFFFFF';
     let rightColor = '#FFFFFF';
+    let leftColorName = lang === 'en' ? 'Color 1' : 'Color 1';
+    let rightColorName = lang === 'en' ? 'Color 2' : 'Color 2';
 
     function paintSolid(canvas, hex) {
       const ctx = canvas.getContext('2d');
@@ -201,6 +205,12 @@
       ctx.strokeStyle = 'rgba(0,0,0,.25)';
       ctx.lineWidth = 2;
       ctx.strokeRect(1, 1, patternCanvas.width - 2, patternCanvas.height - 2);
+    }
+
+
+    function updateCompareLabels() {
+      leftLabel.textContent = leftColorName || (lang === 'en' ? 'Color 1' : 'Color 1');
+      rightLabel.textContent = rightColorName || (lang === 'en' ? 'Color 2' : 'Color 2');
     }
 
     function textColorFor(hex) {
@@ -236,11 +246,15 @@
 
     leftCanvas.addEventListener('click', () => {
       leftColor = selectedColor.hex;
+      leftColorName = (selectedColor.name || selectedColor.id || 'Color 1').trim();
+      updateCompareLabels();
       paintSolid(leftCanvas, leftColor);
       paintPattern();
     });
     rightCanvas.addEventListener('click', () => {
       rightColor = selectedColor.hex;
+      rightColorName = (selectedColor.name || selectedColor.id || 'Color 2').trim();
+      updateCompareLabels();
       paintSolid(rightCanvas, rightColor);
       paintPattern();
     });
@@ -254,6 +268,7 @@
         : (lang === 'en' ? 'Compare colors' : 'Comparar colores');
     });
 
+    updateCompareLabels();
     buildPalette(sharedPalette);
     paintSolid(leftCanvas, leftColor);
     paintSolid(rightCanvas, rightColor);
