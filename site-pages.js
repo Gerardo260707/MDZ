@@ -1138,8 +1138,8 @@
 
       if (cenefaSrc || esquinaSrc || cenefaOuterSrc || esquinaOuterSrc) {
         const hasOuter = Boolean(cenefaOuterSrc || esquinaOuterSrc);
-        const cols = hasOuter ? 15 : 12;
-        const rows = hasOuter ? 10 : 8;
+        const cols = 12;
+        const rows = 8;
         const tw = w / cols;
         const th = h / rows;
 
@@ -2010,6 +2010,10 @@
     let comparePicked = [];
     let compareRequired = 2;
 
+    function isMobileCompareMode() {
+      return window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+    }
+
     function compareModeMessage(count) {
       if (lang === 'en') {
         return `Compare mode is on: select ${count} models (2 or more) to view them side by side, or press the button again to exit.`;
@@ -2024,9 +2028,12 @@
     }
 
     function syncCompareCountUI() {
+      const mobile = isMobileCompareMode();
+      if (mobile) compareRequired = 2;
       if (compareCountValue) compareCountValue.textContent = String(compareRequired);
-      if (compareCountMinus) compareCountMinus.disabled = compareRequired <= 2;
-      if (compareCountPlus) compareCountPlus.disabled = compareRequired >= 4;
+      if (compareCountMinus) compareCountMinus.disabled = mobile || compareRequired <= 2;
+      if (compareCountPlus) compareCountPlus.disabled = mobile || compareRequired >= 4;
+      if (compareCountControl) compareCountControl.hidden = !compareMode || mobile;
     }
 
     function setCompareMode(enabled) {
@@ -2037,7 +2044,6 @@
         compareToggleBtn.setAttribute('aria-pressed', compareMode ? 'true' : 'false');
       }
       syncCompareCountUI();
-      if (compareCountControl) compareCountControl.hidden = !compareMode;
       if (compareModeNotice) {
         compareModeNotice.hidden = !compareMode;
         if (compareMode) compareModeNotice.textContent = compareModeMessage(compareRequired);
@@ -2318,6 +2324,13 @@
         setCompareMode(next);
       });
     }
+    window.addEventListener('resize', () => {
+      if (!compareMode) return;
+      syncCompareCountUI();
+      if (compareModeNotice) compareModeNotice.textContent = compareModeMessage(compareRequired);
+      if (comparePicked.length >= compareRequired) openCompare();
+      else closeCompare();
+    });
     if (compareCountMinus) {
       compareCountMinus.addEventListener('click', () => {
         compareRequired = Math.max(2, compareRequired - 1);
