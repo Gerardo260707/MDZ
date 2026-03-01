@@ -98,11 +98,11 @@
 
   function ensureSiteFavicon() {
     const faviconDefs = [
-      { rel: 'icon', type: 'image/x-icon', href: '/assets/favicon/favicon.ico' },
-      { rel: 'shortcut icon', type: 'image/x-icon', href: '/assets/favicon/favicon.ico' },
-      { rel: 'icon', type: 'image/svg+xml', href: '/assets/favicon/favicon.svg' },
-      { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/assets/favicon/favicon-32x32.png' },
-      { rel: 'apple-touch-icon', sizes: '180x180', href: '/assets/favicon/apple-touch-icon.png' }
+      { rel: 'icon', type: 'image/x-icon', href: 'assets/favicon/favicon.ico' },
+      { rel: 'shortcut icon', type: 'image/x-icon', href: 'assets/favicon/favicon.ico' },
+      { rel: 'icon', type: 'image/svg+xml', href: 'assets/favicon/favicon.svg' },
+      { rel: 'icon', type: 'image/png', sizes: '32x32', href: 'assets/favicon/favicon-32x32.png' },
+      { rel: 'apple-touch-icon', sizes: '180x180', href: 'assets/favicon/apple-touch-icon.png' }
     ];
 
     document.querySelectorAll('link[data-site-favicon="1"]').forEach((el) => el.remove());
