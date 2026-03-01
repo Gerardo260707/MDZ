@@ -7,6 +7,7 @@
   --mosaic-strip-image: url('assets/strip-mosaicos-linea.svg');
 }
 * { box-sizing: border-box; }
+[hidden]{display:none !important;}
 body { margin:0; font-family: Arial, Helvetica, sans-serif; background:var(--bg); color:var(--text); background-attachment:fixed; }
 .site { width: min(96vw, 1680px); margin: 10px auto; background: var(--card); border: 1px solid #e5d8c7; box-shadow:0 10px 30px rgba(124,84,36,.10); }
 .top { padding: 20px 28px 10px; }

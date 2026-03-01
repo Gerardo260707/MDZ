@@ -161,6 +161,8 @@
     if (!toggleBtn || !comparator || !leftCanvas || !rightCanvas || !sharedPalette || !colors.length) return;
 
     const lang = getLang();
+    // Siempre iniciar oculto; solo mostrar al presionar el botón.
+    comparator.setAttribute('hidden', 'hidden');
     toggleBtn.textContent = lang === 'en' ? 'Compare colors' : 'Comparar colores';
 
     let selectedColor = colors[0] || { id: 'X', hex: '#000000' };
