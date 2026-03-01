@@ -833,21 +833,15 @@
     }
 
     function goToSelection(centerModel, cenefaModel, esquinaModel, cenefaOuterModel = null, esquinaOuterModel = null) {
-      persistCurrentDrafts();
       const url = new URL(window.location.href);
       url.searchParams.set('picker', pickerMode);
       if (centerModel) url.searchParams.set('center_id', String(centerModel.id));
       else url.searchParams.delete('center_id');
 
-      if (pickerMode === 'dual') {
-        if (cenefaModel) url.searchParams.set('cenefa_id', String(cenefaModel.id));
-        else url.searchParams.delete('cenefa_id');
-        if (esquinaModel) url.searchParams.set('esquina_id', String(esquinaModel.id));
-        else url.searchParams.delete('esquina_id');
-      } else {
-        url.searchParams.delete('cenefa_id');
-        url.searchParams.delete('esquina_id');
-      }
+      if (cenefaModel) url.searchParams.set('cenefa_id', String(cenefaModel.id));
+      else url.searchParams.delete('cenefa_id');
+      if (esquinaModel) url.searchParams.set('esquina_id', String(esquinaModel.id));
+      else url.searchParams.delete('esquina_id');
 
       if (cenefaOuterModel && cenefaOuterModel.id) url.searchParams.set('cenefa_outer_id', String(cenefaOuterModel.id));
       else url.searchParams.delete('cenefa_outer_id');
@@ -912,7 +906,6 @@
 
 
     function goToTapetePreset(preset) {
-      persistCurrentDrafts();
       if (!preset || typeof preset !== 'object') return;
       const url = new URL(window.location.href);
       url.searchParams.set('picker', 'dual');
