@@ -185,7 +185,7 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .color-compare-preview{border:1px solid #e3e3e3;border-radius:8px;padding:10px;background:#fafafa}
 .color-compare-preview canvas{width:100%;max-width:520px;aspect-ratio:3/2;height:auto;display:block;border:1px solid #bbb;background:#fff}
 .compare-palette{margin-top:8px;grid-template-columns:repeat(10,minmax(0,1fr));max-height:150px;overflow:auto;padding-right:2px;max-width:720px}
-.compare-palette .sw{height:26px}
+.compare-palette .sw{height:40px;display:flex;align-items:center;justify-content:center;padding:2px 4px;font-size:10px;line-height:1.1;text-align:center;white-space:nowrap;text-overflow:ellipsis}
 .compare-palette .sw.active{outline:2px solid #000;outline-offset:-2px}
 .color-card{border:1px solid #ddd;border-radius:8px;padding:10px;background:#fff;display:grid;gap:6px;text-align:center}
 .color-card .swatch{height:60px;border:1px solid #bbb;border-radius:6px}

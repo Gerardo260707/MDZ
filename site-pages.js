@@ -203,6 +203,15 @@
       ctx.strokeRect(1, 1, patternCanvas.width - 2, patternCanvas.height - 2);
     }
 
+    function textColorFor(hex) {
+      if (!hex || !/^#[0-9a-f]{6}$/i.test(hex)) return '#111';
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
+      return luminance > 155 ? '#111' : '#fff';
+    }
+
     function buildPalette(el) {
       el.innerHTML = '';
       colors.forEach((col) => {
@@ -210,8 +219,12 @@
         btn.type = 'button';
         btn.className = 'sw';
         btn.style.background = col.hex;
-        btn.title = `${col.id} · ${col.hex}`;
-        btn.setAttribute('aria-label', `${col.id} ${col.hex}`);
+        const label = (col.name || col.id || '').trim() || col.id;
+        btn.title = `${label} · ${col.id} · ${col.hex}`;
+        btn.setAttribute('aria-label', `${label} ${col.id} ${col.hex}`);
+        btn.textContent = label;
+        btn.style.color = textColorFor(col.hex);
+        btn.style.textShadow = btn.style.color === '#111' ? 'none' : '0 1px 2px rgba(0,0,0,.75)';
         if (selectedColor && selectedColor.id === col.id) btn.classList.add('active');
         btn.addEventListener('click', () => {
           selectedColor = col;
