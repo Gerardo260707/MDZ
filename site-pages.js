@@ -1982,27 +1982,63 @@
     const overlay = q('modelOverlay');
     const patternCanvas = q('modelOverlayPattern');
     const nameEl = q('modelOverlayName');
+    const compareOverlay = q('modelCompareOverlay');
+    const patternCanvasA = q('modelOverlayPatternA');
+    const patternCanvasB = q('modelOverlayPatternB');
+    const nameElA = q('modelOverlayNameA');
+    const nameElB = q('modelOverlayNameB');
+    const compareToggleBtn = q('compareModelsBtn');
     if (!overlay || !patternCanvas || !nameEl) return;
 
     const pctx = patternCanvas.getContext('2d');
+    const pctxA = patternCanvasA ? patternCanvasA.getContext('2d') : null;
+    const pctxB = patternCanvasB ? patternCanvasB.getContext('2d') : null;
     let closeTimer = null;
+    let compareCloseTimer = null;
+    let compareMode = false;
+    let comparePicked = [];
 
-    function ensureCanvasSize() {
-      const rect = patternCanvas.getBoundingClientRect();
+    function setCompareMode(enabled) {
+      compareMode = Boolean(enabled && compareToggleBtn && compareOverlay && patternCanvasA && patternCanvasB && nameElA && nameElB);
+      if (compareToggleBtn) {
+        compareToggleBtn.classList.toggle('active', compareMode);
+        compareToggleBtn.setAttribute('aria-pressed', compareMode ? 'true' : 'false');
+      }
+      if (!compareMode) clearCompareSelection();
+    }
+
+    function clearCompareSelection() {
+      comparePicked = [];
+      document.querySelectorAll('.mosaic-preview-trigger.compare-picked').forEach((node) => node.classList.remove('compare-picked'));
+      closeCompare();
+    }
+
+    function ensureCanvasSizeFor(canvas, minW = 800, minH = 560) {
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
       const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-      const targetW = Math.max(800, Math.round((rect.width || 1200) * dpr));
-      const targetH = Math.max(560, Math.round((rect.height || 900) * dpr));
-      if (patternCanvas.width !== targetW || patternCanvas.height !== targetH) {
-        patternCanvas.width = targetW;
-        patternCanvas.height = targetH;
+      const targetW = Math.max(minW, Math.round((rect.width || 1200) * dpr));
+      const targetH = Math.max(minH, Math.round((rect.height || 900) * dpr));
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW;
+        canvas.height = targetH;
       }
     }
 
-    function drawRotatedPattern(img) {
-      if (!img || !pctx) return;
-      const w = patternCanvas.width;
-      const h = patternCanvas.height;
-      pctx.clearRect(0, 0, w, h);
+    function ensureCanvasSize() {
+      ensureCanvasSizeFor(patternCanvas, 800, 560);
+    }
+
+    function ensureCompareCanvasSize() {
+      ensureCanvasSizeFor(patternCanvasA, 560, 420);
+      ensureCanvasSizeFor(patternCanvasB, 560, 420);
+    }
+
+    function drawRotatedPatternOn(ctx, canvas, img) {
+      if (!img || !ctx || !canvas) return;
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
 
       const cols = 8;
       const rows = 6;
@@ -2027,41 +2063,42 @@
         for (let x = 0; x < cols; x++) {
           const map = [[0, Math.PI / 2], [3 * Math.PI / 2, Math.PI]];
           const angle = map[y % 2][x % 2];
-          pctx.save();
-          pctx.translate(x * tileW + tileW / 2, y * tileH + tileH / 2);
-          pctx.rotate(angle);
-          pctx.drawImage(tileSource, -tileW / 2, -tileH / 2, tileW, tileH);
-          pctx.restore();
+          ctx.save();
+          ctx.translate(x * tileW + tileW / 2, y * tileH + tileH / 2);
+          ctx.rotate(angle);
+          ctx.drawImage(tileSource, -tileW / 2, -tileH / 2, tileW, tileH);
+          ctx.restore();
         }
       }
     }
 
-    function drawBorderPattern(cenefaImg, esquinaImg, cenefaOuterImg, esquinaOuterImg) {
-      const w = patternCanvas.width;
-      const h = patternCanvas.height;
-      pctx.clearRect(0, 0, w, h);
+    function drawBorderPatternOn(ctx, canvas, cenefaImg, esquinaImg, cenefaOuterImg, esquinaOuterImg) {
+      if (!ctx || !canvas) return;
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
 
       const hasOuter = Boolean(cenefaOuterImg || esquinaOuterImg);
       const cols = hasOuter ? 12 : 8;
       const rows = hasOuter ? 9 : 6;
       const tw = w / cols;
       const th = h / rows;
-      pctx.fillStyle = '#fff';
-      pctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, w, h);
 
       function d(src, r, c, angle) {
         if (!src) return;
         const bleed = 1.35;
-        pctx.save();
-        pctx.imageSmoothingEnabled = false;
-        pctx.translate(c * tw + tw / 2, r * th + th / 2);
-        pctx.rotate(angle || 0);
-        pctx.drawImage(src, -(tw / 2 + bleed), -(th / 2 + bleed), tw + bleed * 2, th + bleed * 2);
-        pctx.restore();
+        ctx.save();
+        ctx.imageSmoothingEnabled = false;
+        ctx.translate(c * tw + tw / 2, r * th + th / 2);
+        ctx.rotate(angle || 0);
+        ctx.drawImage(src, -(tw / 2 + bleed), -(th / 2 + bleed), tw + bleed * 2, th + bleed * 2);
+        ctx.restore();
       }
 
       function drawRing(ring, border, corner) {
-        const left = ring, right = cols - 1 - ring, top = ring, bottom = rows - 1 - ring;
+        const left = ring; const right = cols - 1 - ring; const top = ring; const bottom = rows - 1 - ring;
         for (let c = left + 1; c < right; c++) {
           d(border, top, c, 0);
           d(border, bottom, c, Math.PI);
@@ -2108,9 +2145,21 @@
       return loadImageWithFallback(src, { cacheBust: true });
     }
 
-    const open = async (src, modelName, category, cenefaSrc, esquinaSrc, cenefaOuterSrc, esquinaOuterSrc) => {
-      clearTimeout(closeTimer);
-      ensureCanvasSize();
+    function payloadFromImg(img) {
+      return {
+        src: img.getAttribute('src') || '',
+        modelName: img.dataset.modelName || img.alt || 'Modelo',
+        category: (img.dataset.category || '').toLowerCase(),
+        cenefaSrc: img.dataset.cenefaSrc || '',
+        esquinaSrc: img.dataset.esquinaSrc || '',
+        cenefaOuterSrc: img.dataset.cenefaOuterSrc || '',
+        esquinaOuterSrc: img.dataset.esquinaOuterSrc || '',
+      };
+    }
+
+    async function renderOverlayPayload(ctx, canvas, payload) {
+      if (!ctx || !canvas || !payload) return;
+      const { src, category, cenefaSrc, esquinaSrc, cenefaOuterSrc, esquinaOuterSrc } = payload;
       if (['cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior'].includes(category)) {
         const [cenefaImg, esquinaImg, cenefaOuterImg, esquinaOuterImg] = await Promise.all([
           loadImageSafeOverlay(cenefaSrc || (category === 'cenefa' ? src : '')),
@@ -2118,13 +2167,18 @@
           loadImageSafeOverlay(cenefaOuterSrc || (category === 'cenefa_exterior' ? src : '')),
           loadImageSafeOverlay(esquinaOuterSrc || (category === 'esquina_exterior' ? src : '')),
         ]);
-        drawBorderPattern(cenefaImg, esquinaImg, cenefaOuterImg, esquinaOuterImg);
+        drawBorderPatternOn(ctx, canvas, cenefaImg, esquinaImg, cenefaOuterImg, esquinaOuterImg);
       } else {
         const img = await loadImageSafeOverlay(src);
-        if (img) drawRotatedPattern(img);
+        if (img) drawRotatedPatternOn(ctx, canvas, img);
       }
+    }
 
-      nameEl.textContent = `MODELO: ${(modelName || 'Modelo').toUpperCase()}`;
+    const open = async (payload) => {
+      clearTimeout(closeTimer);
+      ensureCanvasSize();
+      await renderOverlayPayload(pctx, patternCanvas, payload);
+      nameEl.textContent = `MODELO: ${(payload.modelName || 'Modelo').toUpperCase()}`;
       overlay.classList.remove('closing');
       overlay.classList.add('open');
       overlay.setAttribute('aria-hidden', 'false');
@@ -2137,30 +2191,86 @@
       closeTimer = setTimeout(() => {
         overlay.classList.remove('closing');
         overlay.setAttribute('aria-hidden', 'true');
-        document.body.style.overflow = '';
+        if (!compareOverlay || compareOverlay.getAttribute('aria-hidden') !== 'false') document.body.style.overflow = '';
+      }, 280);
+    };
+
+    const openCompare = async () => {
+      if (!compareOverlay || comparePicked.length < 2 || !pctxA || !pctxB || !patternCanvasA || !patternCanvasB || !nameElA || !nameElB) return;
+      clearTimeout(compareCloseTimer);
+      ensureCompareCanvasSize();
+      const payloadA = payloadFromImg(comparePicked[0]);
+      const payloadB = payloadFromImg(comparePicked[1]);
+      await Promise.all([
+        renderOverlayPayload(pctxA, patternCanvasA, payloadA),
+        renderOverlayPayload(pctxB, patternCanvasB, payloadB)
+      ]);
+      nameElA.textContent = `MODELO A: ${(payloadA.modelName || 'Modelo').toUpperCase()}`;
+      nameElB.textContent = `MODELO B: ${(payloadB.modelName || 'Modelo').toUpperCase()}`;
+      compareOverlay.classList.remove('closing');
+      compareOverlay.classList.add('open');
+      compareOverlay.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    };
+
+    const closeCompare = () => {
+      if (!compareOverlay) return;
+      compareOverlay.classList.remove('open');
+      compareOverlay.classList.add('closing');
+      compareCloseTimer = setTimeout(() => {
+        compareOverlay.classList.remove('closing');
+        compareOverlay.setAttribute('aria-hidden', 'true');
+        if (!overlay || overlay.getAttribute('aria-hidden') !== 'false') document.body.style.overflow = '';
       }, 280);
     };
 
     document.querySelectorAll('.mosaic-preview-trigger').forEach((img) => {
-      img.addEventListener('click', () => open(
-        img.getAttribute('src') || '',
-        img.dataset.modelName || img.alt || 'Modelo',
-        (img.dataset.category || '').toLowerCase(),
-        img.dataset.cenefaSrc || '',
-        img.dataset.esquinaSrc || '',
-        img.dataset.cenefaOuterSrc || '',
-        img.dataset.esquinaOuterSrc || '',
-      ));
+      img.addEventListener('click', (ev) => {
+        if (compareMode) {
+          ev.preventDefault();
+          if (comparePicked.includes(img)) {
+            comparePicked = comparePicked.filter((n) => n !== img);
+            img.classList.remove('compare-picked');
+            closeCompare();
+            return;
+          }
+          if (comparePicked.length >= 2) {
+            const shifted = comparePicked.shift();
+            if (shifted) shifted.classList.remove('compare-picked');
+          }
+          comparePicked.push(img);
+          img.classList.add('compare-picked');
+          if (comparePicked.length === 2) openCompare();
+          return;
+        }
+
+        open(payloadFromImg(img));
+      });
     });
+
+    if (compareToggleBtn) {
+      compareToggleBtn.addEventListener('click', () => {
+        const next = !compareMode;
+        setCompareMode(next);
+      });
+    }
 
     overlay.addEventListener('click', (e) => {
       if (e.target.closest('[data-overlay-close="true"]')) close();
     });
 
+    if (compareOverlay) {
+      compareOverlay.addEventListener('click', (e) => {
+        if (e.target.closest('[data-compare-overlay-close="true"]')) closeCompare();
+      });
+    }
+
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && overlay.classList.contains('open')) close();
+      if (e.key === 'Escape' && compareOverlay && compareOverlay.classList.contains('open')) closeCompare();
     });
   }
+
 
 
   function initQuoteValidation() {

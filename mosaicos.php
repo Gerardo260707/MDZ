@@ -467,6 +467,7 @@ Los colores presentados en esta muestra digital pueden no representar con fideli
         <p data-i18n="custom_panel_desc">Cambie los colores del mosaico de su elección.</p>
         <div class="top-action-buttons">
           <a class="action quote-top-btn cta-pill" data-keep-lang href="personalizar.php" data-i18n="custom_panel_cta">Pruebe el simulador de colores ahora</a>
+          <button type="button" id="compareModelsBtn" class="action cta-pill compare-toggle" aria-pressed="false" data-i18n="compare_models_toggle">Comparar modelos</button>
           <button type="button" id="quoteToggleBtn" class="action cta-pill secondary" aria-expanded="false" data-i18n="quote_toggle">Solicitar cotización</button>
         </div>
         <div id="quoteContainer" class="inline-quote-container" aria-hidden="true">
@@ -648,6 +649,22 @@ Los colores presentados en esta muestra digital pueden no representar con fideli
       <button type="button" class="model-overlay-close" data-overlay-close="true" aria-label="Cerrar vista previa">×</button>
       <canvas id="modelOverlayPattern" class="model-overlay-pattern" width="1200" height="900" aria-hidden="true"></canvas>
       <div class="model-overlay-footer"><strong id="modelOverlayName">MODELO</strong></div>
+    </div>
+  </div>
+  <div id="modelCompareOverlay" class="model-overlay model-overlay-compare" aria-hidden="true">
+    <div class="model-overlay-backdrop" data-compare-overlay-close="true"></div>
+    <div class="model-overlay-compare-wrap" role="dialog" aria-modal="true" aria-label="Comparación de modelos">
+      <button type="button" class="model-overlay-close" data-compare-overlay-close="true" aria-label="Cerrar comparación">×</button>
+      <div class="model-overlay-compare-grid">
+        <div class="model-overlay-card">
+          <canvas id="modelOverlayPatternA" class="model-overlay-pattern" width="1200" height="900" aria-hidden="true"></canvas>
+          <div class="model-overlay-footer"><strong id="modelOverlayNameA">MODELO A</strong></div>
+        </div>
+        <div class="model-overlay-card">
+          <canvas id="modelOverlayPatternB" class="model-overlay-pattern" width="1200" height="900" aria-hidden="true"></canvas>
+          <div class="model-overlay-footer"><strong id="modelOverlayNameB">MODELO B</strong></div>
+        </div>
+      </div>
     </div>
   </div>
   <script src="app.js"></script>

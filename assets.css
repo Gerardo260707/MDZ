@@ -123,7 +123,7 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .quote-top p{margin:0 0 8px;font-size:14px;color:#333}
 
 .quote-top-inline{border:1px solid #ddd;background:linear-gradient(180deg,#ffffff 0%,#f8f8f8 100%);padding:18px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.08);margin-top:16px}
-.top-action-buttons{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.top-action-buttons{display:flex;gap:28px;flex-wrap:wrap;align-items:center;margin-top:18px}
 .cta-pill.secondary{background:linear-gradient(90deg,#2f698f 0%,#1e4a68 100%) !important}
 .inline-quote-container{margin-top:14px;display:none}
 .inline-quote-container.open{display:block}
@@ -150,6 +150,14 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .model-overlay-close{position:absolute;right:10px;top:8px;z-index:3;border:0;background:rgba(0,0,0,.5);color:#fff;width:34px;height:34px;border-radius:50%;font-size:24px;line-height:1;cursor:pointer}
 .model-overlay-pattern{width:100%;height:100%;display:block;background:#f0f0f0;object-fit:contain}
 .model-overlay-footer{height:46px;background:#000;color:#d7ecff;display:flex;align-items:center;padding:0 20px;font-size:12px;letter-spacing:.8px}
+
+.compare-toggle{background:linear-gradient(90deg,#8053b0 0%,#56307f 100%) !important}
+.compare-toggle.active{box-shadow:0 0 0 3px rgba(128,83,176,.28),0 10px 24px rgba(86,48,127,.35) !important;transform:translateY(-1px)}
+.mosaic-preview-trigger.compare-picked{outline:3px solid #7b2f2f;outline-offset:2px;box-shadow:0 10px 22px rgba(123,47,47,.35)}
+.model-overlay-compare .model-overlay-compare-wrap{position:relative;width:min(96vw,1600px);margin:2.5vh auto 0}
+.model-overlay-compare .model-overlay-compare-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.model-overlay-compare .model-overlay-card{width:100%;max-height:88vh;aspect-ratio:4/3;margin:0}
+@media (max-width:900px){.model-overlay-compare .model-overlay-compare-grid{grid-template-columns:1fr}.model-overlay-compare .model-overlay-card{max-height:44vh}}
 
 .quote-box h3{font-size:36px;margin:0 0 10px;line-height:1.05}
 .quote-box p{font-size:15px;line-height:1.5;margin-bottom:12px;color:#333}
