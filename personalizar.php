@@ -569,6 +569,7 @@ $showCenefaExtra = (bool)$selectedCenefa;
 $showEsquinaExtra = (bool)$selectedEsquina;
 $showCenefaOuterExtra = (bool)$selectedCenefaOuter;
 $showEsquinaOuterExtra = (bool)$selectedEsquinaOuter;
+$showCenterSelectionHint = (!$selectedCenter && (bool)$selectedCenefa);
 ?>
 <!doctype html>
 <html lang="<?= $lang ?>">
@@ -614,6 +615,9 @@ $showEsquinaOuterExtra = (bool)$selectedEsquinaOuter;
         </div>
         <?php endif; ?>
       </div>
+      <?php if ($showCenterSelectionHint): ?>
+      <p class="note" id="centerSelectionHint" data-i18n="custom_center_hint_no_center">Seleccione un centro en la barra de búsqueda o pinte el cuadro para usar un color liso.</p>
+      <?php endif; ?>
     </section>
 
     <section class="panel">

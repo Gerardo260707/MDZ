@@ -1,12 +1,22 @@
 <?php
 $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
+$labels = [
+  'title' => $lang === 'en' ? 'Tiles' : 'Mosaicos',
+  'intro' => $lang === 'en' ? 'Select the tile type you want to browse.' : 'Seleccione el tipo de mosaico que desea consultar.',
+  'decorated' => $lang === 'en' ? 'Decorated' : 'Decorados',
+  'customize' => $lang === 'en' ? 'Customize' : 'Personalizar',
+  'specials' => $lang === 'en' ? 'Specials' : 'Especiales',
+  'decorated_cta' => $lang === 'en' ? 'View decorated' : 'Ver decorados',
+  'customize_cta' => $lang === 'en' ? 'Go to simulator' : 'Ir al simulador',
+  'specials_cta' => $lang === 'en' ? 'View specials' : 'Ver especiales',
+];
 ?>
 <!doctype html>
 <html lang="<?= $lang ?>">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mosaicos</title>
+  <title><?= htmlspecialchars($labels['title'], ENT_QUOTES) ?></title>
   <link rel="stylesheet" href="assets.css" />
 </head>
 <body>
@@ -32,24 +42,24 @@ $lang = ($_GET['lang'] ?? 'es') === 'en' ? 'en' : 'es';
     <div class="mosaic-strip"></div>
 
     <section id="mosaic-options">
-      <h2>Mosaicos</h2>
-      <p>Seleccione el tipo de mosaico que desea consultar.</p>
+      <h2><?= htmlspecialchars($labels['title'], ENT_QUOTES) ?></h2>
+      <p><?= htmlspecialchars($labels['intro'], ENT_QUOTES) ?></p>
 
       <div class="category-grid mosaic-options-grid">
         <article class="category-card">
-          <img src="assets/mosaicos-menu/decorados.jpg" alt="Decorados" onerror="this.src='assets/placeholder-tile.svg'" />
-          <h3>Decorados</h3>
-          <a class="cta-pill" href="mosaicos.php?lang=<?= $lang ?>">Ver decorados</a>
+          <img src="assets/mosaicos-menu/decorados.jpg" alt="<?= htmlspecialchars($labels['decorated'], ENT_QUOTES) ?>" onerror="this.src='assets/placeholder-tile.svg'" />
+          <h3><?= htmlspecialchars($labels['decorated'], ENT_QUOTES) ?></h3>
+          <a class="cta-pill" href="mosaicos.php?lang=<?= $lang ?>"><?= htmlspecialchars($labels['decorated_cta'], ENT_QUOTES) ?></a>
         </article>
         <article class="category-card">
-          <img src="assets/mosaicos-menu/personalizar.jpg" alt="Personalizar" onerror="this.src='assets/placeholder-tile.svg'" />
-          <h3>Personalizar</h3>
-          <a class="cta-pill" href="personalizar.php?lang=<?= $lang ?>">Ir al simulador</a>
+          <img src="assets/mosaicos-menu/personalizar.jpg" alt="<?= htmlspecialchars($labels['customize'], ENT_QUOTES) ?>" onerror="this.src='assets/placeholder-tile.svg'" />
+          <h3><?= htmlspecialchars($labels['customize'], ENT_QUOTES) ?></h3>
+          <a class="cta-pill" href="personalizar.php?lang=<?= $lang ?>"><?= htmlspecialchars($labels['customize_cta'], ENT_QUOTES) ?></a>
         </article>
         <article class="category-card">
-          <img src="assets/mosaicos-menu/especiales.jpg" alt="Especiales" onerror="this.src='assets/placeholder-tile.svg'" />
-          <h3>Especiales</h3>
-          <a class="cta-pill" href="especiales.php?lang=<?= $lang ?>">Ver especiales</a>
+          <img src="assets/mosaicos-menu/especiales.jpg" alt="<?= htmlspecialchars($labels['specials'], ENT_QUOTES) ?>" onerror="this.src='assets/placeholder-tile.svg'" />
+          <h3><?= htmlspecialchars($labels['specials'], ENT_QUOTES) ?></h3>
+          <a class="cta-pill" href="especiales.php?lang=<?= $lang ?>"><?= htmlspecialchars($labels['specials_cta'], ENT_QUOTES) ?></a>
         </article>
       </div>
     </section>

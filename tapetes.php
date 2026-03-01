@@ -189,7 +189,6 @@ $tapetes = carga_tapetes_csv(__DIR__ . '/config/tapetes.csv', $models);
 
     <section>
       <h2><?= $lang === 'en' ? 'Rugs' : 'Tapetes' ?></h2>
-      <p><?= $lang === 'en' ? 'Define rugs in <code>config/tapetes.csv</code> using: <strong>Nombre_Tapete,Centro,Cenefa,Esquina,Cenefa_Exterior,Esquina_Exterior</strong>.' : 'Defina sus tapetes en <code>config/tapetes.csv</code> con el formato: <strong>Nombre_Tapete,Centro,Cenefa,Esquina,Cenefa_Exterior,Esquina_Exterior</strong>.' ?></p>
       <a class="action cta-pill" data-keep-lang href="personalizar.php?picker=dual&amp;source=tapete"><?= $lang === 'en' ? 'Customize rug' : 'Personalizar tapete' ?></a>
     </section>
 
