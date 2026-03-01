@@ -149,7 +149,7 @@
     colors.forEach((c) => {
       const card = document.createElement('div');
       card.className = 'color-card';
-      card.innerHTML = `<div class="swatch" style="background:${c.hex}"></div><strong>${c.id}</strong><span>${c.hex}</span>`;
+      card.innerHTML = `<div class="swatch" style="background:${c.hex}"></div><strong>${c.name || c.id}</strong><span>${c.id} · ${c.hex}</span>`;
       grid.appendChild(card);
     });
 
@@ -157,8 +157,9 @@
     const comparator = q('colorComparator');
     const leftCanvas = q('compareCanvasLeft');
     const rightCanvas = q('compareCanvasRight');
+    const patternCanvas = q('compareCanvasPattern');
     const sharedPalette = q('comparePaletteShared');
-    if (!toggleBtn || !comparator || !leftCanvas || !rightCanvas || !sharedPalette || !colors.length) return;
+    if (!toggleBtn || !comparator || !leftCanvas || !rightCanvas || !patternCanvas || !sharedPalette || !colors.length) return;
 
     const lang = getLang();
     // Siempre iniciar oculto; solo mostrar al presionar el botón.
@@ -182,6 +183,26 @@
       ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
     }
 
+    function paintPattern() {
+      const ctx = patternCanvas.getContext('2d');
+      if (!ctx) return;
+      const cols = 3;
+      const rows = 2;
+      const cellW = patternCanvas.width / cols;
+      const cellH = patternCanvas.height / rows;
+      ctx.clearRect(0, 0, patternCanvas.width, patternCanvas.height);
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const useLeft = (row + col) % 2 === 0;
+          ctx.fillStyle = useLeft ? leftColor : rightColor;
+          ctx.fillRect(col * cellW, row * cellH, cellW, cellH);
+        }
+      }
+      ctx.strokeStyle = 'rgba(0,0,0,.25)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(1, 1, patternCanvas.width - 2, patternCanvas.height - 2);
+    }
+
     function buildPalette(el) {
       el.innerHTML = '';
       colors.forEach((col) => {
@@ -203,10 +224,12 @@
     leftCanvas.addEventListener('click', () => {
       leftColor = selectedColor.hex;
       paintSolid(leftCanvas, leftColor);
+      paintPattern();
     });
     rightCanvas.addEventListener('click', () => {
       rightColor = selectedColor.hex;
       paintSolid(rightCanvas, rightColor);
+      paintPattern();
     });
 
     toggleBtn.addEventListener('click', () => {
@@ -221,6 +244,7 @@
     buildPalette(sharedPalette);
     paintSolid(leftCanvas, leftColor);
     paintSolid(rightCanvas, rightColor);
+    paintPattern();
   }
 
   function initCategories() {
