@@ -704,23 +704,48 @@
         else if (forcedSingleCategory === 'esquina_exterior' && selectedEsquinaOuter) centerInput.value = selectedEsquinaOuter.nombre || '';
         else if (selectedCenter) centerInput.value = selectedCenter.nombre || '';
       } else if (selectedCenter) centerInput.value = selectedCenter.nombre || '';
-      centerInput.addEventListener('input', () => renderSelector({
-        inputEl: centerInput,
-        resultEl: centerResults,
-        category: forcedSingleCategory,
-        selectedId: selectedCenter ? selectedCenter.id : null,
-        onPick: (pickedModel) => {
-          if (pickerMode === 'single' && forcedSingleCategory === 'cenefa') {
-            { const outer = findOuterForCenefa(pickedModel); goToSelection(null, pickedModel, findEsquinaForCenefa(pickedModel), outer.cenefaOuter, outer.esquinaOuter); }
+      centerInput.addEventListener('input', () => {
+        const query = String(centerInput.value || '').trim();
+        if (!query) {
+          if (pickerMode === 'single' && forcedSingleCategory === 'cenefa' && selectedCenefa) {
+            goToSelection(null, null, null, null, null);
             return;
           }
-          if (pickerMode === 'single' && forcedSingleCategory === 'esquina') {
-            goToSelection(null, selectedCenefa, pickedModel, selectedCenefaOuter, selectedEsquinaOuter);
+          if (pickerMode === 'single' && forcedSingleCategory === 'esquina' && selectedEsquina) {
+            goToSelection(null, selectedCenefa, null, selectedCenefaOuter, null);
             return;
           }
-          goToSelection(pickedModel, selectedCenefa, selectedEsquina, selectedCenefaOuter, selectedEsquinaOuter);
-        },
-      }));
+          if (pickerMode === 'single' && forcedSingleCategory === 'cenefa_exterior' && selectedCenefaOuter) {
+            goToSelection(null, selectedCenefa, selectedEsquina, null, selectedEsquinaOuter);
+            return;
+          }
+          if (pickerMode === 'single' && forcedSingleCategory === 'esquina_exterior' && selectedEsquinaOuter) {
+            goToSelection(null, selectedCenefa, selectedEsquina, selectedCenefaOuter, null);
+            return;
+          }
+          if ((pickerMode === 'dual' || forcedSingleCategory === 'centro') && selectedCenter) {
+            goToSelection(null, selectedCenefa, selectedEsquina, selectedCenefaOuter, selectedEsquinaOuter);
+            return;
+          }
+        }
+        renderSelector({
+          inputEl: centerInput,
+          resultEl: centerResults,
+          category: forcedSingleCategory,
+          selectedId: selectedCenter ? selectedCenter.id : null,
+          onPick: (pickedModel) => {
+            if (pickerMode === 'single' && forcedSingleCategory === 'cenefa') {
+              { const outer = findOuterForCenefa(pickedModel); goToSelection(null, pickedModel, findEsquinaForCenefa(pickedModel), outer.cenefaOuter, outer.esquinaOuter); }
+              return;
+            }
+            if (pickerMode === 'single' && forcedSingleCategory === 'esquina') {
+              goToSelection(null, selectedCenefa, pickedModel, selectedCenefaOuter, selectedEsquinaOuter);
+              return;
+            }
+            goToSelection(pickedModel, selectedCenefa, selectedEsquina, selectedCenefaOuter, selectedEsquinaOuter);
+          },
+        });
+      });
       centerInput.addEventListener('focus', () => centerInput.dispatchEvent(new Event('input')));
       centerInput.dispatchEvent(new Event('input'));
     }
@@ -733,17 +758,24 @@
       });
       const hasConnectionFilter = connectedCenefaIds.size > 0;
       if (selectedCenefa) cenefaInput.value = selectedCenefa.nombre || '';
-      cenefaInput.addEventListener('input', () => renderSelector({
-        inputEl: cenefaInput,
-        resultEl: cenefaResults,
-        category: 'cenefa',
-        selectedId: selectedCenefa ? selectedCenefa.id : null,
-        allowedIds: hasConnectionFilter ? connectedCenefaIds : null,
-        onPick: (cenefaModel) => {
-          const outer = findOuterForCenefa(cenefaModel);
-          goToSelection(selectedCenter, cenefaModel, findEsquinaForCenefa(cenefaModel), outer.cenefaOuter, outer.esquinaOuter);
-        },
-      }));
+      cenefaInput.addEventListener('input', () => {
+        const query = String(cenefaInput.value || '').trim();
+        if (!query && selectedCenefa) {
+          goToSelection(selectedCenter, null, null, null, null);
+          return;
+        }
+        renderSelector({
+          inputEl: cenefaInput,
+          resultEl: cenefaResults,
+          category: 'cenefa',
+          selectedId: selectedCenefa ? selectedCenefa.id : null,
+          allowedIds: hasConnectionFilter ? connectedCenefaIds : null,
+          onPick: (cenefaModel) => {
+            const outer = findOuterForCenefa(cenefaModel);
+            goToSelection(selectedCenter, cenefaModel, findEsquinaForCenefa(cenefaModel), outer.cenefaOuter, outer.esquinaOuter);
+          },
+        });
+      });
       cenefaInput.addEventListener('focus', () => cenefaInput.dispatchEvent(new Event('input')));
       cenefaInput.dispatchEvent(new Event('input'));
     }
