@@ -2970,17 +2970,18 @@
       const { ctx, cssW, cssH } = setup;
       const type = String(patternType || '').toLowerCase();
       if (type === 'triangular') {
-        const cols = Math.max(5, Math.round(cssW / 180));
-        const tileW = cssW / cols;
+        const tileW = Math.max(120, cssW / Math.max(6, Math.round(cssW / 150)));
         const tileH = tileW * 0.9;
-        const stepY = tileH * 0.86;
-        const rows = Math.ceil((cssH + tileH) / stepY) + 1;
-        for (let r = -1; r < rows; r++) {
-          for (let c = -1; c < cols + 1; c++) {
-            const cx = (c + 0.5 + ((r % 2) ? 0.5 : 0)) * tileW;
-            const cy = (r + 0.5) * stepY;
-            const angle = (r % 2 === 0) ? 0 : Math.PI;
-            drawTileFit(ctx, tileCanvas, cx, cy, tileW * 1.02, tileH * 1.02, angle);
+        const stepX = tileW * 0.5;
+        const stepY = tileH * 0.98;
+        const cols = Math.ceil((cssW + tileW * 2) / stepX);
+        const rows = Math.ceil((cssH + tileH * 2) / stepY);
+        for (let r = -2; r < rows; r++) {
+          for (let c = -2; c < cols; c++) {
+            const cx = c * stepX + tileW / 2;
+            const cy = r * stepY + tileH / 2;
+            const angle = ((r + c) % 2 === 0) ? 0 : Math.PI;
+            drawTileFit(ctx, tileCanvas, cx, cy, tileW * 1.01, tileH * 1.01, angle);
           }
         }
         return;
@@ -2989,14 +2990,14 @@
         const cols = Math.max(5, Math.round(cssW / 170));
         const tileW = cssW / cols;
         const tileH = tileW * 0.94;
-        const stepX = tileW * 0.91;
-        const stepY = tileH * 0.84;
+        const stepX = tileW * 0.84;
+        const stepY = tileH * 0.78;
         const drawCols = Math.ceil((cssW + tileW * 2) / stepX);
         const drawRows = Math.ceil((cssH + tileH * 2) / stepY);
         for (let c = -2; c < drawCols; c++) {
           const shiftY = (c % 2 === 0) ? 0 : (stepY / 2);
           for (let r = -2; r < drawRows; r++) {
-            drawTileFit(ctx, tileCanvas, c * stepX + tileW / 2, r * stepY + shiftY + tileH / 2, tileW, tileH, 0);
+            drawTileFit(ctx, tileCanvas, c * stepX + tileW / 2, r * stepY + shiftY + tileH / 2, tileW * 1.02, tileH * 1.02, 0);
           }
         }
         return;
@@ -3022,20 +3023,26 @@
         for (let i = 0; i < count; i++) drawTileFit(ctx, tileCanvas, startX + (i + 0.5) * tileW, cy, tileW * 0.95, tileW * 0.95, 0);
         return;
       }
-      const cols = Math.max(4, Math.round(cssW / 190));
-      const tileW = cssW / cols;
-      const tileH = tileW * 0.88;
-      const hStep = tileW * 0.78;
-      const vStep = tileH * 0.82;
-      const rows = Math.ceil((cssH + tileH) / vStep) + 1;
-      const safeRotation = Number.isFinite(rotationSeed) ? (rotationSeed * Math.PI / 180) : 0;
-      for (let r = -1; r < rows; r++) {
-        const offsetX = (r % 2 === 0) ? 0 : (hStep / 2);
-        for (let c = -2; c < cols + 2; c++) {
-          const cx = c * hStep + offsetX + tileW / 2;
-          const cy = r * vStep + tileH / 2;
-          const angle = safeRotation + (((r + c) % 2 === 0) ? 0 : Math.PI / 3);
-          drawTileFit(ctx, tileCanvas, cx, cy, tileW * 1.08, tileH * 1.08, angle);
+      const cols = Math.max(5, Math.round(cssW / 130));
+      const hexW = cssW / cols;
+      const hexH = hexW / 0.8660254;
+      const radius = hexH / 2;
+      const dx = Math.sqrt(3) * radius;
+      const dy = radius * 1.5;
+      const rows = Math.ceil((cssH + hexH * 2) / dy);
+      const colsDraw = Math.ceil((cssW + hexW * 2) / dx);
+      const hasSeed = Number.isFinite(rotationSeed);
+      const seedRad = hasSeed ? (rotationSeed * Math.PI / 180) : 0;
+      const triadStep = Math.PI * 2 / 3;
+      for (let row = -2; row < rows; row++) {
+        for (let col = -2; col < colsDraw; col++) {
+          const cx = col * dx + ((row & 1) ? dx / 2 : 0) + (hexW / 2);
+          const cy = row * dy + radius;
+          const colPhase = ((col % 3) + 3) % 3;
+          const rowPhase = ((row % 2) + 2) % 2;
+          const variant = rowPhase === 0 ? colPhase : ((colPhase + 2) % 3);
+          const angle = hasSeed ? (seedRad + (variant * triadStep)) : 0;
+          drawTileFit(ctx, tileCanvas, cx, cy, hexW * 1.03, hexH * 1.03, angle);
         }
       }
     }
@@ -3263,15 +3270,14 @@
       function renderTri() {
         const baseW = Math.max(110, cssW / Math.max(6, Math.round(cssW / 140)));
         const baseH = baseW * 0.9;
-        const stepX = baseW / 2;
-        const stepY = baseH;
+        const stepX = baseW * 0.5;
+        const stepY = baseH * 0.98;
         const cols = Math.ceil((cssW + baseW * 2) / stepX);
         const rows = Math.ceil((cssH + baseH * 2) / stepY);
         for (let row = -2; row < rows; row++) {
-          const offsetX = (row % 2 === 0) ? 0 : (stepX / 2);
           for (let col = -2; col < cols; col++) {
-            const cx = col * stepX + offsetX;
-            const cy = (row + 0.5) * stepY;
+            const cx = col * stepX + (baseW / 2);
+            const cy = row * stepY + (baseH / 2);
             const angle = ((row + col) % 2 === 0) ? 0 : Math.PI;
             drawTileFit(ctx, tileCanvas, cx, cy, baseW * 1.01, baseH * 1.01, angle);
           }
@@ -3282,14 +3288,14 @@
         const cols = Math.max(5, Math.round(cssW / 165));
         const tileW = cssW / cols;
         const tileH = tileW * 0.92;
-        const stepX = tileW * 0.97;
-        const stepY = tileH * 0.88;
+        const stepX = tileW * 0.84;
+        const stepY = tileH * 0.78;
         const rows = Math.ceil((cssH + tileH * 2) / stepY);
         const colsDraw = Math.ceil((cssW + tileW * 2) / stepX);
         for (let c = -2; c < colsDraw; c++) {
           const shiftY = (c % 2 === 0) ? 0 : (stepY / 2);
           for (let r = -2; r < rows; r++) {
-            drawTileFit(ctx, tileCanvas, c * stepX + tileW / 2, r * stepY + shiftY + tileH / 2, tileW * 1.01, tileH * 1.01, 0);
+            drawTileFit(ctx, tileCanvas, c * stepX + tileW / 2, r * stepY + shiftY + tileH / 2, tileW * 1.02, tileH * 1.02, 0);
           }
         }
       }

@@ -5,6 +5,7 @@ $name = trim((string)($_GET['name'] ?? ($lang === 'en' ? 'Special model' : 'Mode
 $pattern = strtolower(trim((string)($_GET['pattern'] ?? 'hexagonal')));
 $hexRot = trim((string)($_GET['hex_rot'] ?? ''));
 
+$img = rawurldecode($img);
 $img = preg_replace('#^https?://[^/]+/#i', '', $img);
 if ($img === '' || str_contains($img, '..')) {
     $img = 'assets/placeholder-tile.svg';
