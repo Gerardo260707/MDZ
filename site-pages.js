@@ -2880,11 +2880,11 @@
       });
     }
 
-    function renderHexPattern(tileCanvas) {
+    function renderHexPattern(tileCanvas, rotationStepDeg = 0) {
       if (!patternCanvas || !tileCanvas) return;
       const dpr = Math.max(1, window.devicePixelRatio || 1);
-      const cssW = Math.max(520, Math.floor(host.querySelector('.special-overlay-card').clientWidth));
-      const cssH = Math.max(360, Math.floor(host.querySelector('.special-overlay-card').clientHeight - 46));
+      const cssW = Math.max(520, Math.floor(patternCanvas.clientWidth || host.querySelector('.special-overlay-card').clientWidth));
+      const cssH = Math.max(320, Math.floor(patternCanvas.clientHeight || (host.querySelector('.special-overlay-card').clientHeight - 46)));
       patternCanvas.width = Math.floor(cssW * dpr);
       patternCanvas.height = Math.floor(cssH * dpr);
       patternCanvas.style.width = `${cssW}px`;
@@ -2909,13 +2909,14 @@
 
       const rows = Math.ceil((cssH + hexH) / dy) + 1;
       const colsDraw = Math.ceil((cssW + hexW) / dx) + 2;
+      const stepRad = (Number(rotationStepDeg) || 0) * (Math.PI / 180);
 
       for (let row = -1; row < rows; row++) {
         for (let col = -1; col < colsDraw; col++) {
           const cx = col * dx + ((row & 1) ? dx / 2 : 0) + (hexW / 2);
           const cy = row * dy + radius;
           const variant = ((col - row) % 3 + 3) % 3;
-          const angle = variant * (Math.PI * 2 / 3);
+          const angle = stepRad ? (variant * stepRad) : 0;
 
           ctx.save();
           ctx.translate(cx, cy);
@@ -2930,6 +2931,7 @@
       originalSrc = sourceImg.currentSrc || sourceImg.src || '';
       const modelName = sourceImg.alt || 'Modelo especial';
       if (titleEl) titleEl.textContent = `MODELO: ${String(modelName).toUpperCase()}`;
+      const rotationStep = Number.parseFloat(sourceImg.dataset.hexRotation || '');
       host.classList.add('open');
       host.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
@@ -2937,7 +2939,7 @@
       const tileCanvas = await extractSpecialTile(sourceImg);
       if (host.classList.contains('open') && originalSrc === (sourceImg.currentSrc || sourceImg.src || '')) {
         if (tileCanvas) {
-          renderHexPattern(tileCanvas);
+          renderHexPattern(tileCanvas, Number.isFinite(rotationStep) ? rotationStep : 0);
         }
       }
     }

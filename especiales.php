@@ -6,7 +6,7 @@ function carga_cat_especiales(string $csv): array {
         $dir = dirname($csv);
         if (!is_dir($dir)) mkdir($dir, 0775, true);
         $h = fopen($csv, 'w');
-        if ($h) { fputcsv($h, ['carpeta','categoria']); fclose($h); }
+        if ($h) { fputcsv($h, ['carpeta','categoria','hex_rotacion']); fclose($h); }
         return [];
     }
     $h = fopen($csv,'r');
@@ -16,8 +16,13 @@ function carga_cat_especiales(string $csv): array {
     while (($r=fgetcsv($h))!==false) {
         $folder = strtolower(trim((string)($r[0]??'')));
         $cat = strtolower(trim((string)($r[1]??'')));
+        $hexRotRaw = trim((string)($r[2]??''));
         if ($folder==='') continue;
-        $m[$folder]=$cat;
+        $hexRot = null;
+        if ($hexRotRaw !== '' && is_numeric($hexRotRaw)) {
+            $hexRot = fmod((float)$hexRotRaw, 360.0);
+        }
+        $m[$folder]=['cat'=>$cat,'hex_rot'=>$hexRot];
     }
     fclose($h);
     return $m;
@@ -32,12 +37,14 @@ if (is_dir($base)) {
         if (!$pngs) continue;
         sort($pngs, SORT_NATURAL|SORT_FLAG_CASE);
         $src = $pngs[0];
-        $cat = $map[strtolower($folder)] ?? 'formas';
+        $meta = $map[strtolower($folder)] ?? ['cat' => 'formas', 'hex_rot' => null];
+        $cat = $meta['cat'] ?: 'formas';
         $items[] = [
           'folder'=>$folder,
           'cat'=>$cat,
           'img'=>'Especiales/'.rawurlencode($folder).'/'.rawurlencode(basename($src)).'?v='.(@filemtime($src)?:time()),
           'name'=>ucwords(str_replace(['_','-'],' ',$folder)),
+          'hex_rot'=>$meta['hex_rot'],
         ];
     }
 }
@@ -75,7 +82,7 @@ $labels=[
     <section class="panel especiales-grid">
       <?php foreach ($items as $it): $c=$it['cat']; $lbl=$labels[$lang][$c] ?? $labels[$lang]['other']; ?>
       <article class="mosaic-card special-card">
-        <img src="<?= htmlspecialchars($it['img'], ENT_QUOTES) ?>" alt="<?= htmlspecialchars($it['name'], ENT_QUOTES) ?>" />
+        <img src="<?= htmlspecialchars($it['img'], ENT_QUOTES) ?>" alt="<?= htmlspecialchars($it['name'], ENT_QUOTES) ?>" <?= $it['hex_rot'] !== null ? "data-hex-rotation=\"" . htmlspecialchars((string)$it['hex_rot'], ENT_QUOTES) . "\"" : "" ?> />
         <div class="name"><?= htmlspecialchars($it['name'], ENT_QUOTES) ?></div>
         <div class="code"><?= htmlspecialchars($lbl, ENT_QUOTES) ?></div>
       </article>
