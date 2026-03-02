@@ -39,13 +39,17 @@ $title = $lang === 'en' ? 'Customize Special Mosaic' : 'Personalizar Mosaico Esp
       data-special-customizer="1"
       data-pattern-type="<?= htmlspecialchars($pattern, ENT_QUOTES) ?>"
       <?= $hexRot !== '' ? 'data-hex-rotation="' . htmlspecialchars($hexRot, ENT_QUOTES) . '"' : '' ?>>
-      <div class="especiales-customizer-tools">
-        <button type="button" class="btn" data-special-color="#A3AD50">Verde</button>
-        <button type="button" class="btn" data-special-color="#A65B6B">Terracota</button>
-        <button type="button" class="btn" data-special-color="#4D5D86">Azul</button>
-        <button type="button" class="btn" data-special-color="#343434">Gris</button>
+      <div class="especiales-customizer-layout">
+        <div>
+          <h3><?= $lang === 'en' ? 'Model customization' : 'Personalización del modelo' ?></h3>
+          <div class="vector-editor"><canvas id="specialEditCanvas" class="vector-canvas" width="600" height="600"></canvas></div>
+        </div>
+        <div>
+          <h3><?= $lang === 'en' ? 'Pattern preview' : 'Vista de patrón' ?></h3>
+          <canvas id="specialCustomizerCanvas" width="1200" height="900"></canvas>
+        </div>
       </div>
-      <canvas id="specialCustomizerCanvas" width="1200" height="900"></canvas>
+      <div id="specialPalette" class="palette"></div>
       <img id="specialCustomizerSource" src="<?= htmlspecialchars($img, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($name, ENT_QUOTES) ?>" hidden />
     </section>
   </main>

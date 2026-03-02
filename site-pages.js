@@ -3084,27 +3084,29 @@
   function initEspecialesCustomizerPage() {
     const wrap = document.querySelector('[data-special-customizer="1"]');
     const canvas = q('specialCustomizerCanvas');
+    const editCanvas = q('specialEditCanvas');
+    const paletteEl = q('specialPalette');
     const imgEl = q('specialCustomizerSource');
-    if (!wrap || !canvas || !imgEl) return;
+    if (!wrap || !canvas || !editCanvas || !paletteEl || !imgEl) return;
 
     const patternType = String(wrap.dataset.patternType || 'hexagonal').toLowerCase();
     const rotationSeed = Number.parseFloat(wrap.dataset.hexRotation || '');
-    let tint = '#A3AD50';
+    const allColors = Array.isArray(COLORS) ? COLORS : [];
+    let selectedColor = allColors[0]?.hex || '#A3AD50';
+    let originalTileCanvas = null;
     let tileCanvas = null;
 
-    function setupCanvas() {
+    function setupCanvas(targetCanvas, ratio = 4 / 3) {
       const dpr = Math.max(1, window.devicePixelRatio || 1);
-      const cssW = Math.max(320, Math.floor(canvas.clientWidth || 1200));
-      const cssH = Math.floor(cssW * 3 / 4);
-      canvas.width = Math.floor(cssW * dpr);
-      canvas.height = Math.floor(cssH * dpr);
-      const ctx = canvas.getContext('2d');
+      const cssW = Math.max(320, Math.floor(targetCanvas.clientWidth || 1200));
+      const cssH = Math.floor(cssW / ratio);
+      targetCanvas.width = Math.floor(cssW * dpr);
+      targetCanvas.height = Math.floor(cssH * dpr);
+      const ctx = targetCanvas.getContext('2d');
       if (!ctx) return null;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpr, dpr);
       ctx.clearRect(0, 0, cssW, cssH);
-      ctx.fillStyle = '#ece9df';
-      ctx.fillRect(0, 0, cssW, cssH);
       return { ctx, cssW, cssH };
     }
 
@@ -3123,11 +3125,23 @@
       ctx.restore();
     }
 
-    function renderPattern() {
+    function renderEditBox() {
       if (!tileCanvas) return;
-      const setup = setupCanvas();
+      const setup = setupCanvas(editCanvas, 1);
       if (!setup) return;
       const { ctx, cssW, cssH } = setup;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, cssW, cssH);
+      drawTileFit(ctx, tileCanvas, cssW / 2, cssH / 2, cssW * 0.92, cssH * 0.92, 0);
+    }
+
+    function renderPattern() {
+      if (!tileCanvas) return;
+      const setup = setupCanvas(canvas, 4 / 3);
+      if (!setup) return;
+      const { ctx, cssW, cssH } = setup;
+      ctx.fillStyle = '#ece9df';
+      ctx.fillRect(0, 0, cssW, cssH);
 
       function renderHex() {
         const cols = Math.max(5, Math.round(cssW / 130));
@@ -3136,13 +3150,13 @@
         const radius = hexH / 2;
         const dx = Math.sqrt(3) * radius;
         const dy = radius * 1.5;
-        const rows = Math.ceil((cssH + hexH) / dy) + 1;
-        const colsDraw = Math.ceil((cssW + hexW) / dx) + 2;
+        const rows = Math.ceil((cssH + hexH * 2) / dy);
+        const colsDraw = Math.ceil((cssW + hexW * 2) / dx);
         const hasSeed = Number.isFinite(rotationSeed);
         const seedRad = hasSeed ? (rotationSeed * Math.PI / 180) : 0;
         const triadStep = Math.PI * 2 / 3;
-        for (let row = -1; row < rows; row++) {
-          for (let col = -1; col < colsDraw; col++) {
+        for (let row = -2; row < rows; row++) {
+          for (let col = -2; col < colsDraw; col++) {
             const cx = col * dx + ((row & 1) ? dx / 2 : 0) + (hexW / 2);
             const cy = row * dy + radius;
             const colPhase = ((col % 3) + 3) % 3;
@@ -3219,7 +3233,7 @@
       return renderHex();
     }
 
-    function buildTileCanvas(img) {
+    function buildOriginalTile(img) {
       const w = img.naturalWidth || img.width;
       const h = img.naturalHeight || img.height;
       const c = document.createElement('canvas');
@@ -3231,39 +3245,77 @@
       const d = cx.getImageData(0, 0, w, h);
       const arr = d.data;
       for (let i = 0; i < arr.length; i += 4) {
-        if (arr[i] >= 242 && arr[i + 1] >= 242 && arr[i + 2] >= 242) {
-          arr[i + 3] = 0;
-        } else {
-          const nr = parseInt(tint.slice(1, 3), 16);
-          const ng = parseInt(tint.slice(3, 5), 16);
-          const nb = parseInt(tint.slice(5, 7), 16);
-          const lum = (arr[i] + arr[i + 1] + arr[i + 2]) / 765;
-          arr[i] = Math.round(nr * (0.55 + lum * 0.45));
-          arr[i + 1] = Math.round(ng * (0.55 + lum * 0.45));
-          arr[i + 2] = Math.round(nb * (0.55 + lum * 0.45));
-        }
+        if (arr[i] >= 242 && arr[i + 1] >= 242 && arr[i + 2] >= 242) arr[i + 3] = 0;
+      }
+      cx.putImageData(d, 0, 0);
+      return c;
+    }
+
+    function tintTile(sourceCanvas, hex) {
+      const c = document.createElement('canvas');
+      c.width = sourceCanvas.width;
+      c.height = sourceCanvas.height;
+      const cx = c.getContext('2d', { willReadFrequently: true });
+      if (!cx) return null;
+      cx.drawImage(sourceCanvas, 0, 0);
+      const d = cx.getImageData(0, 0, c.width, c.height);
+      const arr = d.data;
+      const nr = parseInt(hex.slice(1, 3), 16);
+      const ng = parseInt(hex.slice(3, 5), 16);
+      const nb = parseInt(hex.slice(5, 7), 16);
+      for (let i = 0; i < arr.length; i += 4) {
+        if (arr[i + 3] === 0) continue;
+        const lum = (arr[i] + arr[i + 1] + arr[i + 2]) / 765;
+        arr[i] = Math.round(nr * (0.55 + lum * 0.45));
+        arr[i + 1] = Math.round(ng * (0.55 + lum * 0.45));
+        arr[i + 2] = Math.round(nb * (0.55 + lum * 0.45));
       }
       cx.putImageData(d, 0, 0);
       return c;
     }
 
     function rebuildAndRender() {
-      tileCanvas = buildTileCanvas(imgEl);
+      if (!originalTileCanvas) return;
+      tileCanvas = tintTile(originalTileCanvas, selectedColor) || originalTileCanvas;
+      renderEditBox();
       renderPattern();
     }
 
-    imgEl.addEventListener('load', rebuildAndRender);
-    if (imgEl.complete && imgEl.naturalWidth) rebuildAndRender();
-
-    wrap.querySelectorAll('[data-special-color]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        tint = String(btn.dataset.specialColor || '#A3AD50');
-        rebuildAndRender();
+    function renderPalette() {
+      paletteEl.innerHTML = '';
+      allColors.forEach((col, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `sw${idx === 0 ? ' active' : ''}`;
+        btn.style.background = col.hex;
+        btn.title = `${col.id} · ${col.hex}`;
+        btn.textContent = col.id;
+        btn.addEventListener('click', () => {
+          selectedColor = col.hex;
+          paletteEl.querySelectorAll('.sw.active').forEach((n) => n.classList.remove('active'));
+          btn.classList.add('active');
+          rebuildAndRender();
+        });
+        paletteEl.appendChild(btn);
       });
-    });
+    }
 
-    window.addEventListener('resize', renderPattern);
+    imgEl.addEventListener('load', () => {
+      originalTileCanvas = buildOriginalTile(imgEl);
+      rebuildAndRender();
+    });
+    if (imgEl.complete && imgEl.naturalWidth) {
+      originalTileCanvas = buildOriginalTile(imgEl);
+      rebuildAndRender();
+    }
+
+    renderPalette();
+    window.addEventListener('resize', () => {
+      renderEditBox();
+      renderPattern();
+    });
   }
+
 
   function initDarkFooter() {
     const main = document.querySelector('main.site');
