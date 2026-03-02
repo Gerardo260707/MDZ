@@ -1,5 +1,13 @@
 <?php
 require_once __DIR__ . '/compat-php56.php';
+if (defined('PHP_VERSION_ID') && PHP_VERSION_ID < 70000) {
+    $legacy = __DIR__ . '/legacy-php56/especiales.php';
+    if (file_exists($legacy)) {
+        require $legacy;
+        exit;
+    }
+}
+
 $lang = (($_GET['lang'] ?? 'es') === 'en') ? 'en' : 'es';
 
 function normalizar_seccion_especial(string $raw): string {

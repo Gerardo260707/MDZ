@@ -1,5 +1,13 @@
 <?php
 require_once __DIR__ . '/compat-php56.php';
+if (defined('PHP_VERSION_ID') && PHP_VERSION_ID < 70000) {
+    $legacy = __DIR__ . '/legacy-php56/personalizar.php';
+    if (file_exists($legacy)) {
+        require $legacy;
+        exit;
+    }
+}
+
 const VALID_CATEGORIAS = ['centro', 'cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior', 'hexagonales', 'antiderrapante'];
 
 function carga_meta_categorias_csv(string $csvPath): array {
