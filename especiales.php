@@ -106,7 +106,7 @@ $sectionInfo = [
         ],
         'antiderrapantes' => [
             'title' => 'Antiderrapantes',
-            'desc' => '',
+            'desc' => 'Seguridad con estilo en cada paso. Nuestros antiderrapantes ofrecen mayor tracción en zonas húmedas, ayudando a prevenir resbalones sin perder la estética del espacio. Son ideales para terrazas, andadores, áreas de alberca, regaderas y exteriores.',
         ],
         'zoclos' => [
             'title' => 'Zoclos',
@@ -120,7 +120,7 @@ $sectionInfo = [
         ],
         'antiderrapantes' => [
             'title' => 'Anti-slip',
-            'desc' => '',
+            'desc' => 'Safety with style in every step. Our anti-slip tiles provide better traction in wet areas, helping prevent slips without compromising the look of the space. They are ideal for terraces, walkways, pool areas, showers, and outdoor spaces.',
         ],
         'zoclos' => [
             'title' => 'Baseboards',
