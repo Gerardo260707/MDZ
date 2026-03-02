@@ -3074,6 +3074,183 @@
     });
   }
 
+
+  function initEspecialesCustomizerPage() {
+    const wrap = document.querySelector('[data-special-customizer="1"]');
+    const canvas = q('specialCustomizerCanvas');
+    const imgEl = q('specialCustomizerSource');
+    if (!wrap || !canvas || !imgEl) return;
+
+    const patternType = String(wrap.dataset.patternType || 'hexagonal').toLowerCase();
+    const rotationSeed = Number.parseFloat(wrap.dataset.hexRotation || '');
+    let tint = '#A3AD50';
+    let tileCanvas = null;
+
+    function setupCanvas() {
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const cssW = Math.max(320, Math.floor(canvas.clientWidth || 1200));
+      const cssH = Math.floor(cssW * 3 / 4);
+      canvas.width = Math.floor(cssW * dpr);
+      canvas.height = Math.floor(cssH * dpr);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, cssW, cssH);
+      ctx.fillStyle = '#ece9df';
+      ctx.fillRect(0, 0, cssW, cssH);
+      return { ctx, cssW, cssH };
+    }
+
+    function drawTileFit(ctx, tile, cx, cy, boxW, boxH, angle = 0) {
+      const ratio = tile.width / tile.height;
+      let drawW = boxW;
+      let drawH = drawW / ratio;
+      if (drawH > boxH) {
+        drawH = boxH;
+        drawW = drawH * ratio;
+      }
+      ctx.save();
+      ctx.translate(cx, cy);
+      if (angle) ctx.rotate(angle);
+      ctx.drawImage(tile, -drawW / 2, -drawH / 2, drawW, drawH);
+      ctx.restore();
+    }
+
+    function renderPattern() {
+      if (!tileCanvas) return;
+      const setup = setupCanvas();
+      if (!setup) return;
+      const { ctx, cssW, cssH } = setup;
+
+      function renderHex() {
+        const cols = Math.max(5, Math.round(cssW / 130));
+        const hexW = cssW / cols;
+        const hexH = hexW / 0.8660254;
+        const radius = hexH / 2;
+        const dx = Math.sqrt(3) * radius;
+        const dy = radius * 1.5;
+        const rows = Math.ceil((cssH + hexH) / dy) + 1;
+        const colsDraw = Math.ceil((cssW + hexW) / dx) + 2;
+        const hasSeed = Number.isFinite(rotationSeed);
+        const seedRad = hasSeed ? (rotationSeed * Math.PI / 180) : 0;
+        const triadStep = Math.PI * 2 / 3;
+        for (let row = -1; row < rows; row++) {
+          for (let col = -1; col < colsDraw; col++) {
+            const cx = col * dx + ((row & 1) ? dx / 2 : 0) + (hexW / 2);
+            const cy = row * dy + radius;
+            const colPhase = ((col % 3) + 3) % 3;
+            const rowPhase = ((row % 2) + 2) % 2;
+            const variant = rowPhase === 0 ? colPhase : ((colPhase + 2) % 3);
+            const angle = hasSeed ? (seedRad + (variant * triadStep)) : 0;
+            drawTileFit(ctx, tileCanvas, cx, cy, hexW * 1.03, hexH * 1.03, angle);
+          }
+        }
+      }
+
+      function renderSquareLike(oct = false) {
+        const cols = Math.max(6, Math.round(cssW / 140));
+        const size = cssW / cols;
+        const rows = Math.ceil(cssH / size) + 1;
+        const map = [[0, Math.PI / 2], [3 * Math.PI / 2, Math.PI]];
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            let angle = map[r % 2][c % 2];
+            if (oct) angle += Math.PI / 4;
+            drawTileFit(ctx, tileCanvas, (c + 0.5) * size, (r + 0.5) * size, size * 0.96, size * 0.96, angle);
+          }
+        }
+      }
+
+      function renderTri() {
+        const cols = Math.max(6, Math.round(cssW / 140));
+        const cellW = cssW / cols;
+        const cellH = cellW * 0.9;
+        const rows = Math.ceil(cssH / cellH) + 2;
+        for (let row = -1; row < rows; row++) {
+          const angle = (row % 2 === 0) ? 0 : Math.PI;
+          for (let col = -1; col < cols + 1; col++) {
+            drawTileFit(ctx, tileCanvas, (col + 0.5) * cellW, (row + 0.5) * cellH, cellW * 0.98, cellH * 0.98, angle);
+          }
+        }
+      }
+
+      function renderCantaro() {
+        const cols = Math.max(4, Math.round(cssW / 190));
+        const tileW = cssW / cols;
+        const tileH = tileW * 0.85;
+        const rows = Math.ceil(cssH / tileH) + 2;
+        for (let r = -1; r < rows; r++) {
+          const shift = (r % 2 === 0) ? 0 : tileW / 2;
+          for (let c = -1; c < cols + 1; c++) {
+            drawTileFit(ctx, tileCanvas, c * tileW + shift + tileW / 2, (r + 0.5) * tileH, tileW * 1.03, tileH * 1.03, 0);
+          }
+        }
+      }
+
+      function renderOtros() {
+        const count = 5;
+        const tileW = Math.min(220, cssW / 5.5);
+        const totalW = count * tileW;
+        const startX = (cssW - totalW) / 2;
+        const cy = cssH / 2;
+        for (let i = 0; i < count; i++) drawTileFit(ctx, tileCanvas, startX + (i + 0.5) * tileW, cy, tileW * 0.95, tileW * 0.95, 0);
+      }
+
+      if (patternType === 'triangular') return renderTri();
+      if (patternType === 'cuadrado') return renderSquareLike(false);
+      if (patternType === 'octagonal') return renderSquareLike(true);
+      if (patternType === 'cantaro') return renderCantaro();
+      if (patternType === 'otros') return renderOtros();
+      return renderHex();
+    }
+
+    function buildTileCanvas(img) {
+      const w = img.naturalWidth || img.width;
+      const h = img.naturalHeight || img.height;
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const cx = c.getContext('2d', { willReadFrequently: true });
+      if (!cx) return null;
+      cx.drawImage(img, 0, 0, w, h);
+      const d = cx.getImageData(0, 0, w, h);
+      const arr = d.data;
+      for (let i = 0; i < arr.length; i += 4) {
+        if (arr[i] >= 242 && arr[i + 1] >= 242 && arr[i + 2] >= 242) {
+          arr[i + 3] = 0;
+        } else {
+          const nr = parseInt(tint.slice(1, 3), 16);
+          const ng = parseInt(tint.slice(3, 5), 16);
+          const nb = parseInt(tint.slice(5, 7), 16);
+          const lum = (arr[i] + arr[i + 1] + arr[i + 2]) / 765;
+          arr[i] = Math.round(nr * (0.55 + lum * 0.45));
+          arr[i + 1] = Math.round(ng * (0.55 + lum * 0.45));
+          arr[i + 2] = Math.round(nb * (0.55 + lum * 0.45));
+        }
+      }
+      cx.putImageData(d, 0, 0);
+      return c;
+    }
+
+    function rebuildAndRender() {
+      tileCanvas = buildTileCanvas(imgEl);
+      renderPattern();
+    }
+
+    imgEl.addEventListener('load', rebuildAndRender);
+    if (imgEl.complete && imgEl.naturalWidth) rebuildAndRender();
+
+    wrap.querySelectorAll('[data-special-color]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        tint = String(btn.dataset.specialColor || '#A3AD50');
+        rebuildAndRender();
+      });
+    });
+
+    window.addEventListener('resize', renderPattern);
+  }
+
   function initDarkFooter() {
     const main = document.querySelector('main.site');
     if (!main || document.getElementById('siteDarkFooter')) return;
@@ -3111,6 +3288,7 @@
     initMosaicosActions();
     initGalleryPage();
     initEspecialesOverlay();
+    initEspecialesCustomizerPage();
     initQuoteValidation();
     initDarkFooter();
   });

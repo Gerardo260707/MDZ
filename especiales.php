@@ -29,7 +29,7 @@ function carga_cat_especiales(string $csv): array {
         $dir = dirname($csv);
         if (!is_dir($dir)) mkdir($dir, 0775, true);
         $h = fopen($csv, 'w');
-        if ($h) { fputcsv($h, ['carpeta','tipo_modelo','seccion','hex_rotacion']); fclose($h); }
+        if ($h) { fputcsv($h, ['carpeta','tipo_modelo','seccion','hex_rotacion','personalizable']); fclose($h); }
         return [];
     }
 
@@ -44,6 +44,7 @@ function carga_cat_especiales(string $csv): array {
     $idxTipo = $byName['tipo_modelo'] ?? 1;
     $idxSeccion = $byName['seccion'] ?? 2;
     $idxHex = $byName['hex_rotacion'] ?? 3;
+    $idxPersonalizable = $byName['personalizable'] ?? 4;
 
     $m = [];
     while (($r = fgetcsv($h)) !== false) {
@@ -53,16 +54,20 @@ function carga_cat_especiales(string $csv): array {
         $tipoRaw = trim((string)($r[$idxTipo] ?? ''));
         $seccionRaw = trim((string)($r[$idxSeccion] ?? ''));
         $hexRotRaw = trim((string)($r[$idxHex] ?? ''));
+        $personalizableRaw = strtolower(trim((string)($r[$idxPersonalizable] ?? '')));
 
         $hexRot = null;
         if ($hexRotRaw !== '' && is_numeric($hexRotRaw)) {
             $hexRot = fmod((float)$hexRotRaw, 360.0);
         }
 
+        $isPersonalizable = in_array($personalizableRaw, ['1', 'si', 'sí', 'yes', 'true'], true);
+
         $m[$folder] = [
             'cat' => normalizar_seccion_especial($seccionRaw),
             'hex_rot' => $hexRot,
             'pattern_type' => normalizar_tipo_patron_especial($tipoRaw),
+            'personalizable' => $isPersonalizable,
         ];
     }
 
@@ -80,7 +85,7 @@ if (is_dir($base)) {
         sort($imgs, SORT_NATURAL | SORT_FLAG_CASE);
         $src = $imgs[0];
 
-        $meta = $map[strtolower($folder)] ?? ['cat' => 'formas', 'hex_rot' => null, 'pattern_type' => ''];
+        $meta = $map[strtolower($folder)] ?? ['cat' => 'formas', 'hex_rot' => null, 'pattern_type' => '', 'personalizable' => false];
         $cat = $meta['cat'] ?: 'formas';
         $patternType = $meta['pattern_type'] ?: infer_pattern_type_especial($folder, $cat);
 
@@ -91,6 +96,7 @@ if (is_dir($base)) {
             'name' => ucwords(str_replace(['_', '-'], ' ', $folder)),
             'hex_rot' => $meta['hex_rot'],
             'pattern_type' => $patternType,
+            'personalizable' => (bool)$meta['personalizable'],
         ];
     }
 }
@@ -168,10 +174,19 @@ foreach ($items as $it) {
       <?php if ($desc !== ''): ?><p class="especiales-desc"><?= htmlspecialchars($desc, ENT_QUOTES) ?></p><?php endif; ?>
     </section>
     <section class="panel especiales-grid">
-      <?php foreach ($sectionItems as $it): ?>
+      <?php foreach ($sectionItems as $it):
+        $personalizarHref = 'especiales-personalizar.php?lang=' . rawurlencode($lang)
+          . '&img=' . rawurlencode($it['img'])
+          . '&name=' . rawurlencode($it['name'])
+          . '&pattern=' . rawurlencode($it['pattern_type'])
+          . ($it['hex_rot'] !== null ? '&hex_rot=' . rawurlencode((string)$it['hex_rot']) : '');
+      ?>
       <article class="mosaic-card special-card">
         <img src="<?= htmlspecialchars($it['img'], ENT_QUOTES) ?>" alt="<?= htmlspecialchars($it['name'], ENT_QUOTES) ?>" data-pattern-type="<?= htmlspecialchars((string)$it['pattern_type'], ENT_QUOTES) ?>" <?= $it['hex_rot'] !== null ? "data-hex-rotation=\"" . htmlspecialchars((string)$it['hex_rot'], ENT_QUOTES) . "\"" : "" ?> />
         <div class="name"><?= htmlspecialchars($it['name'], ENT_QUOTES) ?></div>
+        <?php if ($it['personalizable']): ?>
+          <a class="btn btn-special-personalizar" href="<?= htmlspecialchars($personalizarHref, ENT_QUOTES) ?>"><?= $lang === 'en' ? 'Customize' : 'Personalizar' ?></a>
+        <?php endif; ?>
       </article>
       <?php endforeach; ?>
     </section>
