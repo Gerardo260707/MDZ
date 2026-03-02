@@ -81,7 +81,7 @@ $overlayIdentifier = 'overlay'; // cambiar este identificador si deseas otro cri
 $items = [];
 if (is_dir($base)) {
     foreach (array_filter(scandir($base) ?: [], fn($n) => $n !== '.' && $n !== '..' && is_dir($base . '/' . $n)) as $folder) {
-        $imgs = glob($base . '/' . $folder . '/*.{png,jpg,jpeg,webp,avif}', GLOB_BRACE);
+        $imgs = glob($base . '/' . $folder . '/*.{png,jpg,jpeg,webp,avif,svg,gif,bmp,tif,tiff}', GLOB_BRACE);
         if (!$imgs) continue;
         sort($imgs, SORT_NATURAL | SORT_FLAG_CASE);
         $src = $imgs[0];
@@ -106,6 +106,7 @@ if (is_dir($base)) {
             'hex_rot' => $meta['hex_rot'],
             'pattern_type' => $patternType,
             'overlay_img' => 'Especiales/' . rawurlencode($folder) . '/' . rawurlencode(basename($overlaySrc)) . '?v=' . (@filemtime($overlaySrc) ?: time()),
+            'overlay_direct' => $overlaySrc !== $src,
             'personalizable' => (bool)$meta['personalizable'],
         ];
     }
@@ -199,7 +200,7 @@ foreach ($items as $it) {
           . ($it['hex_rot'] !== null ? '&hex_rot=' . rawurlencode((string)$it['hex_rot']) : '');
       ?>
       <article class="mosaic-card special-card">
-        <img src="<?= htmlspecialchars($it['img'], ENT_QUOTES) ?>" alt="<?= htmlspecialchars($it['name'], ENT_QUOTES) ?>" data-pattern-type="<?= htmlspecialchars((string)$it['pattern_type'], ENT_QUOTES) ?>" data-overlay-src="<?= htmlspecialchars((string)$it['overlay_img'], ENT_QUOTES) ?>" <?= $it['hex_rot'] !== null ? "data-hex-rotation=\"" . htmlspecialchars((string)$it['hex_rot'], ENT_QUOTES) . "\"" : "" ?> />
+        <img src="<?= htmlspecialchars($it['img'], ENT_QUOTES) ?>" alt="<?= htmlspecialchars($it['name'], ENT_QUOTES) ?>" data-pattern-type="<?= htmlspecialchars((string)$it['pattern_type'], ENT_QUOTES) ?>" data-overlay-src="<?= htmlspecialchars((string)$it['overlay_img'], ENT_QUOTES) ?>" <?= $it['overlay_direct'] ? 'data-overlay-direct="1"' : '' ?> <?= $it['hex_rot'] !== null ? "data-hex-rotation=\"" . htmlspecialchars((string)$it['hex_rot'], ENT_QUOTES) . "\"" : "" ?> />
         <div class="name"><?= htmlspecialchars($it['name'], ENT_QUOTES) ?></div>
         <?php if ($it['personalizable']): ?>
           <a class="btn btn-special-personalizar" href="<?= htmlspecialchars($personalizarHref, ENT_QUOTES) ?>"><?= $lang === 'en' ? 'Customize' : 'Personalizar' ?></a>

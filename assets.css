@@ -228,7 +228,11 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .btn-special-personalizar{display:inline-block;margin-top:8px;padding:8px 12px;border-radius:8px;background:#0f3f8f;color:#fff;text-decoration:none;font-size:13px}
 .especiales-customizer-wrap{display:grid;gap:12px}
 .especiales-customizer-layout{display:grid;grid-template-columns:minmax(240px,320px) 1fr;gap:14px;align-items:start}
-#specialCustomizerCanvas{width:100%;max-width:1200px;aspect-ratio:4/3;background:#ece9df;border:1px solid #d6d6d6;border-radius:10px}
+.special-editor-targets{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.btn.btn-small{padding:6px 10px;font-size:13px}
+#specialTargetMain.active,#specialTargetSquare.active{box-shadow:0 0 0 2px rgba(88,54,33,.25) inset}
+#specialSquareEditorWrap{margin-top:12px}
+#specialCustomizerCanvas{width:100%;max-width:1200px;aspect-ratio:3/2;background:#ece9df;border:1px solid #d6d6d6;border-radius:10px}
 @media (max-width:900px){.especiales-customizer-layout{grid-template-columns:1fr}}
 .special-card img{width:100%;aspect-ratio:1/1;object-fit:cover}
 .special-card img.special-overlay-trigger{cursor:zoom-in}

@@ -2872,6 +2872,20 @@
       });
     }
 
+    function drawDirectOverlayImage(targetCanvas, targetCard, imageSource) {
+      const setup = setupPatternCanvas(targetCanvas, targetCard);
+      if (!setup) return;
+      const { ctx, cssW, cssH } = setup;
+      const iw = imageSource.naturalWidth || imageSource.width || 1;
+      const ih = imageSource.naturalHeight || imageSource.height || 1;
+      const scale = Math.min(cssW / iw, cssH / ih);
+      const drawW = iw * scale;
+      const drawH = ih * scale;
+      const x = (cssW - drawW) / 2;
+      const y = (cssH - drawH) / 2;
+      ctx.drawImage(imageSource, x, y, drawW, drawH);
+    }
+
     function extractSpecialTile(sourceImg) {
       return new Promise((resolve) => {
         const workerImg = new Image();
@@ -3041,6 +3055,12 @@
       host.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
       const sourceForTile = await resolveSourceForOverlay(sourceImg);
+      const useDirectOverlay = String(sourceImg.dataset.overlayDirect || '') === '1';
+      if (useDirectOverlay) {
+        drawDirectOverlayImage(patternCanvas, overlayCard, sourceForTile);
+        lastPattern = null;
+        return;
+      }
       const tileCanvas = await extractSpecialTile(sourceForTile);
       if (host.classList.contains('open') && originalSrc === (sourceImg.currentSrc || sourceImg.src || '') && tileCanvas) {
         lastPattern = { tileCanvas, patternType, rotationSeed: Number.isFinite(rotationSeed) ? rotationSeed : null };
@@ -3061,6 +3081,11 @@
         const slotTitle = slot.querySelector('.special-compare-title');
         if (slotTitle) slotTitle.textContent = `MODELO: ${String(img.alt || '').toUpperCase()}`;
         const sourceForTile = await resolveSourceForOverlay(img);
+        const useDirectOverlay = String(img.dataset.overlayDirect || '') === '1';
+        if (useDirectOverlay && slotCanvas) {
+          drawDirectOverlayImage(slotCanvas, slot, sourceForTile);
+          continue;
+        }
         const tileCanvas = await extractSpecialTile(sourceForTile);
         if (tileCanvas && slotCanvas) {
           renderByPatternType(slotCanvas, slot, tileCanvas, img.dataset.patternType || 'hexagonal', Number.parseFloat(img.dataset.hexRotation || ''));
@@ -3122,6 +3147,7 @@
     const wrap = document.querySelector('[data-special-customizer="1"]');
     const canvas = q('specialCustomizerCanvas');
     const editCanvas = q('specialEditCanvas');
+    const squareEditCanvas = q('specialSquareEditCanvas');
     const paletteEl = q('specialPalette');
     const imgEl = q('specialCustomizerSource');
     if (!wrap || !canvas || !editCanvas || !paletteEl || !imgEl) return;
@@ -3130,8 +3156,11 @@
     const rotationSeed = Number.parseFloat(wrap.dataset.hexRotation || '');
     const allColors = Array.isArray(COLORS) ? COLORS : [];
     let selectedColor = allColors[0]?.hex || '#A3AD50';
+    let selectedSquareColor = allColors[1]?.hex || allColors[0]?.hex || '#A3AD50';
+    let activeTarget = 'main';
     let originalTileCanvas = null;
     let tileCanvas = null;
+    let squareTileCanvas = null;
 
     function setupCanvas(targetCanvas, ratio = 4 / 3) {
       const dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -3170,11 +3199,20 @@
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, cssW, cssH);
       drawTileFit(ctx, tileCanvas, cssW / 2, cssH / 2, cssW * 0.92, cssH * 0.92, 0);
+
+      if (squareEditCanvas && squareTileCanvas) {
+        const sq = setupCanvas(squareEditCanvas, 1);
+        if (sq) {
+          sq.ctx.fillStyle = '#ffffff';
+          sq.ctx.fillRect(0, 0, sq.cssW, sq.cssH);
+          drawTileFit(sq.ctx, squareTileCanvas, sq.cssW / 2, sq.cssH / 2, sq.cssW * 0.74, sq.cssH * 0.74, 0);
+        }
+      }
     }
 
     function renderPattern() {
       if (!tileCanvas) return;
-      const setup = setupCanvas(canvas, 4 / 3);
+      const setup = setupCanvas(canvas, 3 / 2);
       if (!setup) return;
       const { ctx, cssW, cssH } = setup;
       ctx.fillStyle = '#ece9df';
@@ -3215,6 +3253,9 @@
             let angle = map[r % 2][c % 2];
             if (oct) angle += Math.PI / 4;
             drawTileFit(ctx, tileCanvas, (c + 0.5) * size, (r + 0.5) * size, size * 0.96, size * 0.96, angle);
+            if (oct && squareTileCanvas) {
+              drawTileFit(ctx, squareTileCanvas, (c + 1) * size, (r + 1) * size, size * 0.34, size * 0.34, 0);
+            }
           }
         }
       }
@@ -3288,6 +3329,22 @@
       return c;
     }
 
+    function buildSquareTile(hex) {
+      const c = document.createElement('canvas');
+      c.width = 220;
+      c.height = 220;
+      const cx = c.getContext('2d');
+      if (!cx) return null;
+      cx.fillStyle = '#ffffff';
+      cx.fillRect(0, 0, c.width, c.height);
+      cx.fillStyle = hex;
+      cx.fillRect(26, 26, c.width - 52, c.height - 52);
+      cx.strokeStyle = 'rgba(0,0,0,.18)';
+      cx.lineWidth = 4;
+      cx.strokeRect(26, 26, c.width - 52, c.height - 52);
+      return c;
+    }
+
     function tintTile(sourceCanvas, hex) {
       const c = document.createElement('canvas');
       c.width = sourceCanvas.width;
@@ -3314,8 +3371,17 @@
     function rebuildAndRender() {
       if (!originalTileCanvas) return;
       tileCanvas = tintTile(originalTileCanvas, selectedColor) || originalTileCanvas;
+      squareTileCanvas = buildSquareTile(selectedSquareColor) || null;
       renderEditBox();
       renderPattern();
+    }
+
+    function refreshPaletteActive() {
+      const value = activeTarget === 'square' ? selectedSquareColor : selectedColor;
+      paletteEl.querySelectorAll('.sw').forEach((node) => {
+        const isActive = String(node.dataset.hex || '').toLowerCase() === String(value || '').toLowerCase();
+        node.classList.toggle('active', isActive);
+      });
     }
 
     function renderPalette() {
@@ -3323,19 +3389,31 @@
       allColors.forEach((col, idx) => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = `sw${idx === 0 ? ' active' : ''}`;
+        btn.className = 'sw';
         btn.style.background = col.hex;
         btn.title = `${col.id} · ${col.hex}`;
+        btn.dataset.hex = col.hex;
         btn.textContent = col.id;
         btn.addEventListener('click', () => {
-          selectedColor = col.hex;
-          paletteEl.querySelectorAll('.sw.active').forEach((n) => n.classList.remove('active'));
-          btn.classList.add('active');
+          if (activeTarget === 'square') selectedSquareColor = col.hex;
+          else selectedColor = col.hex;
+          refreshPaletteActive();
           rebuildAndRender();
         });
         paletteEl.appendChild(btn);
       });
     }
+
+
+    const mainTargetBtn = q('specialTargetMain');
+    const squareTargetBtn = q('specialTargetSquare');
+    function syncTargetButtons() {
+      if (mainTargetBtn) mainTargetBtn.classList.toggle('active', activeTarget === 'main');
+      if (squareTargetBtn) squareTargetBtn.classList.toggle('active', activeTarget === 'square');
+    }
+    if (mainTargetBtn) mainTargetBtn.addEventListener('click', () => { activeTarget = 'main'; syncTargetButtons(); refreshPaletteActive(); });
+    if (squareTargetBtn) squareTargetBtn.addEventListener('click', () => { activeTarget = 'square'; syncTargetButtons(); refreshPaletteActive(); });
+    syncTargetButtons();
 
     imgEl.addEventListener('load', () => {
       originalTileCanvas = buildOriginalTile(imgEl);

@@ -42,11 +42,19 @@ $title = $lang === 'en' ? 'Customize Special Mosaic' : 'Personalizar Mosaico Esp
       <div class="especiales-customizer-layout">
         <div>
           <h3><?= $lang === 'en' ? 'Model customization' : 'Personalización del modelo' ?></h3>
+          <div class="special-editor-targets" <?= $pattern === 'octagonal' ? '' : 'hidden' ?>>
+            <button type="button" id="specialTargetMain" class="btn btn-small active"><?= $lang === 'en' ? 'Octagonal piece' : 'Pieza octagonal' ?></button>
+            <button type="button" id="specialTargetSquare" class="btn btn-small"><?= $lang === 'en' ? 'Center square' : 'Cuadro central' ?></button>
+          </div>
           <div class="vector-editor"><canvas id="specialEditCanvas" class="vector-canvas" width="600" height="600"></canvas></div>
+          <div id="specialSquareEditorWrap" <?= $pattern === 'octagonal' ? '' : 'hidden' ?>>
+            <h3><?= $lang === 'en' ? 'Square customization' : 'Personalización del cuadro' ?></h3>
+            <div class="vector-editor"><canvas id="specialSquareEditCanvas" class="vector-canvas" width="600" height="600"></canvas></div>
+          </div>
         </div>
         <div>
           <h3><?= $lang === 'en' ? 'Pattern preview' : 'Vista de patrón' ?></h3>
-          <canvas id="specialCustomizerCanvas" width="1200" height="900"></canvas>
+          <canvas id="specialCustomizerCanvas" width="1200" height="800"></canvas>
         </div>
       </div>
       <div id="specialPalette" class="palette"></div>
