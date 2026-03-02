@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/compat-php56.php';
 $lang = (($_GET['lang'] ?? 'es') === 'en') ? 'en' : 'es';
 $img = trim((string)($_GET['img'] ?? ''));
 $name = trim((string)($_GET['name'] ?? ($lang === 'en' ? 'Special model' : 'Modelo especial')));

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/compat-php56.php';
 $lang = (($_GET['lang'] ?? 'es') === 'en') ? 'en' : 'es';
 
 function normalizar_seccion_especial(string $raw): string {

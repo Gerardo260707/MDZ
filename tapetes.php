@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/compat-php56.php';
 const VALID_CATEGORIAS = ['centro', 'cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior', 'hexagonales', 'antiderrapante'];
 
 function carga_mapa_categorias_csv(string $csvPath): array {
