@@ -2788,33 +2788,28 @@
       <button type="button" class="special-overlay-backdrop" data-special-overlay-close="1" aria-label="Cerrar"></button>
       <div class="special-overlay-card" role="dialog" aria-modal="true" aria-label="Vista previa de especial">
         <button type="button" class="special-overlay-close" data-special-overlay-close="1" aria-label="Cerrar">×</button>
-        <img id="specialOverlayImg" alt="Modelo especial" />
+        <canvas id="specialOverlayPattern" aria-label="Patrón hexagonal"></canvas>
+        <div class="special-overlay-footer"><strong id="specialOverlayTitle"></strong></div>
       </div>
     `;
     document.body.appendChild(host);
 
-    const imgEl = host.querySelector('#specialOverlayImg');
+    const patternCanvas = host.querySelector('#specialOverlayPattern');
+    const titleEl = host.querySelector('#specialOverlayTitle');
     let originalSrc = '';
-    let objectUrl = '';
-
-    function releaseObjectUrl() {
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-        objectUrl = '';
-      }
-    }
-
     function closeOverlay() {
       host.classList.remove('open');
       host.setAttribute('aria-hidden', 'true');
       document.body.style.overflow = '';
-      releaseObjectUrl();
       setTimeout(() => {
-        if (!host.classList.contains('open')) imgEl.src = '';
+        if (!host.classList.contains('open') && patternCanvas) {
+          const ctx = patternCanvas.getContext('2d');
+          if (ctx) ctx.clearRect(0, 0, patternCanvas.width, patternCanvas.height);
+        }
       }, 120);
     }
 
-    function maybeMakeWhiteTransparent(sourceImg) {
+    function extractSpecialTile(sourceImg) {
       return new Promise((resolve) => {
         const workerImg = new Image();
         workerImg.crossOrigin = 'anonymous';
@@ -2822,13 +2817,13 @@
           try {
             const w = workerImg.naturalWidth || workerImg.width;
             const h = workerImg.naturalHeight || workerImg.height;
-            if (!w || !h) return resolve(sourceImg.src);
+            if (!w || !h) return resolve(null);
 
             const c = document.createElement('canvas');
             c.width = w;
             c.height = h;
             const ctx = c.getContext('2d', { willReadFrequently: true });
-            if (!ctx) return resolve(sourceImg.src);
+            if (!ctx) return resolve(null);
             ctx.drawImage(workerImg, 0, 0, w, h);
 
             const imageData = ctx.getImageData(0, 0, w, h);
@@ -2859,7 +2854,7 @@
               }
             }
 
-            if (!opaqueCount || maxX <= minX || maxY <= minY) return resolve(sourceImg.src);
+            if (!opaqueCount || maxX <= minX || maxY <= minY) return resolve(null);
 
             ctx.putImageData(imageData, 0, 0);
 
@@ -2873,35 +2868,77 @@
             out.width = cropW;
             out.height = cropH;
             const outCtx = out.getContext('2d');
-            if (!outCtx) return resolve(sourceImg.src);
+            if (!outCtx) return resolve(null);
             outCtx.drawImage(c, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
-
-            out.toBlob((blob) => {
-              if (!blob) return resolve(sourceImg.src);
-              objectUrl = URL.createObjectURL(blob);
-              resolve(objectUrl);
-            }, 'image/png');
+            resolve(out);
           } catch (e) {
-            resolve(sourceImg.src);
+            resolve(null);
           }
         };
-        workerImg.onerror = () => resolve(sourceImg.src);
+        workerImg.onerror = () => resolve(null);
         workerImg.src = sourceImg.currentSrc || sourceImg.src || '';
       });
     }
 
+    function renderHexPattern(tileCanvas) {
+      if (!patternCanvas || !tileCanvas) return;
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const cssW = Math.max(520, Math.floor(host.querySelector('.special-overlay-card').clientWidth));
+      const cssH = Math.max(360, Math.floor(host.querySelector('.special-overlay-card').clientHeight - 46));
+      patternCanvas.width = Math.floor(cssW * dpr);
+      patternCanvas.height = Math.floor(cssH * dpr);
+      patternCanvas.style.width = `${cssW}px`;
+      patternCanvas.style.height = `${cssH}px`;
+
+      const ctx = patternCanvas.getContext('2d');
+      if (!ctx) return;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, cssW, cssH);
+      ctx.fillStyle = '#ece9df';
+      ctx.fillRect(0, 0, cssW, cssH);
+
+      const cols = Math.max(5, Math.round(cssW / 130));
+      const hexW = cssW / cols;
+      const hexH = hexW / 0.8660254;
+      const radius = hexH / 2;
+      const dx = Math.sqrt(3) * radius;
+      const dy = radius * 1.5;
+      const drawW = hexW * 1.03;
+      const drawH = hexH * 1.03;
+
+      const rows = Math.ceil((cssH + hexH) / dy) + 1;
+      const colsDraw = Math.ceil((cssW + hexW) / dx) + 2;
+
+      for (let row = -1; row < rows; row++) {
+        for (let col = -1; col < colsDraw; col++) {
+          const cx = col * dx + ((row & 1) ? dx / 2 : 0) + (hexW / 2);
+          const cy = row * dy + radius;
+          const variant = ((col - row) % 3 + 3) % 3;
+          const angle = variant * (Math.PI * 2 / 3);
+
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate(angle);
+          ctx.drawImage(tileCanvas, -drawW / 2, -drawH / 2, drawW, drawH);
+          ctx.restore();
+        }
+      }
+    }
+
     async function openOverlay(sourceImg) {
-      releaseObjectUrl();
       originalSrc = sourceImg.currentSrc || sourceImg.src || '';
-      imgEl.src = originalSrc;
-      imgEl.alt = sourceImg.alt || 'Modelo especial';
+      const modelName = sourceImg.alt || 'Modelo especial';
+      if (titleEl) titleEl.textContent = `MODELO: ${String(modelName).toUpperCase()}`;
       host.classList.add('open');
       host.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
 
-      const processedSrc = await maybeMakeWhiteTransparent(sourceImg);
+      const tileCanvas = await extractSpecialTile(sourceImg);
       if (host.classList.contains('open') && originalSrc === (sourceImg.currentSrc || sourceImg.src || '')) {
-        imgEl.src = processedSrc;
+        if (tileCanvas) {
+          renderHexPattern(tileCanvas);
+        }
       }
     }
 
