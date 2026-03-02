@@ -2880,8 +2880,7 @@
       });
     }
 
-    function renderHexPattern(tileCanvas, rotationSeedDeg = null) {
-      if (!patternCanvas || !tileCanvas) return;
+    function setupPatternCanvas() {
       const dpr = Math.max(1, window.devicePixelRatio || 1);
       const cssW = Math.max(520, Math.floor(patternCanvas.clientWidth || host.querySelector('.special-overlay-card').clientWidth));
       const cssH = Math.max(320, Math.floor(patternCanvas.clientHeight || (host.querySelector('.special-overlay-card').clientHeight - 46)));
@@ -2889,14 +2888,35 @@
       patternCanvas.height = Math.floor(cssH * dpr);
       patternCanvas.style.width = `${cssW}px`;
       patternCanvas.style.height = `${cssH}px`;
-
       const ctx = patternCanvas.getContext('2d');
-      if (!ctx) return;
+      if (!ctx) return null;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpr, dpr);
       ctx.clearRect(0, 0, cssW, cssH);
       ctx.fillStyle = '#ece9df';
       ctx.fillRect(0, 0, cssW, cssH);
+      return { ctx, cssW, cssH };
+    }
+
+    function drawTileFit(ctx, tile, cx, cy, boxW, boxH, angle = 0) {
+      const ratio = (tile.width > 0 && tile.height > 0) ? (tile.width / tile.height) : 1;
+      let drawW = boxW;
+      let drawH = drawW / ratio;
+      if (drawH > boxH) {
+        drawH = boxH;
+        drawW = drawH * ratio;
+      }
+      ctx.save();
+      ctx.translate(cx, cy);
+      if (angle) ctx.rotate(angle);
+      ctx.drawImage(tile, -drawW / 2, -drawH / 2, drawW, drawH);
+      ctx.restore();
+    }
+
+    function renderHexPattern(tileCanvas, rotationSeedDeg = null) {
+      const setup = setupPatternCanvas();
+      if (!setup) return;
+      const { ctx, cssW, cssH } = setup;
 
       const cols = Math.max(5, Math.round(cssW / 130));
       const hexW = cssW / cols;
@@ -2904,11 +2924,9 @@
       const radius = hexH / 2;
       const dx = Math.sqrt(3) * radius;
       const dy = radius * 1.5;
-      const drawW = hexW * 1.03;
-      const drawH = hexH * 1.03;
-
       const rows = Math.ceil((cssH + hexH) / dy) + 1;
       const colsDraw = Math.ceil((cssW + hexW) / dx) + 2;
+
       const hasRotationSeed = Number.isFinite(rotationSeedDeg);
       const seedRad = hasRotationSeed ? (Number(rotationSeedDeg) * (Math.PI / 180)) : 0;
       const triadStep = (Math.PI * 2) / 3;
@@ -2921,14 +2939,88 @@
           const rowPhase = ((row % 2) + 2) % 2;
           const variant = rowPhase === 0 ? colPhase : ((colPhase + 2) % 3);
           const angle = hasRotationSeed ? (seedRad + (variant * triadStep)) : 0;
-
-          ctx.save();
-          ctx.translate(cx, cy);
-          ctx.rotate(angle);
-          ctx.drawImage(tileCanvas, -drawW / 2, -drawH / 2, drawW, drawH);
-          ctx.restore();
+          drawTileFit(ctx, tileCanvas, cx, cy, hexW * 1.03, hexH * 1.03, angle);
         }
       }
+    }
+
+    function renderTriangularPattern(tileCanvas) {
+      const setup = setupPatternCanvas();
+      if (!setup) return;
+      const { ctx, cssW, cssH } = setup;
+      const cols = Math.max(6, Math.round(cssW / 140));
+      const cellW = cssW / cols;
+      const cellH = cellW * 0.9;
+      const rows = Math.ceil(cssH / cellH) + 2;
+      for (let row = -1; row < rows; row++) {
+        const angle = (row % 2 === 0) ? 0 : Math.PI;
+        for (let col = -1; col < cols + 1; col++) {
+          const cx = (col + 0.5) * cellW;
+          const cy = (row + 0.5) * cellH;
+          drawTileFit(ctx, tileCanvas, cx, cy, cellW * 0.98, cellH * 0.98, angle);
+        }
+      }
+    }
+
+    function renderSquareLikePattern(tileCanvas, octagonal = false) {
+      const setup = setupPatternCanvas();
+      if (!setup) return;
+      const { ctx, cssW, cssH } = setup;
+      const cols = Math.max(6, Math.round(cssW / 140));
+      const size = cssW / cols;
+      const rows = Math.ceil(cssH / size) + 1;
+      const map = [[0, Math.PI / 2], [3 * Math.PI / 2, Math.PI]];
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          let angle = map[r % 2][c % 2];
+          if (octagonal) angle += Math.PI / 4;
+          drawTileFit(ctx, tileCanvas, (c + 0.5) * size, (r + 0.5) * size, size * 0.96, size * 0.96, angle);
+        }
+      }
+    }
+
+    function renderCantaroPattern(tileCanvas) {
+      const setup = setupPatternCanvas();
+      if (!setup) return;
+      const { ctx, cssW, cssH } = setup;
+      const cols = Math.max(4, Math.round(cssW / 190));
+      const tileW = cssW / cols;
+      const tileH = tileW * 0.85;
+      const rows = Math.ceil(cssH / tileH) + 2;
+      for (let r = -1; r < rows; r++) {
+        const shift = (r % 2 === 0) ? 0 : (tileW / 2);
+        for (let c = -1; c < cols + 1; c++) {
+          const cx = c * tileW + shift + tileW / 2;
+          const cy = (r + 0.5) * tileH;
+          drawTileFit(ctx, tileCanvas, cx, cy, tileW * 1.03, tileH * 1.03, 0);
+        }
+      }
+    }
+
+    function renderOtrosPattern(tileCanvas) {
+      const setup = setupPatternCanvas();
+      if (!setup) return;
+      const { ctx, cssW, cssH } = setup;
+      const count = 5;
+      const tileW = Math.min(220, cssW / 5.5);
+      const tileH = tileW;
+      const totalW = count * tileW;
+      const startX = (cssW - totalW) / 2;
+      const cy = cssH / 2;
+      for (let i = 0; i < count; i++) {
+        const cx = startX + (i + 0.5) * tileW;
+        drawTileFit(ctx, tileCanvas, cx, cy, tileW * 0.95, tileH * 0.95, 0);
+      }
+    }
+
+    function renderByPatternType(tileCanvas, patternType, rotationSeed) {
+      const type = String(patternType || '').toLowerCase();
+      if (type === 'triangular') return renderTriangularPattern(tileCanvas);
+      if (type === 'cuadrado') return renderSquareLikePattern(tileCanvas, false);
+      if (type === 'octagonal') return renderSquareLikePattern(tileCanvas, true);
+      if (type === 'cantaro') return renderCantaroPattern(tileCanvas);
+      if (type === 'otros') return renderOtrosPattern(tileCanvas);
+      return renderHexPattern(tileCanvas, rotationSeed);
     }
 
     async function openOverlay(sourceImg) {
@@ -2936,6 +3028,7 @@
       const modelName = sourceImg.alt || 'Modelo especial';
       if (titleEl) titleEl.textContent = `MODELO: ${String(modelName).toUpperCase()}`;
       const rotationSeed = Number.parseFloat(sourceImg.dataset.hexRotation || '');
+      const patternType = String(sourceImg.dataset.patternType || 'hexagonal').toLowerCase();
       host.classList.add('open');
       host.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
@@ -2943,7 +3036,7 @@
       const tileCanvas = await extractSpecialTile(sourceImg);
       if (host.classList.contains('open') && originalSrc === (sourceImg.currentSrc || sourceImg.src || '')) {
         if (tileCanvas) {
-          renderHexPattern(tileCanvas, Number.isFinite(rotationSeed) ? rotationSeed : null);
+          renderByPatternType(tileCanvas, patternType, Number.isFinite(rotationSeed) ? rotationSeed : null);
         }
       }
     }

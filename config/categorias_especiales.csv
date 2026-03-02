@@ -1,2 +1,2 @@
-carpeta,categoria,hex_rotacion
-# ejemplo-carpeta,formas,
+carpeta,categoria,hex_rotacion,patron_tipo
+# ejemplo-carpeta,formas,120,hexagonal
