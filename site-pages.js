@@ -2796,7 +2796,9 @@
 
     const patternCanvas = host.querySelector('#specialOverlayPattern');
     const titleEl = host.querySelector('#specialOverlayTitle');
+    const overlayCard = host.querySelector('.special-overlay-card');
     let originalSrc = '';
+    let lastPattern = null;
     function closeOverlay() {
       host.classList.remove('open');
       host.setAttribute('aria-hidden', 'true');
@@ -2882,8 +2884,8 @@
 
     function setupPatternCanvas() {
       const dpr = Math.max(1, window.devicePixelRatio || 1);
-      const cssW = Math.max(520, Math.floor(patternCanvas.clientWidth || host.querySelector('.special-overlay-card').clientWidth));
-      const cssH = Math.max(320, Math.floor(patternCanvas.clientHeight || (host.querySelector('.special-overlay-card').clientHeight - 46)));
+      const cssW = Math.max(320, Math.floor(patternCanvas.clientWidth || overlayCard.clientWidth));
+      const cssH = Math.max(220, Math.floor(patternCanvas.clientHeight || (overlayCard.clientHeight - 46)));
       patternCanvas.width = Math.floor(cssW * dpr);
       patternCanvas.height = Math.floor(cssH * dpr);
       patternCanvas.style.width = `${cssW}px`;
@@ -3023,6 +3025,11 @@
       return renderHexPattern(tileCanvas, rotationSeed);
     }
 
+    function rerenderLastPattern() {
+      if (!lastPattern) return;
+      renderByPatternType(lastPattern.tileCanvas, lastPattern.patternType, lastPattern.rotationSeed);
+    }
+
     async function openOverlay(sourceImg) {
       originalSrc = sourceImg.currentSrc || sourceImg.src || '';
       const modelName = sourceImg.alt || 'Modelo especial';
@@ -3036,7 +3043,12 @@
       const tileCanvas = await extractSpecialTile(sourceImg);
       if (host.classList.contains('open') && originalSrc === (sourceImg.currentSrc || sourceImg.src || '')) {
         if (tileCanvas) {
-          renderByPatternType(tileCanvas, patternType, Number.isFinite(rotationSeed) ? rotationSeed : null);
+          lastPattern = {
+            tileCanvas,
+            patternType,
+            rotationSeed: Number.isFinite(rotationSeed) ? rotationSeed : null,
+          };
+          rerenderLastPattern();
         }
       }
     }
@@ -3054,6 +3066,11 @@
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && host.classList.contains('open')) closeOverlay();
+    });
+
+    window.addEventListener('resize', () => {
+      if (!host.classList.contains('open')) return;
+      rerenderLastPattern();
     });
   }
 
