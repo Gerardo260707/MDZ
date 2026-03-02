@@ -2788,27 +2788,88 @@
       <button type="button" class="special-overlay-backdrop" data-special-overlay-close="1" aria-label="Cerrar"></button>
       <div class="special-overlay-card" role="dialog" aria-modal="true" aria-label="Vista previa de especial">
         <button type="button" class="special-overlay-close" data-special-overlay-close="1" aria-label="Cerrar">×</button>
-        <canvas id="specialOverlayPattern" aria-label="Patrón hexagonal"></canvas>
+        <canvas id="specialOverlayPattern" aria-label="Patrón de especial"></canvas>
         <div class="special-overlay-footer"><strong id="specialOverlayTitle"></strong></div>
       </div>
     `;
     document.body.appendChild(host);
 
+    const compareHost = document.createElement('div');
+    compareHost.className = 'special-overlay model-overlay-compare';
+    compareHost.setAttribute('aria-hidden', 'true');
+    compareHost.innerHTML = `
+      <button type="button" class="special-overlay-backdrop" data-special-compare-close="1" aria-label="Cerrar"></button>
+      <div class="model-overlay-compare-wrap" role="dialog" aria-modal="true" aria-label="Comparar modelos especiales">
+        <button type="button" class="special-overlay-close" data-special-compare-close="1" aria-label="Cerrar">×</button>
+        <div class="model-overlay-compare-grid">
+          <article class="special-overlay-card model-overlay-card compare-slot">
+            <canvas class="special-compare-canvas" width="1200" height="900"></canvas>
+            <div class="special-overlay-footer"><strong class="special-compare-title"></strong></div>
+          </article>
+          <article class="special-overlay-card model-overlay-card compare-slot">
+            <canvas class="special-compare-canvas" width="1200" height="900"></canvas>
+            <div class="special-overlay-footer"><strong class="special-compare-title"></strong></div>
+          </article>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(compareHost);
+
     const patternCanvas = host.querySelector('#specialOverlayPattern');
     const titleEl = host.querySelector('#specialOverlayTitle');
     const overlayCard = host.querySelector('.special-overlay-card');
+    const compareToggleBtn = q('compareSpecialsBtn');
+    const compareNotice = q('compareSpecialsNotice');
+    const compareSlots = Array.from(compareHost.querySelectorAll('.compare-slot'));
+    const compareRequired = 2;
+    let compareMode = false;
+    let comparePicked = [];
     let originalSrc = '';
     let lastPattern = null;
+
+    function compareModeMessage() {
+      const lang = (document.documentElement.getAttribute('lang') || 'es').toLowerCase();
+      return lang === 'en'
+        ? 'Comparison mode enabled: choose 2 special models to view them side by side.'
+        : 'Modo comparación activado: selecciona 2 modelos especiales para verlos lado a lado.';
+    }
+
+    function updateCompareUi() {
+      if (compareToggleBtn) {
+        compareToggleBtn.classList.toggle('active', compareMode);
+        compareToggleBtn.setAttribute('aria-pressed', compareMode ? 'true' : 'false');
+      }
+      if (compareNotice) {
+        compareNotice.hidden = !compareMode;
+        if (compareMode) compareNotice.textContent = compareModeMessage();
+      }
+      if (!compareMode) {
+        comparePicked = [];
+        cards.forEach((img) => img.classList.remove('compare-picked'));
+      }
+    }
+
     function closeOverlay() {
       host.classList.remove('open');
       host.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
-      setTimeout(() => {
-        if (!host.classList.contains('open') && patternCanvas) {
-          const ctx = patternCanvas.getContext('2d');
-          if (ctx) ctx.clearRect(0, 0, patternCanvas.width, patternCanvas.height);
-        }
-      }, 120);
+      if (!compareHost.classList.contains('open')) document.body.style.overflow = '';
+    }
+
+    function closeCompare() {
+      compareHost.classList.remove('open');
+      compareHost.setAttribute('aria-hidden', 'true');
+      if (!host.classList.contains('open')) document.body.style.overflow = '';
+    }
+
+    function resolveSourceForOverlay(sourceImg) {
+      const imgSrc = String(sourceImg.dataset.overlaySrc || sourceImg.currentSrc || sourceImg.src || '');
+      const tmp = new Image();
+      tmp.crossOrigin = 'anonymous';
+      return new Promise((resolve) => {
+        tmp.onload = () => resolve(tmp);
+        tmp.onerror = () => resolve(sourceImg);
+        tmp.src = imgSrc;
+      });
     }
 
     function extractSpecialTile(sourceImg) {
@@ -2820,77 +2881,54 @@
             const w = workerImg.naturalWidth || workerImg.width;
             const h = workerImg.naturalHeight || workerImg.height;
             if (!w || !h) return resolve(null);
-
             const c = document.createElement('canvas');
             c.width = w;
             c.height = h;
             const ctx = c.getContext('2d', { willReadFrequently: true });
             if (!ctx) return resolve(null);
             ctx.drawImage(workerImg, 0, 0, w, h);
-
             const imageData = ctx.getImageData(0, 0, w, h);
             const d = imageData.data;
-            let minX = w;
-            let minY = h;
-            let maxX = -1;
-            let maxY = -1;
-            let opaqueCount = 0;
+            let minX = w; let minY = h; let maxX = -1; let maxY = -1; let opaqueCount = 0;
             const threshold = 242;
-
             for (let i = 0; i < d.length; i += 4) {
-              const r = d[i];
-              const g = d[i + 1];
-              const b = d[i + 2];
-              const x = (i / 4) % w;
-              const y = Math.floor((i / 4) / w);
+              const r = d[i], g = d[i + 1], b = d[i + 2];
+              const x = (i / 4) % w, y = Math.floor((i / 4) / w);
               const nearWhite = r >= threshold && g >= threshold && b >= threshold;
-
-              if (nearWhite) {
-                d[i + 3] = 0;
-              } else if (d[i + 3] > 0) {
+              if (nearWhite) d[i + 3] = 0;
+              else if (d[i + 3] > 0) {
                 opaqueCount += 1;
-                if (x < minX) minX = x;
-                if (y < minY) minY = y;
-                if (x > maxX) maxX = x;
-                if (y > maxY) maxY = y;
+                if (x < minX) minX = x; if (y < minY) minY = y; if (x > maxX) maxX = x; if (y > maxY) maxY = y;
               }
             }
-
             if (!opaqueCount || maxX <= minX || maxY <= minY) return resolve(null);
-
             ctx.putImageData(imageData, 0, 0);
-
             const pad = Math.round(Math.max(w, h) * 0.03);
-            const cropX = Math.max(0, minX - pad);
-            const cropY = Math.max(0, minY - pad);
+            const cropX = Math.max(0, minX - pad), cropY = Math.max(0, minY - pad);
             const cropW = Math.min(w - cropX, (maxX - minX + 1) + (pad * 2));
             const cropH = Math.min(h - cropY, (maxY - minY + 1) + (pad * 2));
-
             const out = document.createElement('canvas');
-            out.width = cropW;
-            out.height = cropH;
+            out.width = cropW; out.height = cropH;
             const outCtx = out.getContext('2d');
             if (!outCtx) return resolve(null);
             outCtx.drawImage(c, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
             resolve(out);
-          } catch (e) {
-            resolve(null);
-          }
+          } catch (_) { resolve(null); }
         };
         workerImg.onerror = () => resolve(null);
         workerImg.src = sourceImg.currentSrc || sourceImg.src || '';
       });
     }
 
-    function setupPatternCanvas() {
+    function setupPatternCanvas(targetCanvas, targetCard) {
       const dpr = Math.max(1, window.devicePixelRatio || 1);
-      const cssW = Math.max(320, Math.floor(patternCanvas.clientWidth || overlayCard.clientWidth));
-      const cssH = Math.max(220, Math.floor(patternCanvas.clientHeight || (overlayCard.clientHeight - 46)));
-      patternCanvas.width = Math.floor(cssW * dpr);
-      patternCanvas.height = Math.floor(cssH * dpr);
-      patternCanvas.style.width = `${cssW}px`;
-      patternCanvas.style.height = `${cssH}px`;
-      const ctx = patternCanvas.getContext('2d');
+      const cssW = Math.max(320, Math.floor(targetCanvas.clientWidth || targetCard.clientWidth));
+      const cssH = Math.max(220, Math.floor(targetCanvas.clientHeight || (targetCard.clientHeight - 46)));
+      targetCanvas.width = Math.floor(cssW * dpr);
+      targetCanvas.height = Math.floor(cssH * dpr);
+      targetCanvas.style.width = `${cssW}px`;
+      targetCanvas.style.height = `${cssH}px`;
+      const ctx = targetCanvas.getContext('2d');
       if (!ctx) return null;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpr, dpr);
@@ -2904,10 +2942,7 @@
       const ratio = (tile.width > 0 && tile.height > 0) ? (tile.width / tile.height) : 1;
       let drawW = boxW;
       let drawH = drawW / ratio;
-      if (drawH > boxH) {
-        drawH = boxH;
-        drawW = drawH * ratio;
-      }
+      if (drawH > boxH) { drawH = boxH; drawW = drawH * ratio; }
       ctx.save();
       ctx.translate(cx, cy);
       if (angle) ctx.rotate(angle);
@@ -2915,125 +2950,85 @@
       ctx.restore();
     }
 
-    function renderHexPattern(tileCanvas, rotationSeedDeg = null) {
-      const setup = setupPatternCanvas();
+    function renderByPatternType(targetCanvas, targetCard, tileCanvas, patternType, rotationSeed) {
+      const setup = setupPatternCanvas(targetCanvas, targetCard);
       if (!setup) return;
       const { ctx, cssW, cssH } = setup;
-
-      const cols = Math.max(5, Math.round(cssW / 130));
-      const hexW = cssW / cols;
-      const hexH = hexW / 0.8660254;
-      const radius = hexH / 2;
-      const dx = Math.sqrt(3) * radius;
-      const dy = radius * 1.5;
-      const rows = Math.ceil((cssH + hexH) / dy) + 1;
-      const colsDraw = Math.ceil((cssW + hexW) / dx) + 2;
-
-      const hasRotationSeed = Number.isFinite(rotationSeedDeg);
-      const seedRad = hasRotationSeed ? (Number(rotationSeedDeg) * (Math.PI / 180)) : 0;
-      const triadStep = (Math.PI * 2) / 3;
-
-      for (let row = -1; row < rows; row++) {
-        for (let col = -1; col < colsDraw; col++) {
-          const cx = col * dx + ((row & 1) ? dx / 2 : 0) + (hexW / 2);
-          const cy = row * dy + radius;
-          const colPhase = ((col % 3) + 3) % 3;
-          const rowPhase = ((row % 2) + 2) % 2;
-          const variant = rowPhase === 0 ? colPhase : ((colPhase + 2) % 3);
-          const angle = hasRotationSeed ? (seedRad + (variant * triadStep)) : 0;
-          drawTileFit(ctx, tileCanvas, cx, cy, hexW * 1.03, hexH * 1.03, angle);
+      const type = String(patternType || '').toLowerCase();
+      if (type === 'triangular') {
+        const cols = Math.max(5, Math.round(cssW / 180));
+        const tileW = cssW / cols;
+        const tileH = tileW * 0.9;
+        const stepY = tileH * 0.86;
+        const rows = Math.ceil((cssH + tileH) / stepY) + 1;
+        for (let r = -1; r < rows; r++) {
+          for (let c = -1; c < cols + 1; c++) {
+            const cx = (c + 0.5 + ((r % 2) ? 0.5 : 0)) * tileW;
+            const cy = (r + 0.5) * stepY;
+            const angle = (r % 2 === 0) ? 0 : Math.PI;
+            drawTileFit(ctx, tileCanvas, cx, cy, tileW * 1.02, tileH * 1.02, angle);
+          }
         }
+        return;
       }
-    }
-
-    function renderTriangularPattern(tileCanvas) {
-      const setup = setupPatternCanvas();
-      if (!setup) return;
-      const { ctx, cssW, cssH } = setup;
-      const baseW = Math.max(110, cssW / Math.max(6, Math.round(cssW / 140)));
-      const baseH = baseW * 0.9;
-      const stepX = baseW / 2;
-      const stepY = baseH;
-      const cols = Math.ceil((cssW + baseW * 2) / stepX);
-      const rows = Math.ceil((cssH + baseH * 2) / stepY);
-      for (let row = -2; row < rows; row++) {
-        const offsetX = (row % 2 === 0) ? 0 : (stepX / 2);
-        for (let col = -2; col < cols; col++) {
-          const cx = col * stepX + offsetX;
-          const cy = (row + 0.5) * stepY;
-          const angle = ((row + col) % 2 === 0) ? 0 : Math.PI;
-          drawTileFit(ctx, tileCanvas, cx, cy, baseW * 1.01, baseH * 1.01, angle);
+      if (type === 'cantaro') {
+        const cols = Math.max(5, Math.round(cssW / 170));
+        const tileW = cssW / cols;
+        const tileH = tileW * 0.94;
+        const stepX = tileW * 0.91;
+        const stepY = tileH * 0.84;
+        const drawCols = Math.ceil((cssW + tileW * 2) / stepX);
+        const drawRows = Math.ceil((cssH + tileH * 2) / stepY);
+        for (let c = -2; c < drawCols; c++) {
+          const shiftY = (c % 2 === 0) ? 0 : (stepY / 2);
+          for (let r = -2; r < drawRows; r++) {
+            drawTileFit(ctx, tileCanvas, c * stepX + tileW / 2, r * stepY + shiftY + tileH / 2, tileW, tileH, 0);
+          }
         }
+        return;
       }
-    }
-
-    function renderSquareLikePattern(tileCanvas, octagonal = false) {
-      const setup = setupPatternCanvas();
-      if (!setup) return;
-      const { ctx, cssW, cssH } = setup;
-      const cols = Math.max(6, Math.round(cssW / 140));
-      const size = cssW / cols;
-      const rows = Math.ceil(cssH / size) + 1;
-      const map = [[0, Math.PI / 2], [3 * Math.PI / 2, Math.PI]];
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
+      if (type === 'cuadrado' || type === 'octagonal') {
+        const cols = Math.max(6, Math.round(cssW / 140));
+        const size = cssW / cols;
+        const rows = Math.ceil(cssH / size) + 1;
+        const map = [[0, Math.PI / 2], [3 * Math.PI / 2, Math.PI]];
+        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
           let angle = map[r % 2][c % 2];
-          if (octagonal) angle += Math.PI / 4;
+          if (type === 'octagonal') angle += Math.PI / 4;
           drawTileFit(ctx, tileCanvas, (c + 0.5) * size, (r + 0.5) * size, size * 0.96, size * 0.96, angle);
         }
+        return;
       }
-    }
-
-    function renderCantaroPattern(tileCanvas) {
-      const setup = setupPatternCanvas();
-      if (!setup) return;
-      const { ctx, cssW, cssH } = setup;
-      const cols = Math.max(5, Math.round(cssW / 165));
+      if (type === 'otros') {
+        const count = 5;
+        const tileW = Math.min(220, cssW / 5.5);
+        const totalW = count * tileW;
+        const startX = (cssW - totalW) / 2;
+        const cy = cssH / 2;
+        for (let i = 0; i < count; i++) drawTileFit(ctx, tileCanvas, startX + (i + 0.5) * tileW, cy, tileW * 0.95, tileW * 0.95, 0);
+        return;
+      }
+      const cols = Math.max(4, Math.round(cssW / 190));
       const tileW = cssW / cols;
-      const tileH = tileW * 0.92;
-      const stepX = tileW * 0.97;
-      const stepY = tileH * 0.88;
-      const rows = Math.ceil((cssH + tileH * 2) / stepY);
-      const colsDraw = Math.ceil((cssW + tileW * 2) / stepX);
-      for (let c = -2; c < colsDraw; c++) {
-        const shiftY = (c % 2 === 0) ? 0 : (stepY / 2);
-        for (let r = -2; r < rows; r++) {
-          const cx = c * stepX + (tileW / 2);
-          const cy = r * stepY + shiftY + (tileH / 2);
-          drawTileFit(ctx, tileCanvas, cx, cy, tileW * 1.01, tileH * 1.01, 0);
+      const tileH = tileW * 0.88;
+      const hStep = tileW * 0.78;
+      const vStep = tileH * 0.82;
+      const rows = Math.ceil((cssH + tileH) / vStep) + 1;
+      const safeRotation = Number.isFinite(rotationSeed) ? (rotationSeed * Math.PI / 180) : 0;
+      for (let r = -1; r < rows; r++) {
+        const offsetX = (r % 2 === 0) ? 0 : (hStep / 2);
+        for (let c = -2; c < cols + 2; c++) {
+          const cx = c * hStep + offsetX + tileW / 2;
+          const cy = r * vStep + tileH / 2;
+          const angle = safeRotation + (((r + c) % 2 === 0) ? 0 : Math.PI / 3);
+          drawTileFit(ctx, tileCanvas, cx, cy, tileW * 1.08, tileH * 1.08, angle);
         }
       }
-    }
-
-    function renderOtrosPattern(tileCanvas) {
-      const setup = setupPatternCanvas();
-      if (!setup) return;
-      const { ctx, cssW, cssH } = setup;
-      const count = 5;
-      const tileW = Math.min(220, cssW / 5.5);
-      const tileH = tileW;
-      const totalW = count * tileW;
-      const startX = (cssW - totalW) / 2;
-      const cy = cssH / 2;
-      for (let i = 0; i < count; i++) {
-        const cx = startX + (i + 0.5) * tileW;
-        drawTileFit(ctx, tileCanvas, cx, cy, tileW * 0.95, tileH * 0.95, 0);
-      }
-    }
-
-    function renderByPatternType(tileCanvas, patternType, rotationSeed) {
-      const type = String(patternType || '').toLowerCase();
-      if (type === 'triangular') return renderTriangularPattern(tileCanvas);
-      if (type === 'cuadrado') return renderSquareLikePattern(tileCanvas, false);
-      if (type === 'octagonal') return renderSquareLikePattern(tileCanvas, true);
-      if (type === 'cantaro') return renderCantaroPattern(tileCanvas);
-      if (type === 'otros') return renderOtrosPattern(tileCanvas);
-      return renderHexPattern(tileCanvas, rotationSeed);
     }
 
     function rerenderLastPattern() {
       if (!lastPattern) return;
-      renderByPatternType(lastPattern.tileCanvas, lastPattern.patternType, lastPattern.rotationSeed);
+      renderByPatternType(patternCanvas, overlayCard, lastPattern.tileCanvas, lastPattern.patternType, lastPattern.rotationSeed);
     }
 
     async function openOverlay(sourceImg) {
@@ -3045,16 +3040,30 @@
       host.classList.add('open');
       host.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
+      const sourceForTile = await resolveSourceForOverlay(sourceImg);
+      const tileCanvas = await extractSpecialTile(sourceForTile);
+      if (host.classList.contains('open') && originalSrc === (sourceImg.currentSrc || sourceImg.src || '') && tileCanvas) {
+        lastPattern = { tileCanvas, patternType, rotationSeed: Number.isFinite(rotationSeed) ? rotationSeed : null };
+        rerenderLastPattern();
+      }
+    }
 
-      const tileCanvas = await extractSpecialTile(sourceImg);
-      if (host.classList.contains('open') && originalSrc === (sourceImg.currentSrc || sourceImg.src || '')) {
-        if (tileCanvas) {
-          lastPattern = {
-            tileCanvas,
-            patternType,
-            rotationSeed: Number.isFinite(rotationSeed) ? rotationSeed : null,
-          };
-          rerenderLastPattern();
+    async function openCompare() {
+      if (comparePicked.length < compareRequired) return;
+      compareHost.classList.add('open');
+      compareHost.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      for (let i = 0; i < compareRequired; i++) {
+        const img = comparePicked[i];
+        const slot = compareSlots[i];
+        if (!img || !slot) continue;
+        const slotCanvas = slot.querySelector('.special-compare-canvas');
+        const slotTitle = slot.querySelector('.special-compare-title');
+        if (slotTitle) slotTitle.textContent = `MODELO: ${String(img.alt || '').toUpperCase()}`;
+        const sourceForTile = await resolveSourceForOverlay(img);
+        const tileCanvas = await extractSpecialTile(sourceForTile);
+        if (tileCanvas && slotCanvas) {
+          renderByPatternType(slotCanvas, slot, tileCanvas, img.dataset.patternType || 'hexagonal', Number.parseFloat(img.dataset.hexRotation || ''));
         }
       }
     }
@@ -3062,21 +3071,49 @@
     cards.forEach((img) => {
       img.classList.add('special-overlay-trigger');
       img.addEventListener('click', () => {
+        if (compareMode) {
+          if (comparePicked.includes(img)) {
+            comparePicked = comparePicked.filter((n) => n !== img);
+            img.classList.remove('compare-picked');
+            return;
+          }
+          if (comparePicked.length >= compareRequired) {
+            const removed = comparePicked.shift();
+            if (removed) removed.classList.remove('compare-picked');
+          }
+          comparePicked.push(img);
+          img.classList.add('compare-picked');
+          if (comparePicked.length === compareRequired) openCompare();
+          return;
+        }
         openOverlay(img);
       });
+    });
+
+    if (compareToggleBtn) compareToggleBtn.addEventListener('click', () => {
+      compareMode = !compareMode;
+      closeCompare();
+      closeOverlay();
+      updateCompareUi();
     });
 
     host.addEventListener('click', (e) => {
       if (e.target.closest('[data-special-overlay-close="1"]')) closeOverlay();
     });
+    compareHost.addEventListener('click', (e) => {
+      if (e.target.closest('[data-special-compare-close="1"]')) closeCompare();
+    });
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && host.classList.contains('open')) closeOverlay();
+      if (e.key === 'Escape') {
+        if (compareHost.classList.contains('open')) closeCompare();
+        if (host.classList.contains('open')) closeOverlay();
+      }
     });
 
     window.addEventListener('resize', () => {
-      if (!host.classList.contains('open')) return;
-      rerenderLastPattern();
+      if (host.classList.contains('open')) rerenderLastPattern();
+      if (compareHost.classList.contains('open')) openCompare();
     });
   }
 

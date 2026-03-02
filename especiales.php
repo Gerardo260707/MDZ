@@ -77,6 +77,7 @@ function carga_cat_especiales(string $csv): array {
 
 $map = carga_cat_especiales(__DIR__ . '/config/categorias_especiales.csv');
 $base = __DIR__ . '/Especiales';
+$overlayIdentifier = 'overlay'; // cambiar este identificador si deseas otro criterio
 $items = [];
 if (is_dir($base)) {
     foreach (array_filter(scandir($base) ?: [], fn($n) => $n !== '.' && $n !== '..' && is_dir($base . '/' . $n)) as $folder) {
@@ -84,6 +85,14 @@ if (is_dir($base)) {
         if (!$imgs) continue;
         sort($imgs, SORT_NATURAL | SORT_FLAG_CASE);
         $src = $imgs[0];
+        $overlaySrc = $src;
+        foreach ($imgs as $candidate) {
+            $baseName = strtolower(pathinfo($candidate, PATHINFO_FILENAME));
+            if (str_contains($baseName, $overlayIdentifier)) {
+                $overlaySrc = $candidate;
+                break;
+            }
+        }
 
         $meta = $map[strtolower($folder)] ?? ['cat' => 'formas', 'hex_rot' => null, 'pattern_type' => '', 'personalizable' => false];
         $cat = $meta['cat'] ?: 'formas';
@@ -96,6 +105,7 @@ if (is_dir($base)) {
             'name' => ucwords(str_replace(['_', '-'], ' ', $folder)),
             'hex_rot' => $meta['hex_rot'],
             'pattern_type' => $patternType,
+            'overlay_img' => 'Especiales/' . rawurlencode($folder) . '/' . rawurlencode(basename($overlaySrc)) . '?v=' . (@filemtime($overlaySrc) ?: time()),
             'personalizable' => (bool)$meta['personalizable'],
         ];
     }
@@ -164,6 +174,13 @@ foreach ($items as $it) {
     </header>
     <div class="mosaic-strip"></div>
 
+    <section class="panel">
+      <button id="compareSpecialsBtn" type="button" class="btn compare-toggle" aria-pressed="false">
+        <?= $lang === 'en' ? 'Compare models' : 'Comparar modelos' ?>
+      </button>
+      <p id="compareSpecialsNotice" class="compare-mode-notice" hidden><?= $lang === 'en' ? 'Comparison mode enabled: choose 2 special models.' : 'Modo comparación activado: elige 2 modelos especiales.' ?></p>
+    </section>
+
     <?php foreach (['formas', 'antiderrapantes', 'zoclos'] as $sectionKey):
       $title = $sectionInfo[$lang][$sectionKey]['title'] ?? '';
       $desc = $sectionInfo[$lang][$sectionKey]['desc'] ?? '';
@@ -182,7 +199,7 @@ foreach ($items as $it) {
           . ($it['hex_rot'] !== null ? '&hex_rot=' . rawurlencode((string)$it['hex_rot']) : '');
       ?>
       <article class="mosaic-card special-card">
-        <img src="<?= htmlspecialchars($it['img'], ENT_QUOTES) ?>" alt="<?= htmlspecialchars($it['name'], ENT_QUOTES) ?>" data-pattern-type="<?= htmlspecialchars((string)$it['pattern_type'], ENT_QUOTES) ?>" <?= $it['hex_rot'] !== null ? "data-hex-rotation=\"" . htmlspecialchars((string)$it['hex_rot'], ENT_QUOTES) . "\"" : "" ?> />
+        <img src="<?= htmlspecialchars($it['img'], ENT_QUOTES) ?>" alt="<?= htmlspecialchars($it['name'], ENT_QUOTES) ?>" data-pattern-type="<?= htmlspecialchars((string)$it['pattern_type'], ENT_QUOTES) ?>" data-overlay-src="<?= htmlspecialchars((string)$it['overlay_img'], ENT_QUOTES) ?>" <?= $it['hex_rot'] !== null ? "data-hex-rotation=\"" . htmlspecialchars((string)$it['hex_rot'], ENT_QUOTES) . "\"" : "" ?> />
         <div class="name"><?= htmlspecialchars($it['name'], ENT_QUOTES) ?></div>
         <?php if ($it['personalizable']): ?>
           <a class="btn btn-special-personalizar" href="<?= htmlspecialchars($personalizarHref, ENT_QUOTES) ?>"><?= $lang === 'en' ? 'Customize' : 'Personalizar' ?></a>
