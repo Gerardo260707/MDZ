@@ -224,6 +224,14 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .color-card span{font-size:12px;color:#666}
 .especiales-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding:20px 28px}
 .special-card img{width:100%;aspect-ratio:1/1;object-fit:cover}
+.special-card img.special-overlay-trigger{cursor:zoom-in}
+
+.special-overlay{position:fixed;inset:0;z-index:1310;opacity:0;pointer-events:none;transition:opacity .22s ease}
+.special-overlay.open{opacity:1;pointer-events:auto}
+.special-overlay-backdrop{position:absolute;inset:0;border:0;background:rgba(0,0,0,.72);cursor:pointer}
+.special-overlay-card{position:relative;width:min(95vw,960px);height:min(90vh,960px);margin:5vh auto 0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at center,#f8f8f8 0%,#ededed 65%,#e1e1e1 100%);border-radius:12px;box-shadow:0 28px 70px rgba(0,0,0,.45);overflow:hidden}
+.special-overlay-close{position:absolute;right:10px;top:8px;z-index:2;border:0;background:rgba(0,0,0,.5);color:#fff;width:34px;height:34px;border-radius:50%;font-size:24px;cursor:pointer}
+#specialOverlayImg{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 20px 24px rgba(0,0,0,.25));padding:20px;box-sizing:border-box}
 @media (max-width:980px){.tapetes-list{grid-template-columns:1fr}.especiales-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.color-comparator-canvases{grid-template-columns:1fr}}
 
 

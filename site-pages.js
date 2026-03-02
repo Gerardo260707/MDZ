@@ -2777,6 +2777,150 @@
     });
   }
 
+  function initEspecialesOverlay() {
+    const cards = Array.from(document.querySelectorAll('.special-card img'));
+    if (!cards.length) return;
+
+    const host = document.createElement('div');
+    host.className = 'special-overlay';
+    host.setAttribute('aria-hidden', 'true');
+    host.innerHTML = `
+      <button type="button" class="special-overlay-backdrop" data-special-overlay-close="1" aria-label="Cerrar"></button>
+      <div class="special-overlay-card" role="dialog" aria-modal="true" aria-label="Vista previa de especial">
+        <button type="button" class="special-overlay-close" data-special-overlay-close="1" aria-label="Cerrar">×</button>
+        <img id="specialOverlayImg" alt="Modelo especial" />
+      </div>
+    `;
+    document.body.appendChild(host);
+
+    const imgEl = host.querySelector('#specialOverlayImg');
+    let originalSrc = '';
+    let objectUrl = '';
+
+    function releaseObjectUrl() {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+        objectUrl = '';
+      }
+    }
+
+    function closeOverlay() {
+      host.classList.remove('open');
+      host.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      releaseObjectUrl();
+      setTimeout(() => {
+        if (!host.classList.contains('open')) imgEl.src = '';
+      }, 120);
+    }
+
+    function maybeMakeWhiteTransparent(sourceImg) {
+      return new Promise((resolve) => {
+        const workerImg = new Image();
+        workerImg.crossOrigin = 'anonymous';
+        workerImg.onload = () => {
+          try {
+            const w = workerImg.naturalWidth || workerImg.width;
+            const h = workerImg.naturalHeight || workerImg.height;
+            if (!w || !h) return resolve(sourceImg.src);
+
+            const c = document.createElement('canvas');
+            c.width = w;
+            c.height = h;
+            const ctx = c.getContext('2d', { willReadFrequently: true });
+            if (!ctx) return resolve(sourceImg.src);
+            ctx.drawImage(workerImg, 0, 0, w, h);
+
+            const imageData = ctx.getImageData(0, 0, w, h);
+            const d = imageData.data;
+            let minX = w;
+            let minY = h;
+            let maxX = -1;
+            let maxY = -1;
+            let opaqueCount = 0;
+            const threshold = 242;
+
+            for (let i = 0; i < d.length; i += 4) {
+              const r = d[i];
+              const g = d[i + 1];
+              const b = d[i + 2];
+              const x = (i / 4) % w;
+              const y = Math.floor((i / 4) / w);
+              const nearWhite = r >= threshold && g >= threshold && b >= threshold;
+
+              if (nearWhite) {
+                d[i + 3] = 0;
+              } else if (d[i + 3] > 0) {
+                opaqueCount += 1;
+                if (x < minX) minX = x;
+                if (y < minY) minY = y;
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+              }
+            }
+
+            if (!opaqueCount || maxX <= minX || maxY <= minY) return resolve(sourceImg.src);
+
+            ctx.putImageData(imageData, 0, 0);
+
+            const pad = Math.round(Math.max(w, h) * 0.03);
+            const cropX = Math.max(0, minX - pad);
+            const cropY = Math.max(0, minY - pad);
+            const cropW = Math.min(w - cropX, (maxX - minX + 1) + (pad * 2));
+            const cropH = Math.min(h - cropY, (maxY - minY + 1) + (pad * 2));
+
+            const out = document.createElement('canvas');
+            out.width = cropW;
+            out.height = cropH;
+            const outCtx = out.getContext('2d');
+            if (!outCtx) return resolve(sourceImg.src);
+            outCtx.drawImage(c, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+            out.toBlob((blob) => {
+              if (!blob) return resolve(sourceImg.src);
+              objectUrl = URL.createObjectURL(blob);
+              resolve(objectUrl);
+            }, 'image/png');
+          } catch (e) {
+            resolve(sourceImg.src);
+          }
+        };
+        workerImg.onerror = () => resolve(sourceImg.src);
+        workerImg.src = sourceImg.currentSrc || sourceImg.src || '';
+      });
+    }
+
+    async function openOverlay(sourceImg) {
+      releaseObjectUrl();
+      originalSrc = sourceImg.currentSrc || sourceImg.src || '';
+      imgEl.src = originalSrc;
+      imgEl.alt = sourceImg.alt || 'Modelo especial';
+      host.classList.add('open');
+      host.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+
+      const processedSrc = await maybeMakeWhiteTransparent(sourceImg);
+      if (host.classList.contains('open') && originalSrc === (sourceImg.currentSrc || sourceImg.src || '')) {
+        imgEl.src = processedSrc;
+      }
+    }
+
+    cards.forEach((img) => {
+      img.classList.add('special-overlay-trigger');
+      img.addEventListener('click', () => {
+        openOverlay(img);
+      });
+    });
+
+    host.addEventListener('click', (e) => {
+      if (e.target.closest('[data-special-overlay-close="1"]')) closeOverlay();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && host.classList.contains('open')) closeOverlay();
+    });
+  }
+
   function initDarkFooter() {
     const main = document.querySelector('main.site');
     if (!main || document.getElementById('siteDarkFooter')) return;
@@ -2813,6 +2957,7 @@
     initTapetesPage();
     initMosaicosActions();
     initGalleryPage();
+    initEspecialesOverlay();
     initQuoteValidation();
     initDarkFooter();
   });
