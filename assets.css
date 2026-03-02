@@ -222,6 +222,7 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .color-card .swatch{height:60px;border:1px solid #bbb;border-radius:6px}
 .color-card strong{font-size:14px}
 .color-card span{font-size:12px;color:#666}
+.especiales-desc{margin:6px 0 0;color:#4a4a4a;line-height:1.45;max-width:980px}
 .especiales-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding:20px 28px}
 .special-card img{width:100%;aspect-ratio:1/1;object-fit:cover}
 .special-card img.special-overlay-trigger{cursor:zoom-in}
