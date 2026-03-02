@@ -2988,16 +2988,19 @@
       const setup = setupPatternCanvas();
       if (!setup) return;
       const { ctx, cssW, cssH } = setup;
-      const cols = Math.max(4, Math.round(cssW / 190));
+      const cols = Math.max(5, Math.round(cssW / 165));
       const tileW = cssW / cols;
-      const tileH = tileW * 0.85;
-      const rows = Math.ceil(cssH / tileH) + 2;
-      for (let r = -1; r < rows; r++) {
-        const shift = (r % 2 === 0) ? 0 : (tileW / 2);
-        for (let c = -1; c < cols + 1; c++) {
-          const cx = c * tileW + shift + tileW / 2;
-          const cy = (r + 0.5) * tileH;
-          drawTileFit(ctx, tileCanvas, cx, cy, tileW * 1.03, tileH * 1.03, 0);
+      const tileH = tileW * 0.92;
+      const stepX = tileW * 0.97;
+      const stepY = tileH * 0.88;
+      const rows = Math.ceil((cssH + tileH * 2) / stepY);
+      const colsDraw = Math.ceil((cssW + tileW * 2) / stepX);
+      for (let c = -2; c < colsDraw; c++) {
+        const shiftY = (c % 2 === 0) ? 0 : (stepY / 2);
+        for (let r = -2; r < rows; r++) {
+          const cx = c * stepX + (tileW / 2);
+          const cy = r * stepY + shiftY + (tileH / 2);
+          drawTileFit(ctx, tileCanvas, cx, cy, tileW * 1.01, tileH * 1.01, 0);
         }
       }
     }
@@ -3184,14 +3187,17 @@
       }
 
       function renderCantaro() {
-        const cols = Math.max(4, Math.round(cssW / 190));
+        const cols = Math.max(5, Math.round(cssW / 165));
         const tileW = cssW / cols;
-        const tileH = tileW * 0.85;
-        const rows = Math.ceil(cssH / tileH) + 2;
-        for (let r = -1; r < rows; r++) {
-          const shift = (r % 2 === 0) ? 0 : tileW / 2;
-          for (let c = -1; c < cols + 1; c++) {
-            drawTileFit(ctx, tileCanvas, c * tileW + shift + tileW / 2, (r + 0.5) * tileH, tileW * 1.03, tileH * 1.03, 0);
+        const tileH = tileW * 0.92;
+        const stepX = tileW * 0.97;
+        const stepY = tileH * 0.88;
+        const rows = Math.ceil((cssH + tileH * 2) / stepY);
+        const colsDraw = Math.ceil((cssW + tileW * 2) / stepX);
+        for (let c = -2; c < colsDraw; c++) {
+          const shiftY = (c % 2 === 0) ? 0 : (stepY / 2);
+          for (let r = -2; r < rows; r++) {
+            drawTileFit(ctx, tileCanvas, c * stepX + tileW / 2, r * stepY + shiftY + tileH / 2, tileW * 1.01, tileH * 1.01, 0);
           }
         }
       }
