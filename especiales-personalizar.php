@@ -87,11 +87,15 @@ $personalizables = carga_personalizables(__DIR__ . '/config/categorias_especiale
   <main class="site especiales-customizer-page">
     <header class="top"><div class="brand-row"><div class="logo"><img src="assets/logo-dzununcan.svg" alt="Mosaicos Dzununcán" /></div><div class="langs"><span data-i18n="lang_label">Idioma</span> ▪<button class="lang-btn" data-set-lang="es" data-lang-active="es">🇲🇽</button><button class="lang-btn" data-set-lang="en" data-lang-active="en">🇺🇸</button></div></div>
       <nav>
-        <a data-keep-lang href="especiales.php" data-i18n="nav_mosaics">Especiales</a>
+        <a data-keep-lang href="index.html" data-i18n="nav_home">Inicio</a>
         <a data-keep-lang href="mosaicos.html" data-i18n="nav_mosaics">Mosaicos</a>
+        <a data-keep-lang href="galeria.html" data-i18n="nav_gallery">Galería</a>
+        <a data-keep-lang href="mantenimiento.html" data-i18n="nav_maintenance">Mantenimiento</a>
+        <a data-keep-lang href="instalacion.html" data-i18n="nav_installation">Instalación</a>
         <a data-keep-lang href="contacto.html" data-i18n="nav_contact">Contacto</a>
       </nav>
     </header>
+    <div class="mosaic-strip"></div>
 
     <section>
       <h2><?= htmlspecialchars($title, ENT_QUOTES) ?></h2>
@@ -138,6 +142,53 @@ $personalizables = carga_personalizables(__DIR__ . '/config/categorias_especiale
       <div id="specialPalette" class="palette"></div>
       <img id="specialCustomizerSource" src="<?= htmlspecialchars($img, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($name, ENT_QUOTES) ?>" hidden />
     </section>
+
+    <footer id="siteDarkFooter" class="dark-footer">
+      <div class="dark-cols">
+        <div>
+          <h4>Mosaicos Dzununcán</h4>
+          <?php if ($lang === 'en'): ?>
+            <p>Mexican cement tile manufacturer with custom projects.</p>
+            <p>
+              <a href="legal.html?lang=en#privacy">Privacy Policy</a><br>
+              <a href="legal.html?lang=en#terms">Terms and Conditions</a><br>
+              <a href="sitemap.html?lang=en">Site map</a>
+            </p>
+          <?php else: ?>
+            <p>Fabricantes de mosaicos de pasta mexicanos con proyectos personalizados.</p>
+            <p>
+              <a href="legal.html?lang=es#privacy">Políticas de privacidad</a><br>
+              <a href="legal.html?lang=es#terms">Términos y condiciones</a><br>
+              <a href="sitemap.html?lang=es">Mapa del sitio</a>
+            </p>
+          <?php endif; ?>
+        </div>
+        <div>
+          <h4><?= $lang === 'en' ? 'Phones' : 'Teléfonos' ?></h4>
+          <p>Local: +52 (999) 217-9326</p>
+          <p><?= $lang === 'en' ? 'Factory' : 'Fábrica' ?>: +52 (999) 249-5158</p>
+          <p>Email: ventas@mosaicosdzununcan.com</p>
+        </div>
+        <div>
+          <h4><?= $lang === 'en' ? 'Address' : 'Dirección' ?></h4>
+          <?php if ($lang === 'en'): ?>
+            <p>Sales & Showroom:<br>Calle 37, No. 318 entre 24 y 26, Mérida, Yucatán.</p>
+            <p>Factory:<br>Carretera Mérida - Dzununcan Km 2.5</p>
+          <?php else: ?>
+            <p>Venta y sala de exhibición:<br>Calle 37, No. 318 entre 24 y 26, Mérida, Yucatán.</p>
+            <p>Fábrica:<br>Carretera Mérida - Dzununcan Km 2.5</p>
+          <?php endif; ?>
+        </div>
+        <div>
+          <h4><?= $lang === 'en' ? 'Social' : 'Redes' ?></h4>
+          <p>
+            <a target="_blank" rel="noopener" href="https://www.facebook.com/mosaicosdecimononicos#">Facebook</a><br>
+            <a target="_blank" rel="noopener" href="https://www.instagram.com/mosaicosdzununcan/">Instagram</a><br>
+            <a target="_blank" rel="noopener" href="https://wa.me/529992179326">WhatsApp</a>
+          </p>
+        </div>
+      </div>
+    </footer>
   </main>
   <script src="app.js"></script>
   <script src="site-pages.js"></script>
