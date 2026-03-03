@@ -2972,8 +2972,8 @@
       if (type === 'triangular') {
         const tileW = Math.max(120, cssW / Math.max(6, Math.round(cssW / 150)));
         const tileH = tileW * 0.9;
-        const stepX = tileW * 0.5;
-        const stepY = tileH * 0.98;
+        const stepX = tileW * 0.47;
+        const stepY = tileH * 1.08;
         const cols = Math.ceil((cssW + tileW * 2) / stepX);
         const rows = Math.ceil((cssH + tileH * 2) / stepY);
         for (let r = -2; r < rows; r++) {
@@ -2990,7 +2990,7 @@
         const cols = Math.max(5, Math.round(cssW / 170));
         const tileW = cssW / cols;
         const tileH = tileW * 0.94;
-        const stepX = tileW * 0.84;
+        const stepX = tileW * 0.76;
         const stepY = tileH * 0.78;
         const drawCols = Math.ceil((cssW + tileW * 2) / stepX);
         const drawRows = Math.ceil((cssH + tileH * 2) / stepY);
@@ -3200,18 +3200,21 @@
 
     function renderEditBox() {
       if (!tileCanvas) return;
-      const setup = setupCanvas(editCanvas, 1);
+      const ratioMain = Math.max(0.3, Math.min(3.2, (tileCanvas.width || 1) / (tileCanvas.height || 1)));
+      const editWrap = editCanvas.closest('.vector-editor');
+      if (editWrap) editWrap.style.aspectRatio = `${ratioMain}`;
+      const setup = setupCanvas(editCanvas, ratioMain);
       if (!setup) return;
       const { ctx, cssW, cssH } = setup;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, cssW, cssH);
-      drawTileFit(ctx, tileCanvas, cssW / 2, cssH / 2, cssW * 0.92, cssH * 0.92, 0);
+      ctx.clearRect(0, 0, cssW, cssH);
+      drawTileFit(ctx, tileCanvas, cssW / 2, cssH / 2, cssW * 0.94, cssH * 0.94, 0);
 
       if (squareEditCanvas && squareTileCanvas) {
+        const sqWrap = squareEditCanvas.closest('.vector-editor');
+        if (sqWrap) sqWrap.style.aspectRatio = '1 / 1';
         const sq = setupCanvas(squareEditCanvas, 1);
         if (sq) {
-          sq.ctx.fillStyle = '#ffffff';
-          sq.ctx.fillRect(0, 0, sq.cssW, sq.cssH);
+          sq.ctx.clearRect(0, 0, sq.cssW, sq.cssH);
           drawTileFit(sq.ctx, squareTileCanvas, sq.cssW / 2, sq.cssH / 2, sq.cssW * 0.74, sq.cssH * 0.74, 0);
         }
       }
@@ -3270,8 +3273,8 @@
       function renderTri() {
         const baseW = Math.max(110, cssW / Math.max(6, Math.round(cssW / 140)));
         const baseH = baseW * 0.9;
-        const stepX = baseW * 0.5;
-        const stepY = baseH * 0.98;
+        const stepX = baseW * 0.47;
+        const stepY = baseH * 1.08;
         const cols = Math.ceil((cssW + baseW * 2) / stepX);
         const rows = Math.ceil((cssH + baseH * 2) / stepY);
         for (let row = -2; row < rows; row++) {
@@ -3288,7 +3291,7 @@
         const cols = Math.max(5, Math.round(cssW / 165));
         const tileW = cssW / cols;
         const tileH = tileW * 0.92;
-        const stepX = tileW * 0.84;
+        const stepX = tileW * 0.76;
         const stepY = tileH * 0.78;
         const rows = Math.ceil((cssH + tileH * 2) / stepY);
         const colsDraw = Math.ceil((cssW + tileW * 2) / stepX);
@@ -3425,6 +3428,11 @@
       originalTileCanvas = buildOriginalTile(imgEl);
       rebuildAndRender();
     });
+    imgEl.addEventListener('error', () => {
+      const src = String(imgEl.getAttribute('src') || '');
+      const clean = src.split('?')[0];
+      if (clean && clean !== src) imgEl.src = clean;
+    });
     if (imgEl.complete && imgEl.naturalWidth) {
       originalTileCanvas = buildOriginalTile(imgEl);
       rebuildAndRender();
@@ -3435,6 +3443,38 @@
       renderEditBox();
       renderPattern();
     });
+  }
+
+
+  function initEspecialesSearch() {
+    const input = q('specialModelsSearch');
+    if (!input) return;
+    const cards = Array.from(document.querySelectorAll('.special-card'));
+    const heads = Array.from(document.querySelectorAll('.special-section-head'));
+    const grids = Array.from(document.querySelectorAll('[data-special-section-grid]'));
+
+    function applyFilter() {
+      const qv = String(input.value || '').toLowerCase().trim();
+      const visibleBySection = {};
+      cards.forEach((card) => {
+        const name = String(card.dataset.modelName || '').toLowerCase();
+        const match = !qv || name.includes(qv);
+        card.style.display = match ? '' : 'none';
+        const sec = card.closest('[data-special-section-grid]');
+        const key = sec ? sec.getAttribute('data-special-section-grid') : '';
+        if (match && key) visibleBySection[key] = true;
+      });
+      grids.forEach((grid) => {
+        const key = grid.getAttribute('data-special-section-grid');
+        grid.style.display = visibleBySection[key] ? '' : 'none';
+      });
+      heads.forEach((head) => {
+        const key = head.getAttribute('data-special-section');
+        head.style.display = visibleBySection[key] ? '' : 'none';
+      });
+    }
+
+    input.addEventListener('input', applyFilter);
   }
 
 
@@ -3476,6 +3516,7 @@
     initGalleryPage();
     initEspecialesOverlay();
     initEspecialesCustomizerPage();
+    initEspecialesSearch();
     initQuoteValidation();
     initDarkFooter();
   });

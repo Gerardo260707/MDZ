@@ -182,16 +182,21 @@ foreach ($items as $it) {
       <p id="compareSpecialsNotice" class="compare-mode-notice" hidden><?= $lang === 'en' ? 'Comparison mode enabled: choose 2 special models.' : 'Modo comparación activado: elige 2 modelos especiales.' ?></p>
     </section>
 
+
+    <section class="panel especiales-search-panel">
+      <input type="search" id="specialModelsSearch" class="special-search-input" placeholder="<?= $lang === 'en' ? 'Search special model' : 'Buscar modelo especial' ?>" autocomplete="off" />
+    </section>
+
     <?php foreach (['formas', 'antiderrapantes', 'zoclos'] as $sectionKey):
       $title = $sectionInfo[$lang][$sectionKey]['title'] ?? '';
       $desc = $sectionInfo[$lang][$sectionKey]['desc'] ?? '';
       $sectionItems = $groups[$sectionKey] ?? [];
     ?>
-    <section>
+    <section class="special-section-head" data-special-section="<?= htmlspecialchars($sectionKey, ENT_QUOTES) ?>">
       <h2><?= htmlspecialchars($title, ENT_QUOTES) ?></h2>
       <?php if ($desc !== ''): ?><p class="especiales-desc"><?= htmlspecialchars($desc, ENT_QUOTES) ?></p><?php endif; ?>
     </section>
-    <section class="panel especiales-grid">
+    <section class="panel especiales-grid" data-special-section-grid="<?= htmlspecialchars($sectionKey, ENT_QUOTES) ?>">
       <?php foreach ($sectionItems as $it):
         $personalizarHref = 'especiales-personalizar.php?lang=' . rawurlencode($lang)
           . '&img=' . rawurlencode($it['img'])
@@ -199,7 +204,7 @@ foreach ($items as $it) {
           . '&pattern=' . rawurlencode($it['pattern_type'])
           . ($it['hex_rot'] !== null ? '&hex_rot=' . rawurlencode((string)$it['hex_rot']) : '');
       ?>
-      <article class="mosaic-card special-card">
+      <article class="mosaic-card special-card" data-model-name="<?= htmlspecialchars(strtolower($it['name']), ENT_QUOTES) ?>">
         <img src="<?= htmlspecialchars($it['img'], ENT_QUOTES) ?>" alt="<?= htmlspecialchars($it['name'], ENT_QUOTES) ?>" data-pattern-type="<?= htmlspecialchars((string)$it['pattern_type'], ENT_QUOTES) ?>" data-overlay-src="<?= htmlspecialchars((string)$it['overlay_img'], ENT_QUOTES) ?>" <?= $it['overlay_direct'] ? 'data-overlay-direct="1"' : '' ?> <?= $it['hex_rot'] !== null ? "data-hex-rotation=\"" . htmlspecialchars((string)$it['hex_rot'], ENT_QUOTES) . "\"" : "" ?> />
         <div class="name"><?= htmlspecialchars($it['name'], ENT_QUOTES) ?></div>
         <?php if ($it['personalizable']): ?>

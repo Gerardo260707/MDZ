@@ -5,7 +5,13 @@ $name = trim((string)($_GET['name'] ?? ($lang === 'en' ? 'Special model' : 'Mode
 $pattern = strtolower(trim((string)($_GET['pattern'] ?? 'hexagonal')));
 $hexRot = trim((string)($_GET['hex_rot'] ?? ''));
 
-$img = rawurldecode($img);
+$imgDecoded = $img;
+for ($i = 0; $i < 3; $i++) {
+    $next = rawurldecode($imgDecoded);
+    if ($next === $imgDecoded) break;
+    $imgDecoded = $next;
+}
+$img = $imgDecoded;
 $img = preg_replace('#^https?://[^/]+/#i', '', $img);
 if ($img === '' || str_contains($img, '..')) {
     $img = 'assets/placeholder-tile.svg';
