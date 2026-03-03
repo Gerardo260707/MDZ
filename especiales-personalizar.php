@@ -1,13 +1,4 @@
 <?php
-require_once __DIR__ . '/compat-php56.php';
-if (defined('PHP_VERSION_ID') && PHP_VERSION_ID < 70000) {
-    $legacy = __DIR__ . '/legacy-php56/especiales-personalizar.php';
-    if (file_exists($legacy)) {
-        require $legacy;
-        exit;
-    }
-}
-
 $lang = (($_GET['lang'] ?? 'es') === 'en') ? 'en' : 'es';
 $img = trim((string)($_GET['img'] ?? ''));
 $name = trim((string)($_GET['name'] ?? ($lang === 'en' ? 'Special model' : 'Modelo especial')));
