@@ -3186,6 +3186,15 @@
       return { ctx, cssW, cssH };
     }
 
+    function previewRatioForPattern(type, tileRatio) {
+      const safeTileRatio = Math.max(0.45, Math.min(2.4, Number(tileRatio) || 1));
+      if (type === 'cuadrado' || type === 'octagonal') return 1;
+      if (type === 'triangular') return Math.max(1.05, Math.min(1.35, safeTileRatio * 1.25));
+      if (type === 'cantaro') return Math.max(1.2, Math.min(1.7, safeTileRatio * 1.35));
+      if (type === 'otros') return Math.max(1.15, Math.min(1.75, safeTileRatio * 1.4));
+      return Math.max(1.2, Math.min(1.8, safeTileRatio * 1.5)); // hexagonal por defecto
+    }
+
     function drawTileFit(ctx, tile, cx, cy, boxW, boxH, angle = 0) {
       const ratio = tile.width / tile.height;
       let drawW = boxW;
@@ -3227,7 +3236,12 @@
 
     function renderPattern() {
       if (!tileCanvas) return;
-      const setup = setupCanvas(canvas, 3 / 2);
+      const tileRatio = (tileCanvas.width || 1) / Math.max(1, (tileCanvas.height || 1));
+      const ratio = previewRatioForPattern(patternType, tileRatio);
+      const canvasWrap = canvas.closest('.panel') || canvas.parentElement;
+      if (canvasWrap) canvasWrap.style.setProperty('--special-preview-ratio', String(ratio));
+      canvas.style.aspectRatio = `${ratio}`;
+      const setup = setupCanvas(canvas, ratio);
       if (!setup) return;
       const { ctx, cssW, cssH } = setup;
       ctx.fillStyle = '#ece9df';
@@ -3367,6 +3381,10 @@
         return best;
       }
 
+      let minX = w;
+      let minY = h;
+      let maxX = -1;
+      let maxY = -1;
       for (let i = 0; i < arr.length; i += 4) {
         if (arr[i + 3] === 0) continue;
         if (arr[i] >= 242 && arr[i + 1] >= 242 && arr[i + 2] >= 242) {
@@ -3377,9 +3395,31 @@
         arr[i] = nearest.r;
         arr[i + 1] = nearest.g;
         arr[i + 2] = nearest.b;
+
+        const px = (i / 4) % w;
+        const py = Math.floor((i / 4) / w);
+        if (px < minX) minX = px;
+        if (py < minY) minY = py;
+        if (px > maxX) maxX = px;
+        if (py > maxY) maxY = py;
       }
       cx.putImageData(d, 0, 0);
-      return c;
+
+      if (maxX < minX || maxY < minY) return c;
+      const pad = 2;
+      const cropX = Math.max(0, minX - pad);
+      const cropY = Math.max(0, minY - pad);
+      const cropW = Math.min(w - cropX, (maxX - minX + 1) + (pad * 2));
+      const cropH = Math.min(h - cropY, (maxY - minY + 1) + (pad * 2));
+      const out = document.createElement('canvas');
+      out.width = Math.max(1, cropW);
+      out.height = Math.max(1, cropH);
+      const outCtx = out.getContext('2d');
+      if (!outCtx) return c;
+      outCtx.imageSmoothingEnabled = true;
+      outCtx.imageSmoothingQuality = 'high';
+      outCtx.drawImage(c, cropX, cropY, cropW, cropH, 0, 0, out.width, out.height);
+      return out;
     }
 
     function buildSquareTile(hex) {
