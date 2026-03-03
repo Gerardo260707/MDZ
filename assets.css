@@ -226,8 +226,10 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .especiales-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding:20px 28px}
 .especiales-search-panel{padding:14px 28px}
 .special-search-input{width:min(100%,560px);height:42px;border:1px solid #cdb8a6;border-radius:10px;padding:0 12px;font-size:15px}
-.special-customizer-model-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.special-customizer-model-item{background:#f1ece6 !important;color:#4b2a1d !important;border:1px solid #d4c3b4}
+.especiales-search-panel .model-search{max-width:560px;width:100%}
+.especiales-search-panel .model-search input{padding:10px 12px;border-radius:10px;font-size:14px}
+.especiales-search-panel .special-customizer-model-list{margin-top:8px;max-height:240px}
+.especiales-search-panel .special-customizer-model-item{font-size:13px}
 
 .btn-special-personalizar{display:inline-block;margin-top:8px;padding:8px 12px;border-radius:8px;background:#0f3f8f;color:#fff;text-decoration:none;font-size:13px}
 .especiales-customizer-wrap{display:grid;gap:12px}
