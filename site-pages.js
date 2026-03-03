@@ -712,7 +712,7 @@
     return { ...fallback, ...external, page: { ...fallback.page, ...(external.page || {}) }, logo: { ...fallback.logo, ...(external.logo || {}) }, title: { ...fallback.title, ...(external.title || {}) }, model: { ...fallback.model, ...(external.model || {}) }, contact: { ...fallback.contact, ...(external.contact || {}) }, pattern: { ...fallback.pattern, ...(external.pattern || {}) }, colorsTitle: { ...fallback.colorsTitle, ...(external.colorsTitle || {}) }, colors: { ...fallback.colors, ...(external.colors || {}) } };
   }
 
-  const COLORS = getCustomizerColors();
+  const COLORS = getCustomizerPalette();
 
   function hexToRgb(hex) {
     return {
