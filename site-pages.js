@@ -3080,6 +3080,7 @@
       compareHost.classList.add('open');
       compareHost.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
+      await new Promise((resolve) => window.requestAnimationFrame(resolve));
       for (let i = 0; i < compareRequired; i++) {
         const img = comparePicked[i];
         const slot = compareSlots[i];
@@ -3447,30 +3448,18 @@
 
 
   function initEspecialesSearch() {
-    const input = q('specialModelsSearch');
-    if (!input) return;
-    const cards = Array.from(document.querySelectorAll('.special-card'));
-    const heads = Array.from(document.querySelectorAll('.special-section-head'));
-    const grids = Array.from(document.querySelectorAll('[data-special-section-grid]'));
+    const wrap = document.querySelector('[data-special-customizer-search="1"]');
+    if (!wrap) return;
+    const input = q('specialCustomizerModelSearch');
+    const items = Array.from(document.querySelectorAll('.special-customizer-model-item'));
+    if (!input || !items.length) return;
 
     function applyFilter() {
       const qv = String(input.value || '').toLowerCase().trim();
-      const visibleBySection = {};
-      cards.forEach((card) => {
-        const name = String(card.dataset.modelName || '').toLowerCase();
+      items.forEach((item) => {
+        const name = String(item.dataset.modelName || '').toLowerCase();
         const match = !qv || name.includes(qv);
-        card.style.display = match ? '' : 'none';
-        const sec = card.closest('[data-special-section-grid]');
-        const key = sec ? sec.getAttribute('data-special-section-grid') : '';
-        if (match && key) visibleBySection[key] = true;
-      });
-      grids.forEach((grid) => {
-        const key = grid.getAttribute('data-special-section-grid');
-        grid.style.display = visibleBySection[key] ? '' : 'none';
-      });
-      heads.forEach((head) => {
-        const key = head.getAttribute('data-special-section');
-        head.style.display = visibleBySection[key] ? '' : 'none';
+        item.style.display = match ? '' : 'none';
       });
     }
 

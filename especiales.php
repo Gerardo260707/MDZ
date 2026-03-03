@@ -183,10 +183,6 @@ foreach ($items as $it) {
     </section>
 
 
-    <section class="panel especiales-search-panel">
-      <input type="search" id="specialModelsSearch" class="special-search-input" placeholder="<?= $lang === 'en' ? 'Search special model' : 'Buscar modelo especial' ?>" autocomplete="off" />
-    </section>
-
     <?php foreach (['formas', 'antiderrapantes', 'zoclos'] as $sectionKey):
       $title = $sectionInfo[$lang][$sectionKey]['title'] ?? '';
       $desc = $sectionInfo[$lang][$sectionKey]['desc'] ?? '';
@@ -204,7 +200,7 @@ foreach ($items as $it) {
           . '&pattern=' . rawurlencode($it['pattern_type'])
           . ($it['hex_rot'] !== null ? '&hex_rot=' . rawurlencode((string)$it['hex_rot']) : '');
       ?>
-      <article class="mosaic-card special-card" data-model-name="<?= htmlspecialchars(strtolower($it['name']), ENT_QUOTES) ?>">
+      <article class="mosaic-card special-card">
         <img src="<?= htmlspecialchars($it['img'], ENT_QUOTES) ?>" alt="<?= htmlspecialchars($it['name'], ENT_QUOTES) ?>" data-pattern-type="<?= htmlspecialchars((string)$it['pattern_type'], ENT_QUOTES) ?>" data-overlay-src="<?= htmlspecialchars((string)$it['overlay_img'], ENT_QUOTES) ?>" <?= $it['overlay_direct'] ? 'data-overlay-direct="1"' : '' ?> <?= $it['hex_rot'] !== null ? "data-hex-rotation=\"" . htmlspecialchars((string)$it['hex_rot'], ENT_QUOTES) . "\"" : "" ?> />
         <div class="name"><?= htmlspecialchars($it['name'], ENT_QUOTES) ?></div>
         <?php if ($it['personalizable']): ?>
