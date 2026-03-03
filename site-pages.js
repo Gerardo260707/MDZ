@@ -2958,6 +2958,8 @@
       let drawH = drawW / ratio;
       if (drawH > boxH) { drawH = boxH; drawW = drawH * ratio; }
       ctx.save();
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       ctx.translate(cx, cy);
       if (angle) ctx.rotate(angle);
       ctx.drawImage(tile, -drawW / 2, -drawH / 2, drawW, drawH);
@@ -2972,8 +2974,8 @@
       if (type === 'triangular') {
         const tileW = Math.max(120, cssW / Math.max(6, Math.round(cssW / 150)));
         const tileH = tileW * 0.9;
-        const stepX = tileW * 0.47;
-        const stepY = tileH * 1.08;
+        const stepX = tileW * 0.49;
+        const stepY = tileH * 0.79;
         const cols = Math.ceil((cssW + tileW * 2) / stepX);
         const rows = Math.ceil((cssH + tileH * 2) / stepY);
         for (let r = -2; r < rows; r++) {
@@ -3193,6 +3195,8 @@
         drawW = drawH * ratio;
       }
       ctx.save();
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       ctx.translate(cx, cy);
       if (angle) ctx.rotate(angle);
       ctx.drawImage(tile, -drawW / 2, -drawH / 2, drawW, drawH);
@@ -3274,8 +3278,8 @@
       function renderTri() {
         const baseW = Math.max(110, cssW / Math.max(6, Math.round(cssW / 140)));
         const baseH = baseW * 0.9;
-        const stepX = baseW * 0.47;
-        const stepY = baseH * 1.08;
+        const stepX = baseW * 0.49;
+        const stepY = baseH * 0.79;
         const cols = Math.ceil((cssW + baseW * 2) / stepX);
         const rows = Math.ceil((cssH + baseH * 2) / stepY);
         for (let row = -2; row < rows; row++) {
@@ -3324,6 +3328,7 @@
     function buildOriginalTile(img) {
       const w = img.naturalWidth || img.width;
       const h = img.naturalHeight || img.height;
+      if (!w || !h) return null;
       const c = document.createElement('canvas');
       c.width = w;
       c.height = h;
@@ -3332,8 +3337,46 @@
       cx.drawImage(img, 0, 0, w, h);
       const d = cx.getImageData(0, 0, w, h);
       const arr = d.data;
+      const paletteRgb = allColors
+        .map((col) => {
+          const hex = String(col.hex || '').trim();
+          if (!/^#[0-9a-f]{6}$/i.test(hex)) return null;
+          return {
+            r: parseInt(hex.slice(1, 3), 16),
+            g: parseInt(hex.slice(3, 5), 16),
+            b: parseInt(hex.slice(5, 7), 16),
+          };
+        })
+        .filter(Boolean);
+
+      function nearestPaletteColor(r, g, b) {
+        if (!paletteRgb.length) return { r, g, b };
+        let best = paletteRgb[0];
+        let bestDist = Number.POSITIVE_INFINITY;
+        for (let i = 0; i < paletteRgb.length; i++) {
+          const p = paletteRgb[i];
+          const dr = r - p.r;
+          const dg = g - p.g;
+          const db = b - p.b;
+          const dist = (dr * dr) + (dg * dg) + (db * db);
+          if (dist < bestDist) {
+            bestDist = dist;
+            best = p;
+          }
+        }
+        return best;
+      }
+
       for (let i = 0; i < arr.length; i += 4) {
-        if (arr[i] >= 242 && arr[i + 1] >= 242 && arr[i + 2] >= 242) arr[i + 3] = 0;
+        if (arr[i + 3] === 0) continue;
+        if (arr[i] >= 242 && arr[i + 1] >= 242 && arr[i + 2] >= 242) {
+          arr[i + 3] = 0;
+          continue;
+        }
+        const nearest = nearestPaletteColor(arr[i], arr[i + 1], arr[i + 2]);
+        arr[i] = nearest.r;
+        arr[i + 1] = nearest.g;
+        arr[i + 2] = nearest.b;
       }
       cx.putImageData(d, 0, 0);
       return c;
