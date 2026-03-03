@@ -3004,6 +3004,78 @@
       ctx.restore();
     }
 
+    function drawPolygonTilePreview(ctx, tile, cssW, cssH, sides, rotation = -Math.PI / 2, scale = 0.44) {
+      const size = Math.min(cssW, cssH) * scale;
+      const cx = cssW / 2;
+      const cy = cssH / 2;
+
+      if (!Number.isFinite(sides) || sides < 3) {
+        drawTileFit(ctx, tile, cx, cy, cssW * 0.94, cssH * 0.94, 0);
+        return;
+      }
+
+      function tracePath() {
+        ctx.beginPath();
+        for (let i = 0; i < sides; i++) {
+          const a = rotation + ((Math.PI * 2) * i / sides);
+          const x = cx + Math.cos(a) * size;
+          const y = cy + Math.sin(a) * size;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+      }
+
+      ctx.save();
+      tracePath();
+      ctx.clip();
+      drawTileFit(ctx, tile, cx, cy, size * 2.05, size * 2.05, 0);
+      ctx.restore();
+
+      ctx.save();
+      tracePath();
+      ctx.lineWidth = Math.max(2, Math.min(cssW, cssH) * 0.01);
+      ctx.strokeStyle = 'rgba(0,0,0,.28)';
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawPolygonTilePreview(ctx, tile, cssW, cssH, sides, rotation = -Math.PI / 2, scale = 0.44) {
+      const size = Math.min(cssW, cssH) * scale;
+      const cx = cssW / 2;
+      const cy = cssH / 2;
+
+      if (!Number.isFinite(sides) || sides < 3) {
+        drawTileFit(ctx, tile, cx, cy, cssW * 0.94, cssH * 0.94, 0);
+        return;
+      }
+
+      function tracePath() {
+        ctx.beginPath();
+        for (let i = 0; i < sides; i++) {
+          const a = rotation + ((Math.PI * 2) * i / sides);
+          const x = cx + Math.cos(a) * size;
+          const y = cy + Math.sin(a) * size;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+      }
+
+      ctx.save();
+      tracePath();
+      ctx.clip();
+      drawTileFit(ctx, tile, cx, cy, size * 2.05, size * 2.05, 0);
+      ctx.restore();
+
+      ctx.save();
+      tracePath();
+      ctx.lineWidth = Math.max(2, Math.min(cssW, cssH) * 0.01);
+      ctx.strokeStyle = 'rgba(0,0,0,.28)';
+      ctx.stroke();
+      ctx.restore();
+    }
+
     function renderByPatternType(targetCanvas, targetCard, tileCanvas, patternType, rotationSeed) {
       const setup = setupPatternCanvas(targetCanvas, targetCard);
       if (!setup) return;
@@ -3247,6 +3319,42 @@
       ctx.translate(cx, cy);
       if (angle) ctx.rotate(angle);
       ctx.drawImage(tile, -drawW / 2, -drawH / 2, drawW, drawH);
+      ctx.restore();
+    }
+
+    function drawPolygonTilePreview(ctx, tile, cssW, cssH, sides, rotation = -Math.PI / 2, scale = 0.44) {
+      const size = Math.min(cssW, cssH) * scale;
+      const cx = cssW / 2;
+      const cy = cssH / 2;
+
+      if (!Number.isFinite(sides) || sides < 3) {
+        drawTileFit(ctx, tile, cx, cy, cssW * 0.94, cssH * 0.94, 0);
+        return;
+      }
+
+      function tracePath() {
+        ctx.beginPath();
+        for (let i = 0; i < sides; i++) {
+          const a = rotation + ((Math.PI * 2) * i / sides);
+          const x = cx + Math.cos(a) * size;
+          const y = cy + Math.sin(a) * size;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+      }
+
+      ctx.save();
+      tracePath();
+      ctx.clip();
+      drawTileFit(ctx, tile, cx, cy, size * 2.05, size * 2.05, 0);
+      ctx.restore();
+
+      ctx.save();
+      tracePath();
+      ctx.lineWidth = Math.max(2, Math.min(cssW, cssH) * 0.01);
+      ctx.strokeStyle = 'rgba(0,0,0,.28)';
+      ctx.stroke();
       ctx.restore();
     }
 
