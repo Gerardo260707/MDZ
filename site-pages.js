@@ -3237,6 +3237,8 @@
         const tileCanvas = await extractSpecialTile(sourceForTile);
         if (tileCanvas && slotCanvas) {
           renderByPatternType(slotCanvas, slot, tileCanvas, img.dataset.patternType || 'hexagonal', Number.parseFloat(img.dataset.hexRotation || ''));
+        } else if (slotCanvas) {
+          drawDirectOverlayImage(slotCanvas, slot, sourceForTile);
         }
       }
     }
@@ -3305,10 +3307,11 @@
     const allColors = Array.isArray(COLORS) ? COLORS : [];
     let selectedColor = allColors[0]?.hex || '#A3AD50';
     let selectedSquareColor = allColors[1]?.hex || allColors[0]?.hex || '#A3AD50';
-    let activeTarget = 'main';
+    let selectedPaintColor = selectedColor;
     let originalTileCanvas = null;
     let tileCanvas = null;
     let squareTileCanvas = null;
+    let editMetrics = null;
 
     function setupCanvas(targetCanvas, ratio = 4 / 3) {
       const dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -3326,11 +3329,8 @@
 
     function previewRatioForPattern(type, tileRatio) {
       const safeTileRatio = Math.max(0.45, Math.min(2.4, Number(tileRatio) || 1));
-      if (type === 'cuadrado' || type === 'octagonal') return 1;
-      if (type === 'triangular') return Math.max(1.05, Math.min(1.35, safeTileRatio * 1.25));
-      if (type === 'cantaro') return Math.max(1.2, Math.min(1.7, safeTileRatio * 1.35));
-      if (type === 'otros') return Math.max(1.15, Math.min(1.75, safeTileRatio * 1.4));
-      return Math.max(1.2, Math.min(1.8, safeTileRatio * 1.5)); // hexagonal por defecto
+      if (type === 'triangular') return Math.max(1.15, Math.min(1.4, safeTileRatio * 1.2));
+      return 4 / 3;
     }
 
     function drawTileFit(ctx, tile, cx, cy, boxW, boxH, angle = 0) {
@@ -3348,6 +3348,17 @@
       if (angle) ctx.rotate(angle);
       ctx.drawImage(tile, -drawW / 2, -drawH / 2, drawW, drawH);
       ctx.restore();
+    }
+
+    function fitSize(tile, boxW, boxH) {
+      const ratio = (tile.width || 1) / Math.max(1, (tile.height || 1));
+      let drawW = boxW;
+      let drawH = drawW / ratio;
+      if (drawH > boxH) {
+        drawH = boxH;
+        drawW = drawH * ratio;
+      }
+      return { drawW, drawH };
     }
 
     function drawPolygonTilePreview(ctx, tile, cssW, cssH, sides, rotation = -Math.PI / 2, scale = 0.44) {
@@ -3398,17 +3409,40 @@
       if (patternType === 'hexagonal') drawPolygonTilePreview(ctx, tileCanvas, cssW, cssH, 6, -Math.PI / 2, 0.44);
       else if (patternType === 'triangular') drawPolygonTilePreview(ctx, tileCanvas, cssW, cssH, 3, -Math.PI / 2, 0.48);
       else if (patternType === 'cuadrado') drawPolygonTilePreview(ctx, tileCanvas, cssW, cssH, 4, Math.PI / 4, 0.46);
-      else if (patternType === 'octagonal') drawPolygonTilePreview(ctx, tileCanvas, cssW, cssH, 8, Math.PI / 8, 0.45);
-      else drawTileFit(ctx, tileCanvas, cssW / 2, cssH / 2, cssW * 0.94, cssH * 0.94, 0);
-
-      if (squareEditCanvas && squareTileCanvas) {
-        const sqWrap = squareEditCanvas.closest('.vector-editor');
-        if (sqWrap) sqWrap.style.aspectRatio = '1 / 1';
-        const sq = setupCanvas(squareEditCanvas, 1);
-        if (sq) {
-          sq.ctx.clearRect(0, 0, sq.cssW, sq.cssH);
-          drawTileFit(sq.ctx, squareTileCanvas, sq.cssW / 2, sq.cssH / 2, sq.cssW * 0.74, sq.cssH * 0.74, 0);
+      else if (patternType === 'octagonal') {
+        const minDim = Math.min(cssW, cssH);
+        const mainSize = minDim * 0.45;
+        const mainBox = mainSize * 2.05;
+        drawPolygonTilePreview(ctx, tileCanvas, cssW, cssH, 8, Math.PI / 8, 0.45);
+        if (squareTileCanvas) {
+          const sqSize = minDim * 0.18;
+          const sqBox = sqSize * 2.05;
+          drawPolygonTilePreview(ctx, squareTileCanvas, cssW, cssH, 4, Math.PI / 4, 0.18);
+          const mainFit = fitSize(tileCanvas, mainBox, mainBox);
+          const sqFit = fitSize(squareTileCanvas, sqBox, sqBox);
+          editMetrics = {
+            cssW,
+            cssH,
+            main: { x: (cssW - mainFit.drawW) / 2, y: (cssH - mainFit.drawH) / 2, w: mainFit.drawW, h: mainFit.drawH },
+            square: { x: (cssW - sqFit.drawW) / 2, y: (cssH - sqFit.drawH) / 2, w: sqFit.drawW, h: sqFit.drawH, diamondRadius: sqSize },
+          };
+        } else {
+          const mainFit = fitSize(tileCanvas, mainBox, mainBox);
+          editMetrics = {
+            cssW,
+            cssH,
+            main: { x: (cssW - mainFit.drawW) / 2, y: (cssH - mainFit.drawH) / 2, w: mainFit.drawW, h: mainFit.drawH },
+          };
         }
+      } else drawTileFit(ctx, tileCanvas, cssW / 2, cssH / 2, cssW * 0.94, cssH * 0.94, 0);
+
+      if (patternType !== 'octagonal') {
+        editMetrics = { cssW, cssH, main: { x: cssW * 0.03, y: cssH * 0.03, w: cssW * 0.94, h: cssH * 0.94 } };
+      }
+
+      if (squareEditCanvas) {
+        const sqWrap = squareEditCanvas.closest('.vector-editor');
+        if (sqWrap) sqWrap.hidden = true;
       }
     }
 
@@ -3461,7 +3495,7 @@
             if (oct) angle += Math.PI / 4;
             drawTileFit(ctx, tileCanvas, (c + 0.5) * size, (r + 0.5) * size, size * 0.96, size * 0.96, angle);
             if (oct && squareTileCanvas) {
-              drawTileFit(ctx, squareTileCanvas, (c + 1) * size, (r + 1) * size, size * 0.34, size * 0.34, 0);
+              drawTileFit(ctx, squareTileCanvas, (c + 1) * size, (r + 1) * size, size * 0.34, size * 0.34, Math.PI / 4);
             }
           }
         }
@@ -3616,39 +3650,100 @@
       return c;
     }
 
-    function tintTile(sourceCanvas, hex) {
+    function cloneCanvas(sourceCanvas) {
       const c = document.createElement('canvas');
       c.width = sourceCanvas.width;
       c.height = sourceCanvas.height;
-      const cx = c.getContext('2d', { willReadFrequently: true });
+      const cx = c.getContext('2d');
       if (!cx) return null;
       cx.drawImage(sourceCanvas, 0, 0);
-      const d = cx.getImageData(0, 0, c.width, c.height);
+      return c;
+    }
+
+    function floodFillCanvasAt(targetCanvas, x, y, hex) {
+      if (!targetCanvas || !/^#[0-9a-f]{6}$/i.test(String(hex || ''))) return false;
+      const cx = targetCanvas.getContext('2d', { willReadFrequently: true });
+      if (!cx) return false;
+      const w = targetCanvas.width;
+      const h = targetCanvas.height;
+      const sx = Math.floor(x);
+      const sy = Math.floor(y);
+      if (sx < 0 || sy < 0 || sx >= w || sy >= h) return false;
+
+      const d = cx.getImageData(0, 0, w, h);
       const arr = d.data;
+      const idx = (sy * w + sx) * 4;
+      const sa = arr[idx + 3];
+      if (sa < 8) return false;
+      const sr = arr[idx];
+      const sg = arr[idx + 1];
+      const sb = arr[idx + 2];
+
       const nr = parseInt(hex.slice(1, 3), 16);
       const ng = parseInt(hex.slice(3, 5), 16);
       const nb = parseInt(hex.slice(5, 7), 16);
-      for (let i = 0; i < arr.length; i += 4) {
-        if (arr[i + 3] === 0) continue;
-        const lum = (arr[i] + arr[i + 1] + arr[i + 2]) / 765;
-        arr[i] = Math.round(nr * (0.55 + lum * 0.45));
-        arr[i + 1] = Math.round(ng * (0.55 + lum * 0.45));
-        arr[i + 2] = Math.round(nb * (0.55 + lum * 0.45));
+
+      if (sr === nr && sg === ng && sb === nb) return false;
+
+      const tol = 26;
+      const tolSq = tol * tol;
+      const visited = new Uint8Array(w * h);
+      const qx = new Int32Array(w * h);
+      const qy = new Int32Array(w * h);
+      let head = 0;
+      let tail = 0;
+      qx[tail] = sx;
+      qy[tail] = sy;
+      tail += 1;
+      visited[sy * w + sx] = 1;
+      let painted = false;
+
+      while (head < tail) {
+        const px = qx[head];
+        const py = qy[head];
+        head += 1;
+        const p = py * w + px;
+        const i = p * 4;
+        if (arr[i + 3] < 8) continue;
+        const dr = arr[i] - sr;
+        const dg = arr[i + 1] - sg;
+        const db = arr[i + 2] - sb;
+        if ((dr * dr) + (dg * dg) + (db * db) > tolSq) continue;
+
+        arr[i] = nr;
+        arr[i + 1] = ng;
+        arr[i + 2] = nb;
+        painted = true;
+
+        function push(nx, ny) {
+          if (nx < 0 || ny < 0 || nx >= w || ny >= h) return;
+          const np = ny * w + nx;
+          if (visited[np]) return;
+          visited[np] = 1;
+          qx[tail] = nx;
+          qy[tail] = ny;
+          tail += 1;
+        }
+
+        push(px - 1, py);
+        push(px + 1, py);
+        push(px, py - 1);
+        push(px, py + 1);
       }
       cx.putImageData(d, 0, 0);
-      return c;
+      return painted;
     }
 
     function rebuildAndRender() {
       if (!originalTileCanvas) return;
-      tileCanvas = tintTile(originalTileCanvas, selectedColor) || originalTileCanvas;
+      tileCanvas = cloneCanvas(originalTileCanvas) || originalTileCanvas;
       squareTileCanvas = buildSquareTile(selectedSquareColor) || null;
       renderEditBox();
       renderPattern();
     }
 
     function refreshPaletteActive() {
-      const value = activeTarget === 'square' ? selectedSquareColor : selectedColor;
+      const value = selectedPaintColor;
       paletteEl.querySelectorAll('.sw').forEach((node) => {
         const isActive = String(node.dataset.hex || '').toLowerCase() === String(value || '').toLowerCase();
         node.classList.toggle('active', isActive);
@@ -3664,27 +3759,66 @@
         btn.style.background = col.hex;
         btn.title = `${col.id} · ${col.hex}`;
         btn.dataset.hex = col.hex;
-        btn.textContent = col.id;
+        btn.setAttribute('aria-label', `${col.id} ${col.name || ''}`.trim());
+        btn.innerHTML = `<span class="${String(col.id || '').length > 6 ? 'long' : ''}">${col.id}</span>`;
         btn.addEventListener('click', () => {
-          if (activeTarget === 'square') selectedSquareColor = col.hex;
-          else selectedColor = col.hex;
+          selectedPaintColor = col.hex;
           refreshPaletteActive();
-          rebuildAndRender();
         });
         paletteEl.appendChild(btn);
       });
     }
 
+    const targetsWrap = document.querySelector('.special-editor-targets');
+    if (targetsWrap) targetsWrap.hidden = true;
 
-    const mainTargetBtn = q('specialTargetMain');
-    const squareTargetBtn = q('specialTargetSquare');
-    function syncTargetButtons() {
-      if (mainTargetBtn) mainTargetBtn.classList.toggle('active', activeTarget === 'main');
-      if (squareTargetBtn) squareTargetBtn.classList.toggle('active', activeTarget === 'square');
+    function mapPointToTile(pointX, pointY, box, targetCanvas) {
+      if (!box || !targetCanvas || box.w <= 0 || box.h <= 0) return null;
+      const relX = (pointX - box.x) / box.w;
+      const relY = (pointY - box.y) / box.h;
+      if (relX < 0 || relY < 0 || relX > 1 || relY > 1) return null;
+      return {
+        x: Math.max(0, Math.min(targetCanvas.width - 1, Math.floor(relX * targetCanvas.width))),
+        y: Math.max(0, Math.min(targetCanvas.height - 1, Math.floor(relY * targetCanvas.height))),
+      };
     }
-    if (mainTargetBtn) mainTargetBtn.addEventListener('click', () => { activeTarget = 'main'; syncTargetButtons(); refreshPaletteActive(); });
-    if (squareTargetBtn) squareTargetBtn.addEventListener('click', () => { activeTarget = 'square'; syncTargetButtons(); refreshPaletteActive(); });
-    syncTargetButtons();
+
+    editCanvas.addEventListener('click', (ev) => {
+      if (!tileCanvas || !editMetrics) return;
+      const rect = editCanvas.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const x = ((ev.clientX - rect.left) / rect.width) * editMetrics.cssW;
+      const y = ((ev.clientY - rect.top) / rect.height) * editMetrics.cssH;
+      const cx = editMetrics.cssW / 2;
+      const cy = editMetrics.cssH / 2;
+
+      let painted = false;
+      if (patternType === 'octagonal' && squareTileCanvas && editMetrics.square) {
+        const dx = Math.abs(x - cx);
+        const dy = Math.abs(y - cy);
+        const insideDiamond = (dx + dy) <= editMetrics.square.diamondRadius;
+        if (insideDiamond) {
+          const sqPoint = mapPointToTile(x, y, editMetrics.square, squareTileCanvas);
+          if (sqPoint) {
+            painted = floodFillCanvasAt(squareTileCanvas, sqPoint.x, sqPoint.y, selectedPaintColor);
+            if (painted) selectedSquareColor = selectedPaintColor;
+          }
+        }
+      }
+
+      if (!painted) {
+        const mainPoint = mapPointToTile(x, y, editMetrics.main, tileCanvas);
+        if (mainPoint) {
+          painted = floodFillCanvasAt(tileCanvas, mainPoint.x, mainPoint.y, selectedPaintColor);
+          if (painted) selectedColor = selectedPaintColor;
+        }
+      }
+
+      if (painted) {
+        renderEditBox();
+        renderPattern();
+      }
+    });
 
     imgEl.addEventListener('load', () => {
       originalTileCanvas = buildOriginalTile(imgEl);
@@ -3701,6 +3835,7 @@
     }
 
     renderPalette();
+    refreshPaletteActive();
     window.addEventListener('resize', () => {
       renderEditBox();
       renderPattern();
