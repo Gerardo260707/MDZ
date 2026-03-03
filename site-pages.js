@@ -3640,13 +3640,9 @@
       c.height = 220;
       const cx = c.getContext('2d');
       if (!cx) return null;
-      cx.fillStyle = '#ffffff';
-      cx.fillRect(0, 0, c.width, c.height);
+      cx.clearRect(0, 0, c.width, c.height);
       cx.fillStyle = hex;
-      cx.fillRect(26, 26, c.width - 52, c.height - 52);
-      cx.strokeStyle = 'rgba(0,0,0,.18)';
-      cx.lineWidth = 4;
-      cx.strokeRect(26, 26, c.width - 52, c.height - 52);
+      cx.fillRect(0, 0, c.width, c.height);
       return c;
     }
 

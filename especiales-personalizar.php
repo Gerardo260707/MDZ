@@ -130,11 +130,11 @@ $personalizables = carga_personalizables(__DIR__ . '/config/categorias_especiale
           <h3><?= $lang === 'en' ? 'Model customization' : 'Personalización del modelo' ?></h3>
           <div class="special-editor-targets" <?= $pattern === 'octagonal' ? '' : 'hidden' ?>>
             <button type="button" id="specialTargetMain" class="btn btn-small active"><?= $lang === 'en' ? 'Octagonal piece' : 'Pieza octagonal' ?></button>
-            <button type="button" id="specialTargetSquare" class="btn btn-small"><?= $lang === 'en' ? 'Center square' : 'Cuadro central' ?></button>
+            <button type="button" id="specialTargetSquare" class="btn btn-small"><?= $lang === 'en' ? 'Solid' : 'Liso' ?></button>
           </div>
           <div class="vector-editor"><canvas id="specialEditCanvas" class="vector-canvas" width="600" height="600"></canvas></div>
           <div id="specialSquareEditorWrap" <?= $pattern === 'octagonal' ? '' : 'hidden' ?>>
-            <h3><?= $lang === 'en' ? 'Square customization' : 'Personalización del cuadro' ?></h3>
+            <h3><?= $lang === 'en' ? 'Solid customization' : 'Personalización de liso' ?></h3>
             <div class="vector-editor"><canvas id="specialSquareEditCanvas" class="vector-canvas" width="600" height="600"></canvas></div>
           </div>
         </div>
