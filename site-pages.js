@@ -2968,34 +2968,36 @@
       ctx.restore();
     }
 
-    function drawHexTilePreview(ctx, tile, cssW, cssH) {
-      const size = Math.min(cssW, cssH) * 0.44;
+    function drawPolygonTilePreview(ctx, tile, cssW, cssH, sides, rotation = -Math.PI / 2, scale = 0.44) {
+      const size = Math.min(cssW, cssH) * scale;
       const cx = cssW / 2;
       const cy = cssH / 2;
-      ctx.save();
-      ctx.beginPath();
-      for (let i = 0; i < 6; i++) {
-        const a = (-Math.PI / 2) + ((Math.PI * 2) * i / 6);
-        const x = cx + Math.cos(a) * size;
-        const y = cy + Math.sin(a) * size;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+
+      if (!Number.isFinite(sides) || sides < 3) {
+        drawTileFit(ctx, tile, cx, cy, cssW * 0.94, cssH * 0.94, 0);
+        return;
       }
-      ctx.closePath();
+
+      function tracePath() {
+        ctx.beginPath();
+        for (let i = 0; i < sides; i++) {
+          const a = rotation + ((Math.PI * 2) * i / sides);
+          const x = cx + Math.cos(a) * size;
+          const y = cy + Math.sin(a) * size;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+      }
+
+      ctx.save();
+      tracePath();
       ctx.clip();
       drawTileFit(ctx, tile, cx, cy, size * 2.05, size * 2.05, 0);
       ctx.restore();
 
       ctx.save();
-      ctx.beginPath();
-      for (let i = 0; i < 6; i++) {
-        const a = (-Math.PI / 2) + ((Math.PI * 2) * i / 6);
-        const x = cx + Math.cos(a) * size;
-        const y = cy + Math.sin(a) * size;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.closePath();
+      tracePath();
       ctx.lineWidth = Math.max(2, Math.min(cssW, cssH) * 0.01);
       ctx.strokeStyle = 'rgba(0,0,0,.28)';
       ctx.stroke();
@@ -3257,11 +3259,11 @@
       if (!setup) return;
       const { ctx, cssW, cssH } = setup;
       ctx.clearRect(0, 0, cssW, cssH);
-      if (patternType === 'hexagonal') {
-        drawHexTilePreview(ctx, tileCanvas, cssW, cssH);
-      } else {
-        drawTileFit(ctx, tileCanvas, cssW / 2, cssH / 2, cssW * 0.94, cssH * 0.94, 0);
-      }
+      if (patternType === 'hexagonal') drawPolygonTilePreview(ctx, tileCanvas, cssW, cssH, 6, -Math.PI / 2, 0.44);
+      else if (patternType === 'triangular') drawPolygonTilePreview(ctx, tileCanvas, cssW, cssH, 3, -Math.PI / 2, 0.48);
+      else if (patternType === 'cuadrado') drawPolygonTilePreview(ctx, tileCanvas, cssW, cssH, 4, Math.PI / 4, 0.46);
+      else if (patternType === 'octagonal') drawPolygonTilePreview(ctx, tileCanvas, cssW, cssH, 8, Math.PI / 8, 0.45);
+      else drawTileFit(ctx, tileCanvas, cssW / 2, cssH / 2, cssW * 0.94, cssH * 0.94, 0);
 
       if (squareEditCanvas && squareTileCanvas) {
         const sqWrap = squareEditCanvas.closest('.vector-editor');
