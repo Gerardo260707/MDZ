@@ -2966,6 +2966,40 @@
       ctx.restore();
     }
 
+    function drawHexTilePreview(ctx, tile, cssW, cssH) {
+      const size = Math.min(cssW, cssH) * 0.44;
+      const cx = cssW / 2;
+      const cy = cssH / 2;
+      ctx.save();
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (-Math.PI / 2) + ((Math.PI * 2) * i / 6);
+        const x = cx + Math.cos(a) * size;
+        const y = cy + Math.sin(a) * size;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.clip();
+      drawTileFit(ctx, tile, cx, cy, size * 2.05, size * 2.05, 0);
+      ctx.restore();
+
+      ctx.save();
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (-Math.PI / 2) + ((Math.PI * 2) * i / 6);
+        const x = cx + Math.cos(a) * size;
+        const y = cy + Math.sin(a) * size;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.lineWidth = Math.max(2, Math.min(cssW, cssH) * 0.01);
+      ctx.strokeStyle = 'rgba(0,0,0,.28)';
+      ctx.stroke();
+      ctx.restore();
+    }
+
     function renderByPatternType(targetCanvas, targetCard, tileCanvas, patternType, rotationSeed) {
       const setup = setupPatternCanvas(targetCanvas, targetCard);
       if (!setup) return;
@@ -3221,7 +3255,11 @@
       if (!setup) return;
       const { ctx, cssW, cssH } = setup;
       ctx.clearRect(0, 0, cssW, cssH);
-      drawTileFit(ctx, tileCanvas, cssW / 2, cssH / 2, cssW * 0.94, cssH * 0.94, 0);
+      if (patternType === 'hexagonal') {
+        drawHexTilePreview(ctx, tileCanvas, cssW, cssH);
+      } else {
+        drawTileFit(ctx, tileCanvas, cssW / 2, cssH / 2, cssW * 0.94, cssH * 0.94, 0);
+      }
 
       if (squareEditCanvas && squareTileCanvas) {
         const sqWrap = squareEditCanvas.closest('.vector-editor');
