@@ -3111,12 +3111,12 @@
       const type = String(patternType || '').toLowerCase();
       if (type === 'triangular') {
         const cols = Math.max(6, Math.round(cssW / 150));
-        const side = cssW / cols;
-        const tileW = side;
-        const tileH = side * 0.8660254;
-        const stepX = side / 2;
+        const tileW = cssW / cols;
+        const tileRatio = (tileCanvas.width || 1) / Math.max(1, (tileCanvas.height || 1));
+        const tileH = tileW / Math.max(0.3, tileRatio);
+        const stepX = tileW / 2;
         const stepY = tileH;
-        const drawCols = Math.ceil((cssW + side * 4) / stepX);
+        const drawCols = Math.ceil((cssW + tileW * 4) / stepX);
         const drawRows = Math.ceil((cssH + tileH * 4) / stepY);
         for (let r = -3; r < drawRows; r++) {
           const rowOffset = (r % 2 === 0) ? 0 : (stepX / 2);
@@ -3312,9 +3312,11 @@
     let selectedSquareColor = allColors[1]?.hex || allColors[0]?.hex || '#A3AD50';
     let selectedPaintColor = selectedColor;
     let originalTileCanvas = null;
+    let originalSquareTileCanvas = null;
     let tileCanvas = null;
     let squareTileCanvas = null;
     let editMetrics = null;
+    let squareEditMetrics = null;
 
     function setupCanvas(targetCanvas, ratio = 4 / 3) {
       const dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -3413,30 +3415,8 @@
       else if (patternType === 'triangular') drawPolygonTilePreview(ctx, tileCanvas, cssW, cssH, 3, -Math.PI / 2, 0.48);
       else if (patternType === 'cuadrado') drawPolygonTilePreview(ctx, tileCanvas, cssW, cssH, 4, Math.PI / 4, 0.46);
       else if (patternType === 'octagonal') {
-        const minDim = Math.min(cssW, cssH);
-        const mainSize = minDim * 0.45;
-        const mainBox = mainSize * 2.05;
         drawPolygonTilePreview(ctx, tileCanvas, cssW, cssH, 8, Math.PI / 8, 0.45);
-        if (squareTileCanvas) {
-          const sqSize = minDim * 0.18;
-          const sqBox = sqSize * 2.05;
-          drawPolygonTilePreview(ctx, squareTileCanvas, cssW, cssH, 4, Math.PI / 4, 0.18);
-          const mainFit = fitSize(tileCanvas, mainBox, mainBox);
-          const sqFit = fitSize(squareTileCanvas, sqBox, sqBox);
-          editMetrics = {
-            cssW,
-            cssH,
-            main: { x: (cssW - mainFit.drawW) / 2, y: (cssH - mainFit.drawH) / 2, w: mainFit.drawW, h: mainFit.drawH },
-            square: { x: (cssW - sqFit.drawW) / 2, y: (cssH - sqFit.drawH) / 2, w: sqFit.drawW, h: sqFit.drawH, diamondRadius: sqSize },
-          };
-        } else {
-          const mainFit = fitSize(tileCanvas, mainBox, mainBox);
-          editMetrics = {
-            cssW,
-            cssH,
-            main: { x: (cssW - mainFit.drawW) / 2, y: (cssH - mainFit.drawH) / 2, w: mainFit.drawW, h: mainFit.drawH },
-          };
-        }
+        editMetrics = { cssW, cssH, main: { x: cssW * 0.04, y: cssH * 0.04, w: cssW * 0.92, h: cssH * 0.92 } };
       } else drawTileFit(ctx, tileCanvas, cssW / 2, cssH / 2, cssW * 0.94, cssH * 0.94, 0);
 
       if (patternType !== 'octagonal') {
@@ -3445,7 +3425,17 @@
 
       if (squareEditCanvas) {
         const sqWrap = squareEditCanvas.closest('.vector-editor');
-        if (sqWrap) sqWrap.hidden = true;
+        if (sqWrap) sqWrap.hidden = patternType !== 'octagonal';
+        if (patternType === 'octagonal' && squareTileCanvas) {
+          if (sqWrap) sqWrap.style.aspectRatio = '1 / 1';
+          const sqSetup = setupCanvas(squareEditCanvas, 1);
+          if (sqSetup) {
+            const { ctx: sqCtx, cssW: sqW, cssH: sqH } = sqSetup;
+            sqCtx.clearRect(0, 0, sqW, sqH);
+            drawPolygonTilePreview(sqCtx, squareTileCanvas, sqW, sqH, 4, Math.PI / 4, 0.42);
+            squareEditMetrics = { cssW: sqW, cssH: sqH, main: { x: sqW * 0.04, y: sqH * 0.04, w: sqW * 0.92, h: sqH * 0.92 } };
+          }
+        }
       }
     }
 
@@ -3498,7 +3488,7 @@
             if (oct) angle += Math.PI / 4;
             drawTileFit(ctx, tileCanvas, (c + 0.5) * size, (r + 0.5) * size, size * 0.96, size * 0.96, angle);
             if (oct && squareTileCanvas) {
-              drawTileFit(ctx, squareTileCanvas, (c + 1) * size, (r + 1) * size, size * 0.34, size * 0.34, Math.PI / 4);
+              drawTileFit(ctx, squareTileCanvas, (c + 1) * size, (r + 1) * size, size * 0.52, size * 0.52, Math.PI / 4);
             }
           }
         }
@@ -3506,12 +3496,12 @@
 
       function renderTri() {
         const cols = Math.max(6, Math.round(cssW / 150));
-        const side = cssW / cols;
-        const baseW = side;
-        const baseH = side * 0.8660254;
-        const stepX = side / 2;
+        const baseW = cssW / cols;
+        const baseRatio = (tileCanvas.width || 1) / Math.max(1, (tileCanvas.height || 1));
+        const baseH = baseW / Math.max(0.3, baseRatio);
+        const stepX = baseW / 2;
         const stepY = baseH;
-        const drawCols = Math.ceil((cssW + side * 4) / stepX);
+        const drawCols = Math.ceil((cssW + baseW * 4) / stepX);
         const drawRows = Math.ceil((cssH + baseH * 4) / stepY);
         for (let row = -3; row < drawRows; row++) {
           const rowOffset = (row % 2 === 0) ? 0 : (stepX / 2);
@@ -3569,36 +3559,6 @@
       cx.drawImage(img, 0, 0, w, h);
       const d = cx.getImageData(0, 0, w, h);
       const arr = d.data;
-      const paletteRgb = allColors
-        .map((col) => {
-          const hex = String(col.hex || '').trim();
-          if (!/^#[0-9a-f]{6}$/i.test(hex)) return null;
-          return {
-            r: parseInt(hex.slice(1, 3), 16),
-            g: parseInt(hex.slice(3, 5), 16),
-            b: parseInt(hex.slice(5, 7), 16),
-          };
-        })
-        .filter(Boolean);
-
-      function nearestPaletteColor(r, g, b) {
-        if (!paletteRgb.length) return { r, g, b };
-        let best = paletteRgb[0];
-        let bestDist = Number.POSITIVE_INFINITY;
-        for (let i = 0; i < paletteRgb.length; i++) {
-          const p = paletteRgb[i];
-          const dr = r - p.r;
-          const dg = g - p.g;
-          const db = b - p.b;
-          const dist = (dr * dr) + (dg * dg) + (db * db);
-          if (dist < bestDist) {
-            bestDist = dist;
-            best = p;
-          }
-        }
-        return best;
-      }
-
       let minX = w;
       let minY = h;
       let maxX = -1;
@@ -3609,11 +3569,6 @@
           arr[i + 3] = 0;
           continue;
         }
-        const nearest = nearestPaletteColor(arr[i], arr[i + 1], arr[i + 2]);
-        arr[i] = nearest.r;
-        arr[i + 1] = nearest.g;
-        arr[i + 2] = nearest.b;
-
         const px = (i / 4) % w;
         const py = Math.floor((i / 4) / w);
         if (px < minX) minX = px;
@@ -3662,24 +3617,27 @@
       return c;
     }
 
-    function floodFillCanvasAt(targetCanvas, x, y, hex) {
-      if (!targetCanvas || !/^#[0-9a-f]{6}$/i.test(String(hex || ''))) return false;
+    function floodFillCanvasAt(sourceCanvas, targetCanvas, x, y, hex) {
+      if (!targetCanvas || !sourceCanvas || !/^#[0-9a-f]{6}$/i.test(String(hex || ''))) return false;
       const cx = targetCanvas.getContext('2d', { willReadFrequently: true });
-      if (!cx) return false;
+      const sxCtx = sourceCanvas.getContext('2d', { willReadFrequently: true });
+      if (!cx || !sxCtx) return false;
       const w = targetCanvas.width;
       const h = targetCanvas.height;
+      if (sourceCanvas.width !== w || sourceCanvas.height !== h) return false;
       const sx = Math.floor(x);
       const sy = Math.floor(y);
       if (sx < 0 || sy < 0 || sx >= w || sy >= h) return false;
 
+      const source = sxCtx.getImageData(0, 0, w, h).data;
       const d = cx.getImageData(0, 0, w, h);
       const arr = d.data;
       const idx = (sy * w + sx) * 4;
-      const sa = arr[idx + 3];
+      const sa = source[idx + 3];
       if (sa < 8) return false;
-      const sr = arr[idx];
-      const sg = arr[idx + 1];
-      const sb = arr[idx + 2];
+      const sr = source[idx];
+      const sg = source[idx + 1];
+      const sb = source[idx + 2];
 
       const nr = parseInt(hex.slice(1, 3), 16);
       const ng = parseInt(hex.slice(3, 5), 16);
@@ -3706,10 +3664,10 @@
         head += 1;
         const p = py * w + px;
         const i = p * 4;
-        if (arr[i + 3] < 8) continue;
-        const dr = arr[i] - sr;
-        const dg = arr[i + 1] - sg;
-        const db = arr[i + 2] - sb;
+        if (source[i + 3] < 8) continue;
+        const dr = source[i] - sr;
+        const dg = source[i + 1] - sg;
+        const db = source[i + 2] - sb;
         if ((dr * dr) + (dg * dg) + (db * db) > tolSq) continue;
 
         arr[i] = nr;
@@ -3739,6 +3697,7 @@
     function rebuildAndRender() {
       if (!originalTileCanvas) return;
       tileCanvas = cloneCanvas(originalTileCanvas) || originalTileCanvas;
+      originalSquareTileCanvas = buildSquareTile('#cfcfcf') || null;
       squareTileCanvas = buildSquareTile(selectedSquareColor) || null;
       renderEditBox();
       renderPattern();
@@ -3774,6 +3733,21 @@
     const targetsWrap = document.querySelector('.special-editor-targets');
     if (targetsWrap) targetsWrap.hidden = true;
 
+    if (patternType === 'octagonal') {
+      const mainEditorWrap = editCanvas.closest('.vector-editor');
+      const squareWrap = q('specialSquareEditorWrap');
+      if (mainEditorWrap && squareWrap) {
+        mainEditorWrap.style.display = 'inline-block';
+        mainEditorWrap.style.width = '48%';
+        mainEditorWrap.style.verticalAlign = 'top';
+        squareWrap.style.display = 'inline-block';
+        squareWrap.style.width = '48%';
+        squareWrap.style.marginLeft = '4%';
+        squareWrap.style.marginTop = '0';
+        squareWrap.style.verticalAlign = 'top';
+      }
+    }
+
     function mapPointToTile(pointX, pointY, box, targetCanvas) {
       if (!box || !targetCanvas || box.w <= 0 || box.h <= 0) return null;
       const relX = (pointX - box.x) / box.w;
@@ -3791,36 +3765,35 @@
       if (!rect.width || !rect.height) return;
       const x = ((ev.clientX - rect.left) / rect.width) * editMetrics.cssW;
       const y = ((ev.clientY - rect.top) / rect.height) * editMetrics.cssH;
-      const cx = editMetrics.cssW / 2;
-      const cy = editMetrics.cssH / 2;
-
-      let painted = false;
-      if (patternType === 'octagonal' && squareTileCanvas && editMetrics.square) {
-        const dx = Math.abs(x - cx);
-        const dy = Math.abs(y - cy);
-        const insideDiamond = (dx + dy) <= editMetrics.square.diamondRadius;
-        if (insideDiamond) {
-          const sqPoint = mapPointToTile(x, y, editMetrics.square, squareTileCanvas);
-          if (sqPoint) {
-            painted = floodFillCanvasAt(squareTileCanvas, sqPoint.x, sqPoint.y, selectedPaintColor);
-            if (painted) selectedSquareColor = selectedPaintColor;
-          }
-        }
-      }
-
-      if (!painted) {
-        const mainPoint = mapPointToTile(x, y, editMetrics.main, tileCanvas);
-        if (mainPoint) {
-          painted = floodFillCanvasAt(tileCanvas, mainPoint.x, mainPoint.y, selectedPaintColor);
-          if (painted) selectedColor = selectedPaintColor;
-        }
-      }
+      const mainPoint = mapPointToTile(x, y, editMetrics.main, tileCanvas);
+      const painted = mainPoint
+        ? floodFillCanvasAt(originalTileCanvas, tileCanvas, mainPoint.x, mainPoint.y, selectedPaintColor)
+        : false;
+      if (painted) selectedColor = selectedPaintColor;
 
       if (painted) {
         renderEditBox();
         renderPattern();
       }
     });
+
+    if (squareEditCanvas) {
+      squareEditCanvas.addEventListener('click', (ev) => {
+        if (patternType !== 'octagonal' || !squareTileCanvas || !squareEditMetrics || !originalSquareTileCanvas) return;
+        const rect = squareEditCanvas.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        const x = ((ev.clientX - rect.left) / rect.width) * squareEditMetrics.cssW;
+        const y = ((ev.clientY - rect.top) / rect.height) * squareEditMetrics.cssH;
+        const sqPoint = mapPointToTile(x, y, squareEditMetrics.main, squareTileCanvas);
+        const painted = sqPoint
+          ? floodFillCanvasAt(originalSquareTileCanvas, squareTileCanvas, sqPoint.x, sqPoint.y, selectedPaintColor)
+          : false;
+        if (!painted) return;
+        selectedSquareColor = selectedPaintColor;
+        renderEditBox();
+        renderPattern();
+      });
+    }
 
     imgEl.addEventListener('load', () => {
       originalTileCanvas = buildOriginalTile(imgEl);
