@@ -2746,9 +2746,35 @@
     const imgEl = q('galleryOverlayImg');
     const titleEl = q('galleryOverlayTitle');
     const captionEl = q('galleryOverlayCaption');
-    if (!overlay || !imgEl || !titleEl || !captionEl) return;
+    const cardEl = overlay ? overlay.querySelector('.gallery-overlay-card') : null;
+    if (!overlay || !imgEl || !titleEl || !captionEl || !cardEl) return;
+
+    function updateOverlayCardSize() {
+      if (!overlay.classList.contains('open')) return;
+      const nw = imgEl.naturalWidth || 0;
+      const nh = imgEl.naturalHeight || 0;
+      if (!nw || !nh) {
+        cardEl.style.width = '';
+        cardEl.style.height = '';
+        return;
+      }
+
+      const footerHeight = 78;
+      const maxW = Math.max(320, Math.floor(window.innerWidth * 0.96));
+      const maxImageH = Math.max(220, Math.floor(window.innerHeight * 0.86) - footerHeight);
+      const scale = Math.min(maxW / nw, maxImageH / nh, 1);
+      const targetW = Math.max(260, Math.floor(nw * scale));
+      const targetH = Math.max(180, Math.floor((nh * scale) + footerHeight));
+
+      cardEl.style.width = `${targetW}px`;
+      cardEl.style.height = `${targetH}px`;
+    }
+
+    imgEl.addEventListener('load', updateOverlayCardSize);
 
     function openGallery(src, title, caption) {
+      cardEl.style.width = '';
+      cardEl.style.height = '';
       imgEl.src = src || '';
       imgEl.alt = title || 'Imagen';
       titleEl.textContent = title || '';
@@ -2756,6 +2782,7 @@
       overlay.classList.add('open');
       overlay.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
+      updateOverlayCardSize();
     }
 
     function closeGallery() {
@@ -2777,6 +2804,7 @@
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && overlay.classList.contains('open')) closeGallery();
     });
+    window.addEventListener('resize', updateOverlayCardSize);
   }
 
   function initEspecialesOverlay() {
