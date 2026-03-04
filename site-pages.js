@@ -3223,27 +3223,49 @@
       compareHost.classList.add('open');
       compareHost.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
-      await new Promise((resolve) => window.requestAnimationFrame(resolve));
+      await new Promise((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
+
+      function canvasHasPaint(canvasEl) {
+        if (!canvasEl || !canvasEl.width || !canvasEl.height) return false;
+        const ctx = canvasEl.getContext('2d', { willReadFrequently: true });
+        if (!ctx) return false;
+        const data = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height).data;
+        for (let i = 3; i < data.length; i += 4) {
+          if (data[i] > 8) return true;
+        }
+        return false;
+      }
+
+      const tasks = [];
       for (let i = 0; i < compareRequired; i++) {
         const img = comparePicked[i];
         const slot = compareSlots[i];
         if (!img || !slot) continue;
         const slotCanvas = slot.querySelector('.special-compare-canvas');
         const slotTitle = slot.querySelector('.special-compare-title');
+        if (slotCanvas) {
+          slotCanvas.style.width = '100%';
+          slotCanvas.style.height = '100%';
+          slotCanvas.style.display = 'block';
+        }
         if (slotTitle) slotTitle.textContent = `MODELO: ${String(img.alt || '').toUpperCase()}`;
-        const sourceForTile = await resolveSourceForOverlay(img);
-        const useDirectOverlay = String(img.dataset.overlayDirect || '') === '1';
-        if (useDirectOverlay && slotCanvas) {
-          drawDirectOverlayImage(slotCanvas, slot, sourceForTile);
-          continue;
-        }
-        const tileCanvas = await extractSpecialTile(sourceForTile);
-        if (tileCanvas && slotCanvas) {
-          renderByPatternType(slotCanvas, slot, tileCanvas, img.dataset.patternType || 'hexagonal', Number.parseFloat(img.dataset.hexRotation || ''));
-        } else if (slotCanvas) {
-          drawDirectOverlayImage(slotCanvas, slot, sourceForTile);
-        }
+        tasks.push((async () => {
+          const sourceForTile = await resolveSourceForOverlay(img);
+          const useDirectOverlay = String(img.dataset.overlayDirect || '') === '1';
+          if (useDirectOverlay && slotCanvas) {
+            drawDirectOverlayImage(slotCanvas, slot, sourceForTile);
+            return;
+          }
+          const tileCanvas = await extractSpecialTile(sourceForTile);
+          if (tileCanvas && slotCanvas) {
+            renderByPatternType(slotCanvas, slot, tileCanvas, img.dataset.patternType || 'hexagonal', Number.parseFloat(img.dataset.hexRotation || ''));
+            if (!canvasHasPaint(slotCanvas)) drawDirectOverlayImage(slotCanvas, slot, sourceForTile);
+          } else if (slotCanvas) {
+            drawDirectOverlayImage(slotCanvas, slot, sourceForTile);
+          }
+        })());
       }
+      await Promise.all(tasks);
     }
 
     cards.forEach((img) => {
