@@ -3342,7 +3342,11 @@
     if (!wrap || !canvas || !editCanvas || !paletteEl || !imgEl) return;
 
     const patternType = String(wrap.dataset.patternType || 'hexagonal').toLowerCase();
-    const rotationSeed = Number.parseFloat(wrap.dataset.hexRotation || '');
+
+    function getHexRotationSeed() {
+      const current = Number.parseFloat(wrap.dataset.hexRotation || '');
+      return Number.isFinite(current) ? current : null;
+    }
     const allColors = Array.isArray(COLORS) ? COLORS : [];
     let selectedColor = allColors[0]?.hex || '#A3AD50';
     let selectedSquareColor = allColors[1]?.hex || allColors[0]?.hex || '#A3AD50';
@@ -3453,7 +3457,7 @@
       const { ctx, cssW, cssH } = setup;
       ctx.clearRect(0, 0, cssW, cssH);
       if (patternType === 'hexagonal') drawPolygonTilePreview(ctx, tileCanvas, cssW, cssH, 6, -Math.PI / 2, 0.44);
-      else if (patternType === 'triangular') drawPolygonTilePreview(ctx, tileCanvas, cssW, cssH, 3, -Math.PI / 2, 0.48);
+      else if (patternType === 'triangular') drawTileFit(ctx, tileCanvas, cssW / 2, cssH / 2, cssW * 0.94, cssH * 0.94, 0);
       else if (patternType === 'cuadrado') drawPolygonTilePreview(ctx, tileCanvas, cssW, cssH, 4, Math.PI / 4, 0.46);
       else if (patternType === 'octagonal') {
         drawPolygonTilePreview(ctx, tileCanvas, cssW, cssH, 8, Math.PI / 8, 0.45);
@@ -3502,8 +3506,9 @@
         const dy = radius * 1.5;
         const rows = Math.ceil((cssH + hexH * 2) / dy);
         const colsDraw = Math.ceil((cssW + hexW * 2) / dx);
-        const hasSeed = Number.isFinite(rotationSeed);
-        const seedRad = hasSeed ? (rotationSeed * Math.PI / 180) : 0;
+        const currentSeed = getHexRotationSeed();
+        const hasSeed = Number.isFinite(currentSeed);
+        const seedRad = hasSeed ? (currentSeed * Math.PI / 180) : 0;
         const triadStep = Math.PI * 2 / 3;
         for (let row = -2; row < rows; row++) {
           for (let col = -2; col < colsDraw; col++) {
