@@ -2832,11 +2832,11 @@
       <div class="model-overlay-compare-wrap" role="dialog" aria-modal="true" aria-label="Comparar modelos especiales">
         <button type="button" class="special-overlay-close" data-special-compare-close="1" aria-label="Cerrar">×</button>
         <div class="model-overlay-compare-grid">
-          <article class="special-overlay-card model-overlay-card compare-slot">
+          <article class="special-overlay-card compare-slot">
             <canvas class="special-compare-canvas" width="1200" height="900"></canvas>
             <div class="special-overlay-footer"><strong class="special-compare-title"></strong></div>
           </article>
-          <article class="special-overlay-card model-overlay-card compare-slot">
+          <article class="special-overlay-card compare-slot">
             <canvas class="special-compare-canvas" width="1200" height="900"></canvas>
             <div class="special-overlay-footer"><strong class="special-compare-title"></strong></div>
           </article>
@@ -3113,17 +3113,15 @@
         const cols = Math.max(6, Math.round(cssW / 150));
         const tileW = cssW / cols;
         const tileRatio = (tileCanvas.width || 1) / Math.max(1, (tileCanvas.height || 1));
-        const tileH = tileW / Math.max(0.3, tileRatio);
-        const stepX = tileW / 2;
-        const stepY = tileH;
-        const drawCols = Math.ceil((cssW + tileW * 4) / stepX);
-        const drawRows = Math.ceil((cssH + tileH * 4) / stepY);
-        for (let r = -3; r < drawRows; r++) {
-          const rowOffset = (r % 2 === 0) ? 0 : (stepX / 2);
-          for (let c = -3; c < drawCols; c++) {
-            const cx = c * stepX + rowOffset + tileW / 2;
-            const cy = r * stepY + tileH / 2;
-            const angle = ((r + c) % 2 === 0) ? 0 : Math.PI;
+        const tileH = tileW / Math.max(0.45, tileRatio);
+        const drawCols = Math.ceil((cssW + tileW * 3) / tileW);
+        const drawRows = Math.ceil((cssH + tileH * 3) / tileH);
+        for (let r = -2; r < drawRows; r++) {
+          const rowOffset = (r % 2 === 0) ? 0 : (tileW / 2);
+          for (let c = -2; c < drawCols; c++) {
+            const cx = c * tileW + rowOffset + tileW / 2;
+            const cy = r * tileH + tileH / 2;
+            const angle = (r % 2 === 0) ? 0 : Math.PI;
             drawTileFit(ctx, tileCanvas, cx, cy, tileW * 1.01, tileH * 1.01, angle);
           }
         }
@@ -3348,6 +3346,8 @@
     const allColors = Array.isArray(COLORS) ? COLORS : [];
     let selectedColor = allColors[0]?.hex || '#A3AD50';
     let selectedSquareColor = allColors[1]?.hex || allColors[0]?.hex || '#A3AD50';
+    const initialSelectedColor = selectedColor;
+    const initialSquareColor = selectedSquareColor;
     let selectedPaintColor = selectedColor;
     let originalTileCanvas = null;
     let originalSquareTileCanvas = null;
@@ -3528,8 +3528,12 @@
             let angle = map[r % 2][c % 2];
             if (oct) angle += Math.PI / 4;
             drawTileFit(ctx, tileCanvas, (c + 0.5) * size, (r + 0.5) * size, size * 0.96, size * 0.96, angle);
-            if (oct && squareTileCanvas) {
-              drawTileFit(ctx, squareTileCanvas, (c + 1) * size, (r + 1) * size, size * 0.52, size * 0.52, Math.PI / 4);
+          }
+        }
+        if (oct && squareTileCanvas) {
+          for (let r = -1; r < rows + 1; r++) {
+            for (let c = -1; c < cols + 1; c++) {
+              drawTileFit(ctx, squareTileCanvas, c * size, r * size, size * 0.52, size * 0.52, Math.PI / 4);
             }
           }
         }
@@ -3539,17 +3543,16 @@
         const cols = Math.max(6, Math.round(cssW / 150));
         const baseW = cssW / cols;
         const baseRatio = (tileCanvas.width || 1) / Math.max(1, (tileCanvas.height || 1));
-        const baseH = baseW / Math.max(0.3, baseRatio);
-        const stepX = baseW / 2;
+        const baseH = baseW / Math.max(0.45, baseRatio);
         const stepY = baseH;
-        const drawCols = Math.ceil((cssW + baseW * 4) / stepX);
+        const drawCols = Math.ceil((cssW + baseW * 3) / baseW);
         const drawRows = Math.ceil((cssH + baseH * 4) / stepY);
-        for (let row = -3; row < drawRows; row++) {
-          const rowOffset = (row % 2 === 0) ? 0 : (stepX / 2);
-          for (let col = -3; col < drawCols; col++) {
-            const cx = col * stepX + rowOffset + (baseW / 2);
+        for (let row = -2; row < drawRows; row++) {
+          const rowOffset = (row % 2 === 0) ? 0 : (baseW / 2);
+          for (let col = -2; col < drawCols; col++) {
+            const cx = col * baseW + rowOffset + (baseW / 2);
             const cy = row * stepY + (baseH / 2);
-            const angle = ((row + col) % 2 === 0) ? 0 : Math.PI;
+            const angle = (row % 2 === 0) ? 0 : Math.PI;
             drawTileFit(ctx, tileCanvas, cx, cy, baseW * 1.01, baseH * 1.01, angle);
           }
         }
@@ -3902,8 +3905,12 @@
     if (resetBtn) {
       resetBtn.addEventListener('click', () => {
         if (!originalTileCanvas) return;
+        selectedColor = initialSelectedColor;
+        selectedSquareColor = initialSquareColor;
+        selectedPaintColor = selectedColor;
+        refreshPaletteActive();
         tileCanvas = cloneCanvas(originalTileCanvas) || originalTileCanvas;
-        squareTileCanvas = buildSquareTile(selectedSquareColor) || squareTileCanvas;
+        squareTileCanvas = buildSquareTile(initialSquareColor) || squareTileCanvas;
         undoStack.length = 0;
         redoStack.length = 0;
         renderEditBox();

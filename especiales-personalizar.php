@@ -102,25 +102,6 @@ $personalizables = carga_personalizables(__DIR__ . '/config/categorias_especiale
       <p class="especiales-desc"><?= htmlspecialchars($name, ENT_QUOTES) ?></p>
     </section>
 
-    <section class="panel especiales-search-panel" data-special-customizer-search="1">
-      <div class="model-search-row">
-        <div class="model-search" id="specialCustomizerSearchWrap">
-          <input type="search" id="specialCustomizerModelSearch" placeholder="<?= $lang === 'en' ? 'Search model to customize' : 'Buscar modelo para personalizar' ?>" autocomplete="off" />
-          <div class="model-search-results special-customizer-model-list" id="specialCustomizerModelList">
-        <?php foreach ($personalizables as $m):
-          $href = 'especiales-personalizar.php?lang=' . rawurlencode($lang)
-            . '&img=' . rawurlencode($m['img'])
-            . '&name=' . rawurlencode($m['name'])
-            . '&pattern=' . rawurlencode($m['pattern'])
-            . ($m['hex_rot'] !== '' ? '&hex_rot=' . rawurlencode($m['hex_rot']) : '');
-        ?>
-            <a class="model-search-item special-customizer-model-item" data-model-name="<?= htmlspecialchars(strtolower($m['name']), ENT_QUOTES) ?>" href="<?= htmlspecialchars($href, ENT_QUOTES) ?>"><?= htmlspecialchars($m['name'], ENT_QUOTES) ?></a>
-        <?php endforeach; ?>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <section class="panel especiales-customizer-wrap"
       data-special-customizer="1"
       data-pattern-type="<?= htmlspecialchars($pattern, ENT_QUOTES) ?>"
