@@ -233,15 +233,15 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 
 .btn-special-personalizar{display:inline-block;margin-top:8px;padding:8px 12px;border-radius:8px;background:#0f3f8f;color:#fff;text-decoration:none;font-size:13px}
 .especiales-customizer-wrap{display:grid;gap:12px}
-.especiales-customizer-layout{display:grid;grid-template-columns:minmax(240px,320px) 140px minmax(420px,1fr);gap:14px;align-items:start}
+.especiales-customizer-layout{display:grid;grid-template-columns:minmax(240px,320px) 160px minmax(520px,760px);gap:14px;align-items:start;justify-content:start}
 .especiales-palette-col{display:grid;gap:10px;align-content:start}
-.especiales-palette-col .palette{grid-template-columns:repeat(2,minmax(0,1fr));max-height:610px;overflow:auto;padding-right:2px}
+.especiales-palette-col .palette{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;max-height:none;overflow:visible;padding-right:0}
 .especiales-palette-col .custom-controls{display:flex;gap:8px;justify-content:center}
 .special-editor-targets{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
 .btn.btn-small{padding:6px 10px;font-size:13px}
 #specialTargetMain.active,#specialTargetSquare.active{box-shadow:0 0 0 2px rgba(88,54,33,.25) inset}
 #specialSquareEditorWrap{margin-top:12px}
-#specialCustomizerCanvas{width:100%;max-width:1200px;aspect-ratio:12/8;background:#ece9df;border:1px solid #d6d6d6;border-radius:10px}
+#specialCustomizerCanvas{width:100%;max-width:760px;aspect-ratio:12/8;background:#ece9df;border:1px solid #d6d6d6;border-radius:10px}
 @media (max-width:900px){.especiales-customizer-layout{grid-template-columns:1fr}}
 .special-card img{width:100%;aspect-ratio:1/1;object-fit:cover}
 .special-card img.special-overlay-trigger{cursor:zoom-in}
