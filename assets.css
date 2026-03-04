@@ -238,7 +238,7 @@ footer { border-top:1px solid #e2e2e2; padding:22px 28px; font-size:13px; color:
 .btn.btn-small{padding:6px 10px;font-size:13px}
 #specialTargetMain.active,#specialTargetSquare.active{box-shadow:0 0 0 2px rgba(88,54,33,.25) inset}
 #specialSquareEditorWrap{margin-top:12px}
-#specialCustomizerCanvas{width:100%;max-width:1200px;aspect-ratio:3/2;background:#ece9df;border:1px solid #d6d6d6;border-radius:10px}
+#specialCustomizerCanvas{width:100%;aspect-ratio:12/8;background:#ece9df;border:1px solid #d6d6d6;border-radius:10px}
 @media (max-width:900px){.especiales-customizer-layout{grid-template-columns:1fr}}
 .special-card img{width:100%;aspect-ratio:1/1;object-fit:cover}
 .special-card img.special-overlay-trigger{cursor:zoom-in}

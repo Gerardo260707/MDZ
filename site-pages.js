@@ -3355,6 +3355,11 @@
     let squareTileCanvas = null;
     let editMetrics = null;
     let squareEditMetrics = null;
+    const undoBtn = q('specialUndoColor');
+    const redoBtn = q('specialRedoColor');
+    const resetBtn = q('specialResetColor');
+    const undoStack = [];
+    const redoStack = [];
 
     function setupCanvas(targetCanvas, ratio = 4 / 3) {
       const dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -3371,9 +3376,7 @@
     }
 
     function previewRatioForPattern(type, tileRatio) {
-      const safeTileRatio = Math.max(0.45, Math.min(2.4, Number(tileRatio) || 1));
-      if (type === 'triangular') return Math.max(1.15, Math.min(1.4, safeTileRatio * 1.2));
-      return 4 / 3;
+      return 12 / 8;
     }
 
     function drawTileFit(ctx, tile, cx, cy, boxW, boxH, angle = 0) {
@@ -3646,6 +3649,7 @@
     }
 
     function cloneCanvas(sourceCanvas) {
+      if (!sourceCanvas) return null;
       const c = document.createElement('canvas');
       c.width = sourceCanvas.width;
       c.height = sourceCanvas.height;
@@ -3739,6 +3743,41 @@
       squareTileCanvas = buildSquareTile(selectedSquareColor) || null;
       renderEditBox();
       renderPattern();
+      undoStack.length = 0;
+      redoStack.length = 0;
+      updateHistoryButtons();
+    }
+
+    function snapshotState() {
+      return {
+        tile: cloneCanvas(tileCanvas),
+        square: cloneCanvas(squareTileCanvas),
+        selectedColor,
+        selectedSquareColor,
+      };
+    }
+
+    function applyState(state) {
+      if (!state) return;
+      tileCanvas = cloneCanvas(state.tile) || tileCanvas;
+      squareTileCanvas = cloneCanvas(state.square) || squareTileCanvas;
+      selectedColor = state.selectedColor || selectedColor;
+      selectedSquareColor = state.selectedSquareColor || selectedSquareColor;
+      renderEditBox();
+      renderPattern();
+      updateHistoryButtons();
+    }
+
+    function commitStateBeforePaint() {
+      undoStack.push(snapshotState());
+      if (undoStack.length > 60) undoStack.shift();
+      redoStack.length = 0;
+      updateHistoryButtons();
+    }
+
+    function updateHistoryButtons() {
+      if (undoBtn) undoBtn.disabled = undoStack.length === 0;
+      if (redoBtn) redoBtn.disabled = redoStack.length === 0;
     }
 
     function refreshPaletteActive() {
@@ -3803,6 +3842,7 @@
       if (!rect.width || !rect.height) return;
       const x = ((ev.clientX - rect.left) / rect.width) * editMetrics.cssW;
       const y = ((ev.clientY - rect.top) / rect.height) * editMetrics.cssH;
+      commitStateBeforePaint();
       const mainPoint = mapPointToTile(x, y, editMetrics.main, tileCanvas);
       const painted = mainPoint
         ? floodFillCanvasAt(originalTileCanvas, tileCanvas, mainPoint.x, mainPoint.y, selectedPaintColor)
@@ -3812,6 +3852,9 @@
       if (painted) {
         renderEditBox();
         renderPattern();
+      } else if (undoStack.length) {
+        undoStack.pop();
+        updateHistoryButtons();
       }
     });
 
@@ -3822,14 +3865,50 @@
         if (!rect.width || !rect.height) return;
         const x = ((ev.clientX - rect.left) / rect.width) * squareEditMetrics.cssW;
         const y = ((ev.clientY - rect.top) / rect.height) * squareEditMetrics.cssH;
+        commitStateBeforePaint();
         const sqPoint = mapPointToTile(x, y, squareEditMetrics.main, squareTileCanvas);
         const painted = sqPoint
           ? floodFillCanvasAt(originalSquareTileCanvas, squareTileCanvas, sqPoint.x, sqPoint.y, selectedPaintColor)
           : false;
-        if (!painted) return;
+        if (!painted) {
+          if (undoStack.length) undoStack.pop();
+          updateHistoryButtons();
+          return;
+        }
         selectedSquareColor = selectedPaintColor;
         renderEditBox();
         renderPattern();
+      });
+    }
+
+    if (undoBtn) {
+      undoBtn.addEventListener('click', () => {
+        if (!undoStack.length) return;
+        redoStack.push(snapshotState());
+        const prev = undoStack.pop();
+        applyState(prev);
+      });
+    }
+
+    if (redoBtn) {
+      redoBtn.addEventListener('click', () => {
+        if (!redoStack.length) return;
+        undoStack.push(snapshotState());
+        const next = redoStack.pop();
+        applyState(next);
+      });
+    }
+
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        if (!originalTileCanvas) return;
+        tileCanvas = cloneCanvas(originalTileCanvas) || originalTileCanvas;
+        squareTileCanvas = buildSquareTile(selectedSquareColor) || squareTileCanvas;
+        undoStack.length = 0;
+        redoStack.length = 0;
+        renderEditBox();
+        renderPattern();
+        updateHistoryButtons();
       });
     }
 
@@ -3849,6 +3928,7 @@
 
     renderPalette();
     refreshPaletteActive();
+    updateHistoryButtons();
     window.addEventListener('resize', () => {
       renderEditBox();
       renderPattern();

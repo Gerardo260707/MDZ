@@ -144,6 +144,11 @@ $personalizables = carga_personalizables(__DIR__ . '/config/categorias_especiale
         </div>
       </div>
       <div id="specialPalette" class="palette"></div>
+      <div class="custom-controls">
+        <button id="specialUndoColor" class="action control-btn" type="button" data-i18n-title="custom_undo" title="Regresar color" aria-label="Regresar color">↶</button>
+        <button id="specialRedoColor" class="action control-btn" type="button" data-i18n-title="custom_redo" title="Adelante color" aria-label="Adelante color">↷</button>
+        <button id="specialResetColor" class="action control-btn" type="button" data-i18n-title="custom_home" title="Imagen original" aria-label="Imagen original">⌂</button>
+      </div>
       <img id="specialCustomizerSource" src="<?= htmlspecialchars($img, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($name, ENT_QUOTES) ?>" hidden />
     </section>
 
