@@ -3114,14 +3114,15 @@
         const tileW = cssW / cols;
         const tileRatio = (tileCanvas.width || 1) / Math.max(1, (tileCanvas.height || 1));
         const tileH = tileW / Math.max(0.45, tileRatio);
-        const drawCols = Math.ceil((cssW + tileW * 3) / tileW);
-        const drawRows = Math.ceil((cssH + tileH * 3) / tileH);
+        const stepX = tileW / 2;
+        const stepY = tileH / 2;
+        const drawCols = Math.ceil((cssW + tileW * 2) / stepX);
+        const drawRows = Math.ceil((cssH + tileH * 2) / stepY);
         for (let r = -2; r < drawRows; r++) {
-          const rowOffset = (r % 2 === 0) ? 0 : (tileW / 2);
           for (let c = -2; c < drawCols; c++) {
-            const cx = c * tileW + rowOffset + tileW / 2;
-            const cy = r * tileH + tileH / 2;
-            const angle = (r % 2 === 0) ? 0 : Math.PI;
+            const cx = c * stepX + tileW / 2;
+            const cy = r * stepY + tileH / 2;
+            const angle = ((r + c) % 2 === 0) ? 0 : Math.PI;
             drawTileFit(ctx, tileCanvas, cx, cy, tileW * 1.01, tileH * 1.01, angle);
           }
         }
@@ -3549,15 +3550,15 @@
         const baseW = cssW / cols;
         const baseRatio = (tileCanvas.width || 1) / Math.max(1, (tileCanvas.height || 1));
         const baseH = baseW / Math.max(0.45, baseRatio);
-        const stepY = baseH;
-        const drawCols = Math.ceil((cssW + baseW * 3) / baseW);
-        const drawRows = Math.ceil((cssH + baseH * 4) / stepY);
+        const stepX = baseW / 2;
+        const stepY = baseH / 2;
+        const drawCols = Math.ceil((cssW + baseW * 2) / stepX);
+        const drawRows = Math.ceil((cssH + baseH * 2) / stepY);
         for (let row = -2; row < drawRows; row++) {
-          const rowOffset = (row % 2 === 0) ? 0 : (baseW / 2);
           for (let col = -2; col < drawCols; col++) {
-            const cx = col * baseW + rowOffset + (baseW / 2);
+            const cx = col * stepX + (baseW / 2);
             const cy = row * stepY + (baseH / 2);
-            const angle = (row % 2 === 0) ? 0 : Math.PI;
+            const angle = ((row + col) % 2 === 0) ? 0 : Math.PI;
             drawTileFit(ctx, tileCanvas, cx, cy, baseW * 1.01, baseH * 1.01, angle);
           }
         }
