@@ -3247,6 +3247,12 @@
           slotCanvas.style.width = '100%';
           slotCanvas.style.height = '100%';
           slotCanvas.style.display = 'block';
+          const sctx = slotCanvas.getContext('2d');
+          if (sctx) {
+            sctx.clearRect(0, 0, slotCanvas.width, slotCanvas.height);
+            sctx.fillStyle = '#ece9df';
+            sctx.fillRect(0, 0, slotCanvas.width, slotCanvas.height);
+          }
         }
         if (slotTitle) slotTitle.textContent = `MODELO: ${String(img.alt || '').toUpperCase()}`;
         tasks.push((async () => {
@@ -3266,6 +3272,16 @@
         })());
       }
       await Promise.all(tasks);
+
+      for (let i = 0; i < compareRequired; i++) {
+        const img = comparePicked[i];
+        const slot = compareSlots[i];
+        const slotCanvas = slot ? slot.querySelector('.special-compare-canvas') : null;
+        if (!img || !slot || !slotCanvas) continue;
+        if (!canvasHasPaint(slotCanvas)) {
+          drawDirectOverlayImage(slotCanvas, slot, img);
+        }
+      }
     }
 
     cards.forEach((img) => {
