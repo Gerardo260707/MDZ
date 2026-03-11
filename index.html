@@ -34,9 +34,9 @@
     <section class="panel decorated-layout home-sales-layout">
       <div class="mosaic-grid-wrap">
         <h1>Mosaicos Dzununcán</h1>
-        <p data-i18n="home_intro">Ahora cada menú abre su propio archivo independiente.</p>
+        <p class="home-intro-lead" data-i18n="home_intro"></p>
         <div class="cards" id="featureCards"></div>
-        <p class="note" data-i18n="home_note">Los 3 cuadros cargan imágenes desde assets/cuadros/.</p>
+        <p class="note" data-i18n="home_note"></p>
       </div>
       <aside class="quote-box">
         <h3 data-i18n="quote_title">Solicite una Cotización</h3>
@@ -44,14 +44,14 @@
         <form class="quote-form" action="mailto:ventas@mosaicosdzununcan.com" method="post" enctype="text/plain">
           <input type="text" name="nombre" data-i18n-placeholder="quote_name" placeholder="Nombre" required />
           <input type="email" name="email" data-i18n-placeholder="quote_email" placeholder="Email" required />
-          <input type="tel" name="telefono" data-i18n-placeholder="quote_phone" placeholder="Teléfono" />
+          <input type="tel" name="telefono" data-i18n-placeholder="quote_phone" placeholder="Teléfono" required minlength="8" inputmode="tel" />
           <textarea name="comentarios" rows="8" data-i18n-placeholder="quote_comments" placeholder="Comentarios" required></textarea>
           <button type="submit" class="action quote-submit" data-i18n="quote_send">Enviar</button>
         </form>
       </aside>
     </section>
 
-    <footer data-i18n="home_footer">Base preparada para migrar a PHP + base de datos cuando compartas tu estructura.</footer>
+    <footer></footer>
   </main>
 
   <script src="app.js"></script>

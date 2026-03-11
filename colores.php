@@ -33,6 +33,29 @@ $lang = (($_GET['lang'] ?? 'es') === 'en') ? 'en' : 'es';
     <section>
       <h2 data-i18n="colors_title">Paleta de colores</h2>
       <p data-i18n="colors_desc">Consulta todos los colores disponibles para personalizar tus diseños.</p>
+      <button id="toggleColorComparator" class="action cta-pill" type="button">Comparar colores</button>
+      <div id="colorComparator" class="color-comparator" hidden>
+        <div class="color-comparator-canvases">
+          <section class="color-compare-editor" data-editor="left">
+            <h3 id="compareLabelLeft">Color 1</h3>
+            <canvas id="compareCanvasLeft" width="200" height="200" aria-label="Comparador lienzo izquierdo"></canvas>
+          </section>
+          <section class="color-compare-editor" data-editor="right">
+            <h3 id="compareLabelRight">Color 2</h3>
+            <canvas id="compareCanvasRight" width="200" height="200" aria-label="Comparador lienzo derecho"></canvas>
+          </section>
+          <section class="color-compare-preview" aria-label="Vista grande de comparación">
+            <h3 data-i18n="compare_preview_title">Vista de comparación</h3>
+            <canvas id="compareCanvasPattern" width="600" height="400" aria-label="Patrón intercalado de colores"></canvas>
+          </section>
+        </div>
+        <div class="custom-controls compare-controls" aria-label="Controles comparador de color">
+          <button type="button" id="compareUndo" class="action control-btn" title="Regresar color" aria-label="Regresar color" data-i18n-title="custom_undo">↶</button>
+          <button type="button" id="compareRedo" class="action control-btn" title="Adelante color" aria-label="Adelante color" data-i18n-title="custom_redo">↷</button>
+          <button type="button" id="compareHome" class="action control-btn" title="Color original" aria-label="Color original" data-i18n-title="custom_home">⌂</button>
+        </div>
+        <div id="comparePaletteShared" class="palette compare-palette"></div>
+      </div>
       <div id="colorsGrid" class="colors-grid"></div>
     </section>
   </main>

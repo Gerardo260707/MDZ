@@ -1,0 +1,40 @@
+# Mosaicos Dzununcán - Apache baseline rules
+# Note: these rules require AllowOverride enabled in Apache.
+
+# Prefer static home, then PHP fallback.
+DirectoryIndex index.html index.php
+
+# Prevent directory listing if no index file is present.
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Keep existing files/directories untouched.
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Optional convenience routes to avoid 404 if links omit extension.
+  RewriteRule ^galeria/?$ galeria.php [L,QSA]
+  RewriteRule ^mosaicos/?$ mosaicos-menu.php [L,QSA]
+  RewriteRule ^especiales/?$ especiales.php [L,QSA]
+  RewriteRule ^personalizar-especial/?$ especiales-personalizar.php [L,QSA]
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Strong cache for versioned static assets (?v=... is already used by the app).
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 1 month"
+  ExpiresByType application/javascript "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/webp "access plus 1 month"
+  ExpiresByType image/avif "access plus 1 month"
+</IfModule>

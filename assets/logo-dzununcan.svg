@@ -1,13 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 90" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 190" role="img" aria-labelledby="title desc">
   <title id="title">Logo Mosaicos Dzununcán</title>
-  <desc id="desc">Logotipo con rombos inclinados y texto Mosaicos Dzununcán.</desc>
-  <g fill="none" stroke="#7b2f2f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" transform="translate(6,8)">
-    <path d="M0 52h34l11-44H11z" />
-    <path d="M26 52h34l11-44H37z" />
-    <path d="M52 52h34l11-44H63z" />
-    <path d="M0 82h34l11-44H11z" />
-    <path d="M26 82h34l11-44H37z" />
+  <desc id="desc">Logotipo con ícono de cuatro trazos y texto Mosaicos Dzununcán.</desc>
+
+  <g transform="translate(28 32)" fill="none" stroke="#7A2F2A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <!-- fila superior -->
+    <path d="M0 44h74" />
+    <path d="M94 44h74" />
+    <!-- fila inferior -->
+    <path d="M0 106h74" />
+    <path d="M94 106h74" />
+
+    <!-- diagonales (4 picos en total) -->
+    <path d="M74 44l18-44" />
+    <path d="M168 44l18-44" />
+    <path d="M74 106l18-44" />
+    <path d="M168 106l18-44" />
   </g>
-  <text x="112" y="34" font-family="Arial, Helvetica, sans-serif" font-size="46" font-style="italic" fill="#111">Mosaicos</text>
-  <text x="112" y="78" font-family="Arial, Helvetica, sans-serif" font-size="66" font-style="italic" font-weight="700" fill="#111">Dzununcán</text>
+
+  <g fill="#101010" font-family="Arial, Helvetica, sans-serif" font-style="italic">
+    <text x="258" y="84" font-size="64" font-weight="500">Mosaicos</text>
+    <text x="258" y="152" font-size="82" font-weight="700">Dzununcán</text>
+  </g>
 </svg>

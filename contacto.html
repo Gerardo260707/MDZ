@@ -1,3 +1,92 @@
 <!doctype html>
-<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Contacto</title><link rel="stylesheet" href="assets.css"></head><body><main class="site"><header class="top"><div class="brand-row"><div class="logo"><img src="assets/logo-dzununcan.svg" alt="Mosaicos Dzununcán" /></div><div class="langs"><span data-i18n="lang_label">Idioma</span> ▪ <button class="lang-btn" data-set-lang="es" data-lang-active="es">🇲🇽</button><button class="lang-btn" data-set-lang="en" data-lang-active="en">🇺🇸</button></div></div><nav><a data-keep-lang href="index.html" data-i18n="nav_home">Inicio</a><a data-keep-lang href="mosaicos.html" data-i18n="nav_mosaics">Mosaicos</a><a data-keep-lang href="galeria.html" data-i18n="nav_gallery">Galería</a><a data-keep-lang href="mantenimiento.html" data-i18n="nav_maintenance">Mantenimiento</a><a data-keep-lang href="instalacion.html" data-i18n="nav_installation">Instalación</a><a data-keep-lang href="contacto.html" data-i18n="nav_contact">Contacto</a></nav></header><div class="mosaic-strip"></div><section><h2 data-i18n="contact_title">Contacto</h2><p>Sección independiente lista para contenido.</p></section></main><script src="app.js"></script>
-  <script src="site-pages.js"></script></body></html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-i18n="contact_title">Contacto</title>
+  <link rel="stylesheet" href="assets.css" />
+</head>
+<body>
+  <main class="site">
+    <header class="top">
+      <div class="brand-row">
+        <div class="logo"><img src="assets/logo-dzununcan.svg" alt="Mosaicos Dzununcán" /></div>
+        <div class="langs">
+          <span data-i18n="lang_label">Idioma</span> ▪
+          <button class="lang-btn" data-set-lang="es" data-lang-active="es">🇲🇽</button>
+          <button class="lang-btn" data-set-lang="en" data-lang-active="en">🇺🇸</button>
+        </div>
+      </div>
+      <nav>
+        <a data-keep-lang href="index.html" data-i18n="nav_home">Inicio</a>
+        <a data-keep-lang href="mosaicos.html" data-i18n="nav_mosaics">Mosaicos</a>
+        <a data-keep-lang href="galeria.html" data-i18n="nav_gallery">Galería</a>
+        <a data-keep-lang href="mantenimiento.html" data-i18n="nav_maintenance">Mantenimiento</a>
+        <a data-keep-lang href="instalacion.html" data-i18n="nav_installation">Instalación</a>
+        <a data-keep-lang href="contacto.html" data-i18n="nav_contact">Contacto</a>
+      </nav>
+    </header>
+
+    <div class="mosaic-strip"></div>
+
+    <section class="contact-page">
+      <h2 data-i18n="contact_title">Contacto</h2>
+      <p class="contact-intro" data-i18n="contact_intro">Ven a conocer nuestras salas de exhibición o si prefieres llamarnos para más información, aquí puedes contactarnos.</p>
+
+      <h3 class="contact-section-title" data-i18n="contact_location_title">Ubicación</h3>
+
+      <article class="contact-location-row">
+        <div class="contact-map-frame">
+          <iframe
+            title="Mosaicos Dzununcan Montealbán"
+            src="https://www.google.com/maps?q=Mosaicos%20Dzununcan%2C%20C.%2037%20318%2C%20Montealb%C3%A1n%2C%2097114%20M%C3%A9rida%2C%20Yuc.&output=embed"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            allowfullscreen></iframe>
+        </div>
+        <div class="contact-location-info">
+          <h4 data-i18n="contact_showroom_title">Venta y Sala de Exhibición</h4>
+          <p><strong data-i18n="contact_address_label">Dirección</strong><br />
+            <span data-lang-only="es">Calle 37 No. 318 entre 24 y 26<br />
+            Col. Montealban<br />
+            97114 Mérida, Yuc.</span>
+            <span data-lang-only="en">37th Street No. 318 between 24 and 26<br />
+            Montealban neighborhood<br />
+            97114 Mérida, Yucatan, Mexico.</span></p>
+          <p><strong>Tel:</strong> <a href="tel:+529992179326">(999) 217 9326</a></p>
+          <p><strong>Email</strong><br />
+            <a href="mailto:ventas@mosaicosdzununcan.com">ventas@mosaicosdzununcan.com</a>
+          </p>
+        </div>
+      </article>
+
+      <article class="contact-location-row">
+        <div class="contact-map-frame">
+          <iframe
+            title="Mosaicos Dzununcan Fabrica"
+            src="https://www.google.com/maps?output=embed&q=Mosaicos+Dzununcan+Fabrica"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            allowfullscreen></iframe>
+        </div>
+        <div class="contact-location-info">
+          <h4 data-i18n="contact_factory_title">Fábrica</h4>
+          <p><strong data-i18n="contact_address_label">Dirección</strong><br />
+            <span data-lang-only="es">Calle 86, Km. 2.5 carretera, entre<br />
+            Periférico sur y Dzununcan<br />
+            Sin Nombre, 97315 Mérida, Yuc.</span>
+            <span data-lang-only="en">86th Street, Km 2.5 road, between<br />
+            South Periférico and Dzununcan<br />
+            Sin Nombre, 97315 Mérida, Yucatan, Mexico.</span></p>
+          <p><strong>Tel:</strong> <a href="tel:+529992495158">(999) 249 5158</a></p>
+          <p><strong>Email</strong><br />
+            <a href="mailto:ventas2@mosaicosdzununcan.com">ventas2@mosaicosdzununcan.com</a>
+          </p>
+                  </div>
+      </article>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

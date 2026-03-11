@@ -1,24 +1,30 @@
 <?php
-const VALID_CATEGORIAS = ['centro', 'cenefa', 'esquina', 'hexagonales', 'antiderrapante'];
+const VALID_CATEGORIAS = ['centro', 'cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior', 'hexagonales', 'antiderrapante'];
 
-function carga_mapa_categorias_csv(string $csvPath): array {
-    if (!file_exists($csvPath)) return [];
+function carga_meta_categorias_csv(string $csvPath): array {
+    if (!file_exists($csvPath)) return ['categorias' => [], 'cenefa_rotacion_alterna' => []];
     $h = fopen($csvPath, 'r');
-    if ($h === false) return [];
+    if ($h === false) return ['categorias' => [], 'cenefa_rotacion_alterna' => []];
     $header = fgetcsv($h);
-    if (!is_array($header)) {
-        fclose($h);
-        return [];
-    }
-    $map = [];
+    if (!is_array($header)) { fclose($h); return ['categorias' => [], 'cenefa_rotacion_alterna' => []]; }
+    $mapCategorias = [];
+    $mapRotacionAlterna = [];
     while (($row = fgetcsv($h)) !== false) {
         $folder = strtolower(trim((string)($row[0] ?? '')));
         $cat = strtolower(trim((string)($row[1] ?? '')));
+        $flagRaw = trim((string)($row[2] ?? ''));
         if ($folder === '' || str_starts_with($folder, '#')) continue;
-        $map[$folder] = in_array($cat, VALID_CATEGORIAS, true) ? $cat : '';
+        if (!in_array($cat, VALID_CATEGORIAS, true)) $cat = '';
+        $mapCategorias[$folder] = $cat;
+        $mapRotacionAlterna[$folder] = $cat === 'cenefa' && in_array(strtolower($flagRaw), ['1','true','si','sí','yes'], true);
     }
     fclose($h);
-    return $map;
+    return ['categorias' => $mapCategorias, 'cenefa_rotacion_alterna' => $mapRotacionAlterna];
+}
+
+function carga_mapa_categorias_csv(string $csvPath): array {
+    $meta = carga_meta_categorias_csv($csvPath);
+    return (array)($meta['categorias'] ?? []);
 }
 
 function carpeta_modelo_de_item(array $item): string {
@@ -79,21 +85,64 @@ function categoria_prefix(?string $categoria): string {
         'cenefa' => 'CEN',
         'esquina' => 'ESQ',
         'centro' => 'CTR',
+        'cenefa_exterior' => 'CEX',
+        'esquina_exterior' => 'EEX',
         'hexagonales' => 'HEX',
         'antiderrapante' => 'ANT',
         default => 'MOD',
     };
 }
 
-function pair_key(array $m): string {
-    $base = (string)($m['carpeta_modelo'] ?? $m['nombre'] ?? '');
-    $base = strtolower($base);
-    $base = str_replace(['centro', 'cenefa', 'esquina', 'corner', 'bord', 'border'], '', $base);
-    $base = preg_replace('/[^a-z0-9]+/', '-', $base);
-    return trim((string)$base, '-');
+
+function normaliza_conexion_clave(string $value): string {
+    $v = strtolower(trim($value));
+    $v = str_replace(['_', '-'], ' ', $v);
+    $v = preg_replace('/\s+/', ' ', $v);
+    return trim((string)$v);
 }
 
+function resolver_carpeta_desde_conexion(string $value, array $aliasMap): string {
+    $k = normaliza_conexion_clave($value);
+    if ($k === '') return '';
+    return (string)($aliasMap[$k] ?? $k);
+}
 
+function normalizar_conexiones_con_modelos(array $primary, array $outer, array $models): array {
+    $aliasMap = [];
+    foreach ($models as $m) {
+        $folder = carpeta_modelo_de_item($m);
+        if ($folder === '') continue;
+        $keys = [
+            $folder,
+            (string)($m['nombre'] ?? ''),
+            (string)($m['identificador'] ?? ''),
+        ];
+        foreach ($keys as $raw) {
+            $nk = normaliza_conexion_clave((string)$raw);
+            if ($nk !== '' && !isset($aliasMap[$nk])) $aliasMap[$nk] = $folder;
+        }
+    }
+
+    $normalizedPrimary = [];
+    foreach ($primary as $cenefaRaw => $esquinaRaw) {
+        $cenefaFolder = resolver_carpeta_desde_conexion((string)$cenefaRaw, $aliasMap);
+        $esquinaFolder = resolver_carpeta_desde_conexion((string)$esquinaRaw, $aliasMap);
+        if ($cenefaFolder === '') continue;
+        $normalizedPrimary[$cenefaFolder] = $esquinaFolder;
+    }
+
+    $normalizedOuter = [];
+    foreach ($outer as $cenefaRaw => $defs) {
+        $cenefaFolder = resolver_carpeta_desde_conexion((string)$cenefaRaw, $aliasMap);
+        if ($cenefaFolder === '') continue;
+        $normalizedOuter[$cenefaFolder] = [
+            'cenefa' => resolver_carpeta_desde_conexion((string)($defs['cenefa'] ?? ''), $aliasMap),
+            'esquina' => resolver_carpeta_desde_conexion((string)($defs['esquina'] ?? ''), $aliasMap),
+        ];
+    }
+
+    return ['primary' => $normalizedPrimary, 'outer' => $normalizedOuter];
+}
 
 function build_image_rel_with_version(string $baseName, string $folder, string $fileName, string $absPath): string {
     $rel = $baseName . '/' . rawurlencode($folder) . '/' . rawurlencode($fileName);
@@ -117,6 +166,7 @@ function normaliza_item(array $m): array {
         'categoria' => $categoria,
         'identificador' => $identificador,
         'carpeta_modelo' => (string)($m['carpeta_modelo'] ?? ''),
+        'cenefa_rotacion_alterna' => !empty($m['cenefa_rotacion_alterna']) ? 1 : 0,
     ];
 }
 
@@ -149,12 +199,15 @@ function carga_modelos_tapete(): array {
         }
     }
 
-    $catMap = carga_mapa_categorias_csv(__DIR__ . '/config/categorias.csv');
+    $metaCategorias = carga_meta_categorias_csv(__DIR__ . '/config/categorias.csv');
+    $catMap = (array)($metaCategorias['categorias'] ?? []);
+    $rotMap = (array)($metaCategorias['cenefa_rotacion_alterna'] ?? []);
     if (!empty($catMap)) {
         foreach ($items as &$item) {
             $folder = carpeta_modelo_de_item($item);
             if ($folder !== '' && array_key_exists($folder, $catMap)) {
                 $item['categoria'] = $catMap[$folder];
+                $item['cenefa_rotacion_alterna'] = !empty($rotMap[$folder]) ? 1 : 0;
             }
         }
         unset($item);
@@ -199,6 +252,8 @@ function carga_tapetes_csv(string $csvPath, array $models): array {
         $esquinaQ = trim((string)($row[3] ?? ''));
         $cenefaOuterQ = trim((string)($row[4] ?? ''));
         $esquinaOuterQ = trim((string)($row[5] ?? ''));
+        $cenefaAltRotateRaw = trim((string)($row[6] ?? ''));
+        $cenefaAltRotate = in_array(strtolower($cenefaAltRotateRaw), ['1','true','si','sí','yes'], true);
         if ($name === '' || str_starts_with($name, '#')) continue;
 
         $centro = find_model($models, $centroQ);
@@ -274,12 +329,15 @@ function carga_modelos(): array {
         }
     }
 
-    $catMap = carga_mapa_categorias_csv(__DIR__ . '/config/categorias.csv');
+    $metaCategorias = carga_meta_categorias_csv(__DIR__ . '/config/categorias.csv');
+    $catMap = (array)($metaCategorias['categorias'] ?? []);
+    $rotMap = (array)($metaCategorias['cenefa_rotacion_alterna'] ?? []);
     if (!empty($catMap)) {
         foreach ($items as &$item) {
             $folder = carpeta_modelo_de_item($item);
             if ($folder !== '' && array_key_exists($folder, $catMap)) {
                 $item['categoria'] = $catMap[$folder];
+                $item['cenefa_rotacion_alterna'] = !empty($rotMap[$folder]) ? 1 : 0;
             }
         }
         unset($item);
@@ -297,12 +355,25 @@ $tapetePresets = ($modelSource === 'tapete') ? carga_tapetes_csv(__DIR__ . '/con
 $conexionesCsv = carga_conexiones_cenefa_esquina(__DIR__ . '/config/conexiones_cenefa_esquina.csv');
 $conexionesPrimary = (array)($conexionesCsv['primary'] ?? []);
 $conexionesOuter = (array)($conexionesCsv['outer'] ?? []);
+$conexionesNormalizadas = normalizar_conexiones_con_modelos($conexionesPrimary, $conexionesOuter, $models);
+$conexionesPrimary = (array)($conexionesNormalizadas['primary'] ?? []);
+$conexionesOuter = (array)($conexionesNormalizadas['outer'] ?? []);
+$reverseOuterCenefa = [];
+$reverseOuterEsquina = [];
+foreach ($conexionesOuter as $innerFolder => $outerDef) {
+    $oc = strtolower(trim((string)($outerDef['cenefa'] ?? '')));
+    $oe = strtolower(trim((string)($outerDef['esquina'] ?? '')));
+    if ($oc !== '') $reverseOuterCenefa[$oc] = strtolower((string)$innerFolder);
+    if ($oe !== '') $reverseOuterEsquina[$oe] = strtolower((string)$innerFolder);
+}
 $modelById = [];
 foreach ($models as $item) $modelById[(string)$item['id']] = $item;
 
 $centerId = (string)($_GET['center_id'] ?? '');
 $cenefaId = (string)($_GET['cenefa_id'] ?? '');
 $esquinaId = (string)($_GET['esquina_id'] ?? '');
+$cenefaOuterId = (string)($_GET['cenefa_outer_id'] ?? '');
+$esquinaOuterId = (string)($_GET['esquina_outer_id'] ?? '');
 $legacyId = (string)($_GET['id'] ?? '');
 if ($centerId === '' && $legacyId !== '' && isset($modelById[$legacyId]) && $modelById[$legacyId]['categoria'] === 'centro') $centerId = $legacyId;
 if ($cenefaId === '' && $legacyId !== '' && isset($modelById[$legacyId]) && $modelById[$legacyId]['categoria'] === 'cenefa') $cenefaId = $legacyId;
@@ -311,14 +382,16 @@ if ($esquinaId === '' && $legacyId !== '' && isset($modelById[$legacyId]) && $mo
 $selectedCenter = ($centerId !== '' && isset($modelById[$centerId])) ? $modelById[$centerId] : null;
 $selectedCenefa = ($cenefaId !== '' && isset($modelById[$cenefaId])) ? $modelById[$cenefaId] : null;
 $selectedEsquina = ($esquinaId !== '' && isset($modelById[$esquinaId])) ? $modelById[$esquinaId] : null;
-$selectedCenefaOuter = null;
-$selectedEsquinaOuter = null;
+$selectedCenefaOuter = ($cenefaOuterId !== '' && isset($modelById[$cenefaOuterId])) ? $modelById[$cenefaOuterId] : null;
+$selectedEsquinaOuter = ($esquinaOuterId !== '' && isset($modelById[$esquinaOuterId])) ? $modelById[$esquinaOuterId] : null;
 
 $centerImgParam = trim((string)($_GET['center_img'] ?? ''));
 $cenefaImgParam = trim((string)($_GET['cenefa_img'] ?? ''));
 $esquinaImgParam = trim((string)($_GET['esquina_img'] ?? ''));
 $cenefaOuterImgParam = trim((string)($_GET['cenefa_outer_img'] ?? ''));
 $esquinaOuterImgParam = trim((string)($_GET['esquina_outer_img'] ?? ''));
+$cenefaAltRotateParam = trim((string)($_GET['cenefa_alt_rotate'] ?? ''));
+$cenefaOuterAltRotateParam = trim((string)($_GET['cenefa_outer_alt_rotate'] ?? ''));
 if (!$selectedCenter && $centerImgParam !== '') {
     $selectedCenter = [
         'id' => 0,
@@ -327,6 +400,7 @@ if (!$selectedCenter && $centerImgParam !== '') {
         'categoria' => 'centro',
         'identificador' => '',
         'carpeta_modelo' => '',
+        'cenefa_rotacion_alterna' => in_array(strtolower($cenefaAltRotateParam), ['1','true','si','sí','yes'], true) ? 1 : 0,
     ];
 }
 if (!$selectedCenefa && $cenefaImgParam !== '') {
@@ -337,6 +411,7 @@ if (!$selectedCenefa && $cenefaImgParam !== '') {
         'categoria' => 'cenefa',
         'identificador' => '',
         'carpeta_modelo' => '',
+        'cenefa_rotacion_alterna' => 0,
     ];
 }
 if (!$selectedEsquina && $esquinaImgParam !== '') {
@@ -347,6 +422,7 @@ if (!$selectedEsquina && $esquinaImgParam !== '') {
         'categoria' => 'esquina',
         'identificador' => '',
         'carpeta_modelo' => '',
+        'cenefa_rotacion_alterna' => 0,
     ];
 }
 
@@ -356,9 +432,10 @@ if (!$selectedCenefaOuter && $cenefaOuterImgParam !== '') {
         'id' => 0,
         'nombre' => (string)($_GET['cenefa_outer_name'] ?? ($lang === 'en' ? 'Outer Border' : 'Cenefa exterior')),
         'imagen' => $cenefaOuterImgParam,
-        'categoria' => 'cenefa',
+        'categoria' => 'cenefa_exterior',
         'identificador' => '',
         'carpeta_modelo' => '',
+        'cenefa_rotacion_alterna' => in_array(strtolower($cenefaOuterAltRotateParam), ['1','true','si','sí','yes'], true) ? 1 : 0,
     ];
 }
 if (!$selectedEsquinaOuter && $esquinaOuterImgParam !== '') {
@@ -366,11 +443,37 @@ if (!$selectedEsquinaOuter && $esquinaOuterImgParam !== '') {
         'id' => 0,
         'nombre' => (string)($_GET['esquina_outer_name'] ?? ($lang === 'en' ? 'Outer Corner' : 'Esquina exterior')),
         'imagen' => $esquinaOuterImgParam,
-        'categoria' => 'esquina',
+        'categoria' => 'esquina_exterior',
         'identificador' => '',
         'carpeta_modelo' => '',
+        'cenefa_rotacion_alterna' => 0,
     ];
 }
+
+if ($selectedCenefa && $cenefaAltRotateParam !== '') {
+    $selectedCenefa['cenefa_rotacion_alterna'] = in_array(strtolower($cenefaAltRotateParam), ['1','true','si','sí','yes'], true) ? 1 : 0;
+}
+if ($selectedCenefaOuter && $cenefaOuterAltRotateParam !== '') {
+    $selectedCenefaOuter['cenefa_rotacion_alterna'] = in_array(strtolower($cenefaOuterAltRotateParam), ['1','true','si','sí','yes'], true) ? 1 : 0;
+}
+
+if ($selectedCenefa && trim((string)($selectedCenefa['imagen'] ?? '')) === '' && $cenefaImgParam !== '') {
+    $selectedCenefa['imagen'] = $cenefaImgParam;
+    if (trim((string)($selectedCenefa['nombre'] ?? '')) === '') $selectedCenefa['nombre'] = (string)($_GET['cenefa_name'] ?? ($lang === 'en' ? 'Border' : 'Cenefa'));
+}
+if ($selectedEsquina && trim((string)($selectedEsquina['imagen'] ?? '')) === '' && $esquinaImgParam !== '') {
+    $selectedEsquina['imagen'] = $esquinaImgParam;
+    if (trim((string)($selectedEsquina['nombre'] ?? '')) === '') $selectedEsquina['nombre'] = (string)($_GET['esquina_name'] ?? ($lang === 'en' ? 'Corner' : 'Esquina'));
+}
+if ($selectedCenefaOuter && trim((string)($selectedCenefaOuter['imagen'] ?? '')) === '' && $cenefaOuterImgParam !== '') {
+    $selectedCenefaOuter['imagen'] = $cenefaOuterImgParam;
+    if (trim((string)($selectedCenefaOuter['nombre'] ?? '')) === '') $selectedCenefaOuter['nombre'] = (string)($_GET['cenefa_outer_name'] ?? ($lang === 'en' ? 'Outer Border' : 'Cenefa exterior'));
+}
+if ($selectedEsquinaOuter && trim((string)($selectedEsquinaOuter['imagen'] ?? '')) === '' && $esquinaOuterImgParam !== '') {
+    $selectedEsquinaOuter['imagen'] = $esquinaOuterImgParam;
+    if (trim((string)($selectedEsquinaOuter['nombre'] ?? '')) === '') $selectedEsquinaOuter['nombre'] = (string)($_GET['esquina_outer_name'] ?? ($lang === 'en' ? 'Outer Corner' : 'Esquina exterior'));
+}
+
 if ($selectedCenefa && !$selectedEsquina) {
     $cenefaFolder = carpeta_modelo_de_item($selectedCenefa);
     $mappedCornerFolder = $conexionesPrimary[$cenefaFolder] ?? '';
@@ -382,13 +485,6 @@ if ($selectedCenefa && !$selectedEsquina) {
                 break;
             }
         }
-    }
-}
-
-if ($selectedCenefa && !$selectedEsquina) {
-    $k = pair_key($selectedCenefa);
-    foreach ($models as $m) {
-        if ($m['categoria'] === 'esquina' && pair_key($m) === $k) { $selectedEsquina = $m; break; }
     }
 }
 
@@ -406,13 +502,38 @@ if ($selectedEsquina && !$selectedCenefa) {
     }
 }
 
-if ($selectedEsquina && !$selectedCenefa) {
-    $k = pair_key($selectedEsquina);
-    foreach ($models as $m) {
-        if (($m['categoria'] ?? '') === 'cenefa' && pair_key($m) === $k) { $selectedCenefa = $m; break; }
+if ($selectedCenefaOuter && !$selectedCenefa) {
+    $outerFolder = carpeta_modelo_de_item($selectedCenefaOuter);
+    $innerFolder = (string)($reverseOuterCenefa[$outerFolder] ?? '');
+    if ($innerFolder !== '') {
+        foreach ($models as $m) {
+            if (($m['categoria'] ?? '') !== 'cenefa') continue;
+            if (carpeta_modelo_de_item($m) === $innerFolder) { $selectedCenefa = $m; break; }
+        }
+    }
+}
+if ($selectedEsquinaOuter && !$selectedCenefa) {
+    $outerFolder = carpeta_modelo_de_item($selectedEsquinaOuter);
+    $innerFolder = (string)($reverseOuterEsquina[$outerFolder] ?? '');
+    if ($innerFolder !== '') {
+        foreach ($models as $m) {
+            if (($m['categoria'] ?? '') !== 'cenefa') continue;
+            if (carpeta_modelo_de_item($m) === $innerFolder) { $selectedCenefa = $m; break; }
+        }
     }
 }
 
+
+if ($selectedCenefa && !$selectedEsquina) {
+    $cenefaFolder = carpeta_modelo_de_item($selectedCenefa);
+    $mappedCornerFolder = $conexionesPrimary[$cenefaFolder] ?? '';
+    if ($mappedCornerFolder !== '') {
+        foreach ($models as $m) {
+            if (($m['categoria'] ?? '') !== 'esquina') continue;
+            if (carpeta_modelo_de_item($m) === $mappedCornerFolder) { $selectedEsquina = $m; break; }
+        }
+    }
+}
 
 if ($selectedCenefa && !$selectedCenefaOuter) {
     $cenefaFolder = carpeta_modelo_de_item($selectedCenefa);
@@ -420,18 +541,19 @@ if ($selectedCenefa && !$selectedCenefaOuter) {
     $outerCenefaFolder = strtolower(trim((string)($outerDef['cenefa'] ?? '')));
     if ($outerCenefaFolder !== '') {
         foreach ($models as $m) {
-            if (($m['categoria'] ?? '') !== 'cenefa') continue;
+            if (($m['categoria'] ?? '') !== 'cenefa_exterior') continue;
             if (carpeta_modelo_de_item($m) === $outerCenefaFolder) { $selectedCenefaOuter = $m; break; }
         }
     }
 }
-if ($selectedCenefaOuter && !$selectedEsquinaOuter) {
-    $outerFolder = carpeta_modelo_de_item($selectedCenefaOuter);
-    $mappedOuterCorner = $conexionesPrimary[$outerFolder] ?? '';
-    if ($mappedOuterCorner !== '') {
+if ($selectedCenefa && $selectedCenefaOuter && !$selectedEsquinaOuter) {
+    $cenefaFolder = carpeta_modelo_de_item($selectedCenefa);
+    $outerDef = $conexionesOuter[$cenefaFolder] ?? null;
+    $outerCornerFolder = strtolower(trim((string)($outerDef['esquina'] ?? '')));
+    if ($outerCornerFolder !== '') {
         foreach ($models as $m) {
-            if (($m['categoria'] ?? '') !== 'esquina') continue;
-            if (carpeta_modelo_de_item($m) === $mappedOuterCorner) { $selectedEsquinaOuter = $m; break; }
+            if (($m['categoria'] ?? '') !== 'esquina_exterior') continue;
+            if (carpeta_modelo_de_item($m) === $outerCornerFolder) { $selectedEsquinaOuter = $m; break; }
         }
     }
 }
@@ -443,6 +565,8 @@ if ($pickerMode === 'dual') {
         'cenefa' => $selectedCenefa,
         'esquina' => $selectedEsquina,
         'centro' => $selectedCenter,
+        'cenefa_exterior' => ($selectedCenefaOuter ?: $selectedCenefa),
+        'esquina_exterior' => ($selectedEsquinaOuter ?: $selectedEsquina),
         default => ($selectedCenter ?: $selectedCenefa ?: $selectedEsquina),
     };
 }
@@ -454,6 +578,7 @@ if (!$editable && isset($_GET['img']) && (string)$_GET['img'] !== '') {
         'categoria' => strtolower(trim((string)($_GET['cat'] ?? ''))),
         'identificador' => '',
         'carpeta_modelo' => '',
+        'cenefa_rotacion_alterna' => 0,
     ];
 }
 
@@ -462,15 +587,19 @@ $selectedImage = $editable['imagen'] ?? '';
 $selectedCategory = $editable['categoria'] ?? '';
 $editTarget = ($pickerMode === 'dual') ? 'centro' : ($selectedCategory !== '' ? $selectedCategory : 'centro');
 $entryCategory = strtolower(trim((string)($_GET['cat'] ?? ($editable['categoria'] ?? ''))));
-$showCenterEditor = true;
 $searchMode = ($modelSource === 'tapete') ? 'tapete' : 'modelo';
-if ($pickerMode === 'dual') {
-    $showCenefaExtra = (bool)$selectedCenefa;
-    $showEsquinaExtra = (bool)$selectedEsquina;
-} else {
-    $showCenefaExtra = ($selectedCategory === 'esquina') && (bool)$selectedCenefa;
-    $showEsquinaExtra = ($selectedCategory === 'cenefa') && (bool)$selectedEsquina;
-}
+$isBorderSelection = in_array($selectedCategory, ['cenefa', 'esquina', 'cenefa_exterior', 'esquina_exterior'], true);
+$isSingleBorderEntry = ($pickerMode === 'single' && $isBorderSelection);
+$showCenterEditor = !$isSingleBorderEntry;
+$showCenterSearch = ($searchMode === 'tapete') || !$isSingleBorderEntry;
+$showCenefaSearch = ($searchMode !== 'tapete') && ($pickerMode === 'dual' || ($pickerMode === 'single' && in_array($entryCategory, ['centro', 'cenefa'], true)));
+$showSearch = $showCenterSearch || $showCenefaSearch;
+$disableSearch = false;
+$showCenefaExtra = (bool)$selectedCenefa;
+$showEsquinaExtra = (bool)$selectedEsquina;
+$showCenefaOuterExtra = (bool)$selectedCenefaOuter;
+$showEsquinaOuterExtra = (bool)$selectedEsquinaOuter;
+$showCenterSelectionHint = (!$selectedCenter && (bool)$selectedCenefa);
 ?>
 <!doctype html>
 <html lang="<?= $lang ?>">
@@ -504,35 +633,44 @@ if ($pickerMode === 'dual') {
     <section>
       <h2 data-i18n="custom_title">Personalizar Diseño</h2>
       <p><strong id="selectedModelName"><?= htmlspecialchars($selectedName, ENT_QUOTES) ?></strong></p>
-      <div class="model-search-row" data-picker-mode="<?= $pickerMode ?>" data-search-mode="<?= htmlspecialchars($searchMode, ENT_QUOTES) ?>">
-        <div class="model-search" id="centerSearchWrap">
-          <input id="centerSearchInput" type="search" autocomplete="off" <?= $searchMode === 'tapete' ? '' : 'data-i18n-placeholder="custom_select_center"' ?> placeholder="<?= $searchMode === 'tapete' ? 'Seleccionar tapete' : 'Seleccionar centro' ?>" />
+      <div class="model-search-row" data-picker-mode="<?= $pickerMode ?>" data-search-mode="<?= htmlspecialchars($searchMode, ENT_QUOTES) ?>" data-search-disabled="<?= $disableSearch ? '1' : '0' ?>">
+        <?php if ($showCenterSearch): ?><div class="model-search" id="centerSearchWrap">
+          <input id="centerSearchInput" type="search" autocomplete="off" <?= $disableSearch ? 'disabled' : '' ?> <?= $searchMode === 'tapete' ? '' : 'data-i18n-placeholder="custom_select_center"' ?> placeholder="<?= $searchMode === 'tapete' ? 'Seleccionar tapete' : 'Seleccionar centro' ?>" />
           <div class="model-search-results" id="centerSearchResults"></div>
-        </div>
-        <?php if ($pickerMode === 'dual' && $searchMode !== 'tapete'): ?>
+        </div><?php endif; ?>
+        <?php if ($showCenefaSearch): ?>
         <div class="model-search" id="cenefaSearchWrap">
-          <input id="cenefaSearchInput" type="search" autocomplete="off" data-i18n-placeholder="custom_select_cenefa" placeholder="Seleccionar cenefa" />
+          <input id="cenefaSearchInput" type="search" autocomplete="off" <?= $disableSearch ? 'disabled' : '' ?> data-i18n-placeholder="custom_select_cenefa" placeholder="Seleccionar cenefa" />
           <div class="model-search-results" id="cenefaSearchResults"></div>
         </div>
         <?php endif; ?>
       </div>
+      <?php if ($showCenterSelectionHint): ?>
+      <p class="note" id="centerSelectionHint" data-i18n="custom_center_hint_no_center">Seleccione un centro en la barra de búsqueda o pinte el cuadro para usar un color liso.</p>
+      <?php endif; ?>
     </section>
 
     <section class="panel">
       <div class="custom-wrap" id="customWrap" data-has-model="<?= $editable ? '1' : '0' ?>">
         <div>
-          <p data-i18n="custom_step1">1. Selecciona un color.</p>
-          <p class="note" data-i18n="custom_step_area">2. Da clic en una sección del mosaico (PNG) para aplicar el color solo en esa zona.</p>
+          <p data-i18n="custom_step1">Selecciona un color, luego dar click sobre la imagen.</p>
+          <p class="note" data-i18n="custom_color_policy">La cantidad de colores debe ser igual a los que tiene la imagen de línea. Si desea sumar más colores aumentará el costo por pieza. El máximo es de 6 colores por modelo.</p>
           <?php if ($showCenterEditor): ?>
           <div class="vector-editor" id="vectorEditor"></div>
           <?php endif; ?>
-          <?php if ($showCenefaExtra || $showEsquinaExtra): ?>
+          <?php if ($showCenefaExtra || $showEsquinaExtra || $showCenefaOuterExtra || $showEsquinaOuterExtra): ?>
           <div class="extra-editors">
             <?php if ($showCenefaExtra): ?>
             <div class="vector-editor extra-editor" id="extraCenefaPreview" data-extra-src="<?= htmlspecialchars($selectedCenefa['imagen'] ?? '', ENT_QUOTES) ?>" aria-label="Cenefa"></div>
             <?php endif; ?>
             <?php if ($showEsquinaExtra): ?>
             <div class="vector-editor extra-editor" id="extraCornerPreview" data-extra-src="<?= htmlspecialchars($selectedEsquina['imagen'] ?? '', ENT_QUOTES) ?>" aria-label="Esquina"></div>
+            <?php endif; ?>
+            <?php if ($showCenefaOuterExtra): ?>
+            <div class="vector-editor extra-editor" id="extraCenefaOuterPreview" data-extra-src="<?= htmlspecialchars($selectedCenefaOuter['imagen'] ?? '', ENT_QUOTES) ?>" aria-label="Cenefa exterior"></div>
+            <?php endif; ?>
+            <?php if ($showEsquinaOuterExtra): ?>
+            <div class="vector-editor extra-editor" id="extraCornerOuterPreview" data-extra-src="<?= htmlspecialchars($selectedEsquinaOuter['imagen'] ?? '', ENT_QUOTES) ?>" aria-label="Esquina exterior"></div>
             <?php endif; ?>
           </div>
           <?php endif; ?>
@@ -554,8 +692,10 @@ if ($pickerMode === 'dual') {
                data-edit-target="<?= htmlspecialchars($editTarget, ENT_QUOTES) ?>"
                data-center-image="<?= htmlspecialchars($selectedCenter['imagen'] ?? '', ENT_QUOTES) ?>"
                data-cenefa-image="<?= htmlspecialchars($selectedCenefa['imagen'] ?? '', ENT_QUOTES) ?>"
+               data-cenefa-alt-rotate="<?= !empty($selectedCenefa['cenefa_rotacion_alterna']) ? '1' : '' ?>"
                data-esquina-image="<?= htmlspecialchars($selectedEsquina['imagen'] ?? '', ENT_QUOTES) ?>"
                data-cenefa-outer-image="<?= htmlspecialchars($selectedCenefaOuter['imagen'] ?? '', ENT_QUOTES) ?>"
+               data-cenefa-outer-alt-rotate="<?= !empty($selectedCenefaOuter['cenefa_rotacion_alterna']) ? '1' : '' ?>"
                data-esquina-outer-image="<?= htmlspecialchars($selectedEsquinaOuter['imagen'] ?? '', ENT_QUOTES) ?>"
                data-picker-mode="<?= htmlspecialchars($pickerMode, ENT_QUOTES) ?>"></div>
           <button id="download" class="action" style="margin-top:8px" data-i18n="custom_download">Descargar imagen</button>
@@ -570,6 +710,8 @@ if ($pickerMode === 'dual') {
       'centerId' => $selectedCenter['id'] ?? null,
       'cenefaId' => $selectedCenefa['id'] ?? null,
       'esquinaId' => $selectedEsquina['id'] ?? null,
+      'cenefaOuterId' => $selectedCenefaOuter['id'] ?? null,
+      'esquinaOuterId' => $selectedEsquinaOuter['id'] ?? null,
       'pickerMode' => $pickerMode,
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
     window.CUSTOMIZER_TAPETES = <?= json_encode($tapetePresets, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
